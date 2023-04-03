@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='和监控简介是一款常用的服务发现和配置管理工具，可以很好地管理和发现分布式系统中的服务和实例。而是一款常用的开源监控和告警系统，可以监控各种不同的系统组件并进行告警和分析。本文将介绍如何使用监控服务端，。。。。。。。'>
+<title>Prometheus 和 Grafana 监控 Consul服务端</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/prometheus-%E5%92%8C-grafana-%E7%9B%91%E6%8E%A7-consul%E6%9C%8D%E5%8A%A1%E7%AB%AF/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='Prometheus 和 Grafana 监控 Consul服务端'>
+<meta property='og:description' content='和监控简介是一款常用的服务发现和配置管理工具，可以很好地管理和发现分布式系统中的服务和实例。而是一款常用的开源监控和告警系统，可以监控各种不同的系统组件并进行告警和分析。本文将介绍如何使用监控服务端，。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/prometheus-%E5%92%8C-grafana-%E7%9B%91%E6%8E%A7-consul%E6%9C%8D%E5%8A%A1%E7%AB%AF/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='grafana' /><meta property='article:tag' content='consul' /><meta property='article:published_time' content='2023-03-17T10:57:56&#43;00:00'/><meta property='article:modified_time' content='2023-03-17T10:57:56&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/21.jpg' />
+<meta name="twitter:title" content="Prometheus 和 Grafana 监控 Consul服务端">
+<meta name="twitter:description" content="和监控简介是一款常用的服务发现和配置管理工具，可以很好地管理和发现分布式系统中的服务和实例。而是一款常用的开源监控和告警系统，可以监控各种不同的系统组件并进行告警和分析。本文将介绍如何使用监控服务端，。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/21.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#安装conusl服务端">安装Conusl服务端</a></li>
+    <li><a href="#prometheus架构">Prometheus架构</a></li>
+    <li><a href="#方法一exporter监控consul服务端">方法一、Exporter监控Consul服务端</a>
+      <ol>
+        <li><a href="#安装consul-exporter">安装Consul Exporter</a></li>
+        <li><a href="#配置consul-exporter">配置Consul Exporter</a></li>
+        <li><a href="#3配置prometheus文件">3、配置prometheus文件</a></li>
+        <li><a href="#4grafana导入模板">4、grafana导入模板</a></li>
+      </ol>
+    </li>
+    <li><a href="#方法二consul服务端自带监控">方法二、Consul服务端自带监控</a>
+      <ol>
+        <li><a href="#1配置consul">1、配置Consul</a></li>
+        <li><a href="#2prometheus配置">2、prometheus配置</a></li>
+        <li><a href="#3grafana配置">3、grafana配置</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/prometheus-%E5%92%8C-grafana-%E7%9B%91%E6%8E%A7-consul%E6%9C%8D%E5%8A%A1%E7%AB%AF/">
+                
+                    <img src="http://image.ownit.top/4kdongman/21.jpg" loading="lazy" alt="Featured image of post Prometheus 和 Grafana 监控 Consul服务端" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus/" >
+                prometheus
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/prometheus-%E5%92%8C-grafana-%E7%9B%91%E6%8E%A7-consul%E6%9C%8D%E5%8A%A1%E7%AB%AF/">Prometheus 和 Grafana 监控 Consul服务端</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            和监控简介是一款常用的服务发现和配置管理工具，可以很好地管理和发现分布式系统中的服务和实例。而是一款常用的开源监控和告警系统，可以监控各种不同的系统组件并进行告警和分析。本文将介绍如何使用监控服务端，。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 17, 2023</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="prometheus-和-grafana-监控-consul">Prometheus 和 Grafana 监控 Consul</h1>
+<h2 id="简介">简介</h2>
+<p>Consul是一款常用的服务发现和配置管理工具，可以很好地管理和发现分布式系统中的服务和实例。而Prometheus是一款常用的开源监控和告警系统，可以监控各种不同的系统组件并进行告警和分析。本文将介绍如何使用Prometheus监控Consul服务端，以便更好地管理和分析Consul集群的运行情况。</p>
+<h2 id="安装conusl服务端">安装Conusl服务端</h2>
+<p><strong>Conusl版本：Consul v1.5.3</strong></p>
+<p>1、首先从官方网站（<a class="link" href="https://www.consul.io/downloads.html%ef%bc%89%e4%b8%8b%e8%bd%bd%e9%80%82%e7%94%a8%e4%ba%8e%e6%82%a8%e7%9a%84%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f%e7%9a%84%e4%ba%8c%e8%bf%9b%e5%88%b6%e6%96%87%e4%bb%b6%e3%80%82"  target="_blank" rel="noopener"
+    >https://www.consul.io/downloads.html）下载适用于您的操作系统的二进制文件。</a></p>
+<p>2、解压缩下载的文件。例如，在Linux中，您可以使用以下命令解压缩：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"> unzip consul_1.x.x_linux_amd64.zip
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3、将解压缩的二进制文件移动到一个目录中，例如<code>/usr/local/bin</code>​：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo mv consul /usr/local/bin/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>4、创建一个配置文件来配置Consul服务端</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir -p /etc/consul/ <span class="o">&amp;&amp;</span> <span class="nb">cd</span> /etc/consul/
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt consul<span class="o">]</span><span class="c1"># cat consul.hcl</span>
+</span></span><span class="line"><span class="cl"><span class="nv">data_dir</span> <span class="o">=</span> <span class="s2">&#34;/var/lib/consul&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">log_level</span> <span class="o">=</span> <span class="s2">&#34;WARN&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">enable_syslog</span> <span class="o">=</span> <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server</span> <span class="o">=</span> <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="nv">bootstrap</span> <span class="o">=</span> <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ui</span> <span class="o">=</span> <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="nv">datacenter</span> <span class="o">=</span> <span class="s2">&#34;ownit&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">check_update_interval</span> <span class="o">=</span> <span class="s2">&#34;0s&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">bind_addr</span> <span class="o">=</span> <span class="s2">&#34;192.168.102.20&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">client_addr</span> <span class="o">=</span> <span class="s2">&#34;192.168.102.20&#34;</span>
+</span></span><span class="line"><span class="cl">telemetry <span class="o">{</span>
+</span></span><span class="line"><span class="cl">          <span class="nv">prometheus_retention_time</span> <span class="o">=</span> <span class="s2">&#34;24h&#34;</span> <span class="c1">#Consul自带的监控</span>
+</span></span><span class="line"><span class="cl">                  <span class="nv">disable_hostname</span> <span class="o">=</span> <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">该配置文件指定Consul服务端应该使用的数据中心、是否是服务器节点（server）、启动集群时期望的服务器数量（bootstrap_expect）、数据存储目录（data_dir）、日志级别（log_level）、是否启用syslog（enable_syslog）、是否启用UI（ui）以及HTTP地址（addresses.http）。
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>5、启动Consul服务端</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vim /usr/lib/systemd/system/consul.service
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Unit<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">Description</span><span class="o">=</span>consul-server
+</span></span><span class="line"><span class="cl"><span class="nv">After</span><span class="o">=</span>network-online.target
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Service<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">User</span><span class="o">=</span>consul
+</span></span><span class="line"><span class="cl"><span class="nv">PIDFile</span><span class="o">=</span>/var/lib/consul/consul-server.pid
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/bin/consul agent -config-dir /etc/consul -pid-file /var/lib/consul/consul-server.pid -log-file /var/log/consul/consul-server.log
+</span></span><span class="line"><span class="cl"><span class="nv">ExecReload</span><span class="o">=</span>/bin/kill -s SIGHUP <span class="nv">$MAINPID</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStop</span><span class="o">=</span>/bin/kill -INT <span class="nv">$MAINPID</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Install<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">WantedBy</span><span class="o">=</span>multi-user.target
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">systemctl daemon-reload  <span class="o">&amp;&amp;</span> systemctl restart consul
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/e42d18dd650c4bfdbdb4c90ff5006e02.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="prometheus架构">Prometheus架构</h2>
+<p>Prometheus监控系统由以下几个主要组件组成：</p>
+<ol>
+<li>Prometheus Server：用于存储和查询监控指标数据。</li>
+<li>Exporter：用于将不同的应用程序、系统组件或服务的监控指标数据转换为Prometheus可以处理的格式。</li>
+<li>Alertmanager：用于接收来自Prometheus Server的告警信息，并进行处理和发送告警通知。</li>
+</ol>
+<h2 id="方法一exporter监控consul服务端">方法一、Exporter监控Consul服务端</h2>
+<p>要将Consul服务端的监控指标数据导入到Prometheus中，可以使用Consul的官方Exporter或第三方Exporter。这些Exporter将Consul的运行指标数据暴露为Prometheus可以处理的格式。下面以官方Exporter为例进行介绍。</p>
+<ol>
+<li>
+<h3 id="安装consul-exporter">安装Consul Exporter</h3>
+</li>
+</ol>
+<p>可以通过以下命令来下载Consul Exporter：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">wget https://github.com/prometheus/consul_exporter/releases/download/v0.6.0/consul_exporter-0.6.0.linux-amd64.tar.gz
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol start="2">
+<li>
+<h3 id="配置consul-exporter">配置Consul Exporter</h3>
+</li>
+</ol>
+<p>需要创建一个systemd服务文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vim /usr/lib/systemd/system/consul_exporter.service
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Unit<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">Description</span><span class="o">=</span>Consul Exporter
+</span></span><span class="line"><span class="cl"><span class="nv">After</span><span class="o">=</span>network.target
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Service<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">Type</span><span class="o">=</span>simple
+</span></span><span class="line"><span class="cl"><span class="c1">#User=conusl</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/consul_exporter/consul_exporter --consul.server<span class="o">=</span>192.168.102.20:8500
+</span></span><span class="line"><span class="cl"><span class="nv">Restart</span><span class="o">=</span>always
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Install<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">WantedBy</span><span class="o">=</span>multi-user.target
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">systemctl daemon-reload <span class="o">&amp;&amp;</span>  systemctl restart consul_exporter
+</span></span><span class="line"><span class="cl">systemctl status consul_exporter
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/89c13098319546d4944226204d63faf7.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>访问地址： http://192.168.102.20:9107/metrics</p>
+<p><img src="http://image.ownit.top/csdn/a09bbcad89fe4a4d9f4e801fefe21639.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="3配置prometheus文件">3、配置prometheus文件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">  - job_name: <span class="s1">&#39;consul&#39;</span>
+</span></span><span class="line"><span class="cl">    scrape_interval: 10s
+</span></span><span class="line"><span class="cl">    scrape_timeout: 10s
+</span></span><span class="line"><span class="cl">    static_configs:
+</span></span><span class="line"><span class="cl">    - targets: <span class="o">[</span><span class="s1">&#39;192.168.102.20:9107&#39;</span><span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="4grafana导入模板">4、grafana导入模板</h3>
+<p><a class="link" href="https://grafana.com/grafana/dashboards/12049-consul-exporter-dashboard/"  target="_blank" rel="noopener"
+    ></a><a class="link" href="https://hellowoodes.oss-cn-beijing.aliyuncs.com/picture/custom-consul-grafana-dashboard.json"  target="_blank" rel="noopener"
+    >https://hellowoodes.oss-cn-beijing.aliyuncs.com/picture/custom-consul-grafana-dashboard.json</a></p>
+<p><img src="http://image.ownit.top/csdn/77f46a3bc397486598a6e89683c08bd9.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><a class="link" href="https://grafana.com/grafana/dashboards/12049-consul-exporter-dashboard/"  target="_blank" rel="noopener"
+    >https://grafana.com/grafana/dashboards/12049-consul-exporter-dashboard/</a></p>
+<p><img src="http://image.ownit.top/csdn/b8ae8cdcb6c94a7e8d9db0b7fbc1d60c.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>‍</p>
+<h2 id="方法二consul服务端自带监控">方法二、Consul服务端自带监控</h2>
+<h3 id="1配置consul">1、配置Consul</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">telemetry <span class="o">{</span>
+</span></span><span class="line"><span class="cl">          <span class="nv">prometheus_retention_time</span> <span class="o">=</span> <span class="s2">&#34;24h&#34;</span> <span class="c1">#Consul自带的监控</span>
+</span></span><span class="line"><span class="cl">                  <span class="nv">disable_hostname</span> <span class="o">=</span> <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2prometheus配置">2、prometheus配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">  - job_name: consul-server
+</span></span><span class="line"><span class="cl">    honor_timestamps: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">    scrape_interval: 15s
+</span></span><span class="line"><span class="cl">    scrape_timeout: 10s
+</span></span><span class="line"><span class="cl">    metrics_path: <span class="s1">&#39;/v1/agent/metrics&#39;</span>
+</span></span><span class="line"><span class="cl">    scheme: http
+</span></span><span class="line"><span class="cl">    params:
+</span></span><span class="line"><span class="cl">      format: <span class="o">[</span><span class="s2">&#34;prometheus&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">    static_configs:
+</span></span><span class="line"><span class="cl">    - targets:
+</span></span><span class="line"><span class="cl">      - 192.168.102.20:8500
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3grafana配置">3、grafana配置</h3>
+<p><a class="link" href="https://grafana.com/grafana/dashboards/2351-consul/"  target="_blank" rel="noopener"
+    >https://grafana.com/grafana/dashboards/2351-consul/</a></p>
+<p>点击左侧<code>+</code>​按钮，选择 <code>import</code>​，输入Dashboard ID为 <code>10642</code>​，选择Prometheus为刚才添加的数据源，点击Import后即可看到监控面板</p>
+<p><img src="http://image.ownit.top/csdn/910e542e206c41228ae7d241096e1669.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/grafana/">Grafana</a>
+        
+            <a href="/tags/consul/">consul</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

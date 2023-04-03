@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='容器本身特性：采集目标多：容器本身的特性导致采集目标多，需要采集容器内日志、容器。对于容器内部的文件日志采集，现在并没有一个很好的工具能够去动态发现采集。针对每种数据源都有对应的采集软件，但缺乏一站式。。。。。。。'>
+<title>Kubernetes高效收集生产日志</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/kubernetes%E9%AB%98%E6%95%88%E6%94%B6%E9%9B%86%E7%94%9F%E4%BA%A7%E6%97%A5%E5%BF%97/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='Kubernetes高效收集生产日志'>
+<meta property='og:description' content='容器本身特性：采集目标多：容器本身的特性导致采集目标多，需要采集容器内日志、容器。对于容器内部的文件日志采集，现在并没有一个很好的工具能够去动态发现采集。针对每种数据源都有对应的采集软件，但缺乏一站式。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/kubernetes%E9%AB%98%E6%95%88%E6%94%B6%E9%9B%86%E7%94%9F%E4%BA%A7%E6%97%A5%E5%BF%97/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='容器' /><meta property='article:published_time' content='2022-03-12T19:40:43&#43;00:00'/><meta property='article:modified_time' content='2022-03-12T19:40:43&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/62.jpg' />
+<meta name="twitter:title" content="Kubernetes高效收集生产日志">
+<meta name="twitter:description" content="容器本身特性：采集目标多：容器本身的特性导致采集目标多，需要采集容器内日志、容器。对于容器内部的文件日志采集，现在并没有一个很好的工具能够去动态发现采集。针对每种数据源都有对应的采集软件，但缺乏一站式。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/62.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1es-serviceyaml">1、 es-service.yaml</a></li>
+    <li><a href="#es-statefulsetyaml">es-statefulset.yaml</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#kibanayaml">kibana.yaml </a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#log-pilotyaml">log-pilot.yaml</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#nginxyaml"> nginx.yaml</a>
+      <ol>
+        <li><a href="#podyaml">pod.yaml</a></li>
+        <li><a href="#tomcatyaml">tomcat.yaml</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/kubernetes%E9%AB%98%E6%95%88%E6%94%B6%E9%9B%86%E7%94%9F%E4%BA%A7%E6%97%A5%E5%BF%97/">
+                
+                    <img src="http://image.ownit.top/4kdongman/62.jpg" loading="lazy" alt="Featured image of post Kubernetes高效收集生产日志" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/kubernetes%E9%AB%98%E6%95%88%E6%94%B6%E9%9B%86%E7%94%9F%E4%BA%A7%E6%97%A5%E5%BF%97/">Kubernetes高效收集生产日志</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            容器本身特性：采集目标多：容器本身的特性导致采集目标多，需要采集容器内日志、容器。对于容器内部的文件日志采集，现在并没有一个很好的工具能够去动态发现采集。针对每种数据源都有对应的采集软件，但缺乏一站式。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 12, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 6 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <ul>
+<li>容器本身特性：
+<ul>
+<li>采集目标多：容器本身的特性导致采集目标多，需要采集容器内日志、容器 stdout。对于容器内部的文件日志采集，现在并没有一个很好的工具能够去动态发现采集。针对每种数据源都有对应的采集软件，但缺乏一站式的工具。</li>
+<li>弹性伸缩难：kubernetes 是分布式的集群，服务、环境的弹性伸缩对于日志采集带来了很大的困难，无法像传统虚拟机环境下那样，事先配置好日志的采集路径等信息，采集的动态性以及数据完整性是非常大的挑战。</li>
+</ul>
+</li>
+<li>现有日志工具的一些缺陷：
+<ul>
+<li>缺乏动态配置的能力。目前的采集工具都需要事先手动配置好日志采集方式和路径等信息，因为它无法能够自动感知到容器的生命周期变化或者动态漂移，所以它无法动态地去配置。</li>
+<li>日志采集重复或丢失的问题。因为现在的一些采集工具基本上是通过 tail 的方式来进行日志采集的，那么这里就可能存在两个方面的问题：一个是可能导致日志丢失，比如采集工具在重启的过程中，而应用依然在写日志，那么就有可能导致这个窗口期的日志丢失；而对于这种情况一般保守的做法就是，默认往前多采集 1M 日志或 2M 的日志，那么这就又会可能引起日志采集重复的问题。</li>
+<li>未明确标记日志源。因为一个应用可能有很多个容器，输出的应用日志也是一样的，那么当我们将所有应用日志收集到统一日志存储后端时，在搜索日志的时候，我们就无法明确这条日志具体是哪一个节点上的哪一个应用容器产生的。</li>
+</ul>
+</li>
+</ul>
+<p>本文档将介绍一种 Docker 日志收集工具 log-pilot，结合 Elasticsearch 和 kibana 等工具，形成一套适用于 kubernetes 环境下的一站式日志解决方案。</p>
+<p><a class="link" href="https://github.com/AliyunContainerService/log-pilot"  title="GitHub \- AliyunContainerService/log-pilot: Collect logs for docker containers"
+     target="_blank" rel="noopener"
+    >GitHub - AliyunContainerService/log-pilot: Collect logs for docker containersCollect logs for docker containers. Contribute to AliyunContainerService/log-pilot development by creating an account on GitHub.<img src="http://image.ownit.top/csdn/fluidicon.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+>https://github.com/AliyunContainerService/log-pilot</a><a class="link" href="https://developer.aliyun.com/article/674327"  title="容器日志采集利器Log-Pilot-阿里云开发者社区"
+     target="_blank" rel="noopener"
+    >容器日志采集利器Log-Pilot-阿里云开发者社区容器时代越来越多的传统应用将会逐渐容器化，而日志又是应用的一个关键环节，那么在应用容器化过程中，如何方便快捷高效地来自动发现和采集应用的日志，如何与日志存储系统协同来高效存储和搜索应用日志，本文将主要跟大家分享下如何通过Log-Pilot来采集容器的标准输出日志和容器内文件日志。<img src="http://image.ownit.top/csdn/icon-default.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="icon-default.png?t=M276"
+	
+	
+>https://developer.aliyun.com/article/674327</a></p>
+<p>Log-Pilot 支持容器事件管理，它能够动态地监听容器的事件变化，然后依据容器的标签来进行解析，生成日志采集配置文件，然后交由采集插件来进行日志采集。</p>
+<p>相关特点和优势，可以点击上方的链接学习。</p>
+<h1 id="方案">方案</h1>
+<p>从日志的采集方式上，在我看来方案大致主要分为两种：</p>
+<p>**（1）POD 里面安装logging agent**</p>
+<p>每个pod里面都要安装一个agent，无论是以放在本container还是以sidecar的方式部署，很明显会占用很多资源，基本不推荐</p>
+<p>**（2）在节点上安装logging agent（推荐）**</p>
+<p>其实容器stdout,stderr的日志最终也是落在<a class="link" href="https://cloud.tencent.com/product/cdh?from=10680"  title="宿主机"
+     target="_blank" rel="noopener"
+    >宿主机</a>上，而容器内的路径可以通过配置volumeMount 在宿主机上配置映射即可，所以这种方式还是最可行的</p>
+<blockquote>
+<p>当然应用还可以自己通过代码直接上报给日志服务，但是这种方式不够通用，还增加了业务代码的复杂性</p>
+</blockquote>
+<p><strong>log-Pilot</strong>是一个智能容器日志采集工具，它不仅能够高效便捷地将容器日志采集输出到多种存储日志后端，同时还能够动态地发现和采集容器内部的日志文件，更多咨询可以移步<a class="link" href="https://yq.aliyun.com/articles/674327"  title="这里"
+     target="_blank" rel="noopener"
+    >这里</a>。</p>
+<p>log-Pilot目前支持两种工具对日志进行收集，<a class="link" href="https://github.com/AliyunContainerService/log-pilot/blob/master/docs/fluentd/docs.md"  title="Fluentd Plugin"
+     target="_blank" rel="noopener"
+    >Fluentd Plugin</a> 和 <a class="link" href="https://github.com/AliyunContainerService/log-pilot/blob/master/docs/filebeat/docs.md"  title="Filebeat Plugin"
+     target="_blank" rel="noopener"
+    >Filebeat Plugin</a>。</p>
+<p>Log-Pilot支持容器事件管理，它能够动态地监听容器的事件变化，然后依据容器的标签来进行解析，生成日志采集配置文件，然后交由采集插件来进行日志采集</p>
+<p>以下的的安装配置，是基于上一篇的EFK的配置，只是修改收集端（有必要，可以了解上一篇的文章）</p>
+<p><a class="link" href="https://blog.csdn.net/heian_99/article/details/123405383?spm=1001.2014.3001.5501"  title="Kubernetes安装EFK日志收集_南宫乘风-Linux运维-虚拟化容器-Python编程     ownit.top-CSDN博客"
+     target="_blank" rel="noopener"
+    >Kubernetes安装EFK日志收集_南宫乘风-Linux运维-虚拟化容器-Python编程 ownit.top-CSDN博客</a></p>
+<h1 id="准备">准备</h1>
+<p>参考官方<a class="link" href="https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/fluentd-elasticsearch"  title="部署文档"
+     target="_blank" rel="noopener"
+    >部署文档</a>的基础上使用本项目<code>manifests/efk/</code>部署，以下为几点主要的修改：</p>
+<ul>
+<li><strong>增加</strong> <strong>log-Pilot 部署代码（解决 不支持 es7.0 版本以上的痛点）</strong></li>
+<li>修改官方docker镜像，方便国内下载加速</li>
+<li>修改 es-statefulset.yaml 支持日志存储持久化等</li>
+<li>增加自动清理日志</li>
+</ul>
+<h1 id="创建-elasticsearch-集群">创建 Elasticsearch 集群</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Namespace
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: logging
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="1es-serviceyaml">1、 es-service.yaml</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: elasticsearch
+</span></span><span class="line"><span class="cl">  namespace: logging
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: elasticsearch
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: elasticsearch
+</span></span><span class="line"><span class="cl">  clusterIP: None
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">    - port: <span class="m">9200</span>
+</span></span><span class="line"><span class="cl">      name: rest
+</span></span><span class="line"><span class="cl">    - port: <span class="m">9300</span>
+</span></span><span class="line"><span class="cl">      name: inter-node
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>定义了一个名为 elasticsearch 的 Service，指定标签 <code>app=elasticsearch</code>，当我们将 Elasticsearch StatefulSet 与此服务关联时，服务将返回带有标签 <code>app=elasticsearch</code>的 Elasticsearch Pods 的 DNS A 记录，然后设置 <code>clusterIP=None</code>，将该服务设置成无头服务。最后，我们分别定义端口9200、9300，分别用于与 REST API 交互，以及用于节点间通信。 </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 efk<span class="o">]</span><span class="c1"># kubectl apply -f es-service.yaml</span>
+</span></span><span class="line"><span class="cl">service/elasticsearch-logging created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 efk<span class="o">]</span><span class="c1"># kubectl get svc -n kube-system </span>
+</span></span><span class="line"><span class="cl">NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>                      AGE
+</span></span><span class="line"><span class="cl">elasticsearch-logging   ClusterIP   None            &lt;none&gt;        9200/TCP                     15s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="es-statefulsetyaml">es-statefulset.yaml</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: StatefulSet
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: es
+</span></span><span class="line"><span class="cl">  namespace: logging
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  serviceName: elasticsearch
+</span></span><span class="line"><span class="cl">  replicas: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: elasticsearch
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      labels: 
+</span></span><span class="line"><span class="cl">        app: elasticsearch
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      nodeSelector:  <span class="c1">#记得给节点把标签，不然会找到不符合的节点</span>
+</span></span><span class="line"><span class="cl">        es: log
+</span></span><span class="line"><span class="cl">      initContainers:
+</span></span><span class="line"><span class="cl">      - name: increase-vm-max-map
+</span></span><span class="line"><span class="cl">        image: busybox
+</span></span><span class="line"><span class="cl">        command: <span class="o">[</span><span class="s2">&#34;sysctl&#34;</span>, <span class="s2">&#34;-w&#34;</span>, <span class="s2">&#34;vm.max_map_count=262144&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">        securityContext:
+</span></span><span class="line"><span class="cl">          privileged: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">      - name: increase-fd-ulimit
+</span></span><span class="line"><span class="cl">        image: busybox
+</span></span><span class="line"><span class="cl">        command: <span class="o">[</span><span class="s2">&#34;sh&#34;</span>, <span class="s2">&#34;-c&#34;</span>, <span class="s2">&#34;ulimit -n 65536&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">        securityContext:
+</span></span><span class="line"><span class="cl">          privileged: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">      - name: elasticsearch
+</span></span><span class="line"><span class="cl">        image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+</span></span><span class="line"><span class="cl">        ports:
+</span></span><span class="line"><span class="cl">        - name: rest
+</span></span><span class="line"><span class="cl">          containerPort: <span class="m">9200</span>
+</span></span><span class="line"><span class="cl">        - name: inter
+</span></span><span class="line"><span class="cl">          containerPort: <span class="m">9300</span>
+</span></span><span class="line"><span class="cl">        resources:
+</span></span><span class="line"><span class="cl">          limits:
+</span></span><span class="line"><span class="cl">            cpu: 1000m
+</span></span><span class="line"><span class="cl">          requests:
+</span></span><span class="line"><span class="cl">            cpu: 1000m
+</span></span><span class="line"><span class="cl">        volumeMounts:
+</span></span><span class="line"><span class="cl">        - name: data
+</span></span><span class="line"><span class="cl">          mountPath: /usr/share/elasticsearch/data
+</span></span><span class="line"><span class="cl">        env:
+</span></span><span class="line"><span class="cl">        - name: cluster.name
+</span></span><span class="line"><span class="cl">          value: k8s-logs
+</span></span><span class="line"><span class="cl">        - name: node.name
+</span></span><span class="line"><span class="cl">          valueFrom:
+</span></span><span class="line"><span class="cl">            fieldRef:
+</span></span><span class="line"><span class="cl">              fieldPath: metadata.name
+</span></span><span class="line"><span class="cl">        - name: cluster.initial_master_nodes
+</span></span><span class="line"><span class="cl">          value: <span class="s2">&#34;es-0,es-1,es-2&#34;</span>
+</span></span><span class="line"><span class="cl">        - name: discovery.zen.minimum_master_nodes
+</span></span><span class="line"><span class="cl">          value: <span class="s2">&#34;2&#34;</span>
+</span></span><span class="line"><span class="cl">        - name: discovery.seed_hosts
+</span></span><span class="line"><span class="cl">          value: <span class="s2">&#34;elasticsearch&#34;</span>
+</span></span><span class="line"><span class="cl">        - name: ES_JAVA_OPTS
+</span></span><span class="line"><span class="cl">          value: <span class="s2">&#34;-Xms512m -Xmx512m&#34;</span>
+</span></span><span class="line"><span class="cl">        - name: network.host
+</span></span><span class="line"><span class="cl">          value: <span class="s2">&#34;0.0.0.0&#34;</span>
+</span></span><span class="line"><span class="cl">  volumeClaimTemplates:
+</span></span><span class="line"><span class="cl">  - metadata:
+</span></span><span class="line"><span class="cl">      name: data
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: elasticsearch
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      accessModes: <span class="o">[</span> <span class="s2">&#34;ReadWriteOnce&#34;</span> <span class="o">]</span>
+</span></span><span class="line"><span class="cl">      storageClassName: nfsdata
+</span></span><span class="line"><span class="cl">      resources:
+</span></span><span class="line"><span class="cl">        requests:
+</span></span><span class="line"><span class="cl">          storage: 5Gi 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/ea6bebb226ff4569a5b5793743149eaa.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> Pods 部署完成后，我们可以通过请求一个 REST API 来检查 Elasticsearch 集群是否正常运行。使用下面的命令将本地端口9200 转发到 Elasticsearch 节点（如es-0）对应的端口：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 new<span class="o">]</span><span class="c1"># kubectl port-forward es-0 9200:9200 --namespace=logging</span>
+</span></span><span class="line"><span class="cl">Forwarding from 127.0.0.1:9200 -&gt; <span class="m">9200</span>
+</span></span><span class="line"><span class="cl">Forwarding from <span class="o">[</span>::1<span class="o">]</span>:9200 -&gt; <span class="m">9200</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">curl http://localhost:9200/_cluster/state?pretty
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/be8ab8d757834cdda7cd3dc3ed0e3a38.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> 看到上面的信息就表明我们名为 k8s-logs 的 Elasticsearch 集群成功创建了3个节点：es-0，es-1，和es-2，当前主节点是 es-0</p>
+<h1 id="创建-kibana-服务">创建 Kibana 服务</h1>
+<p>Elasticsearch 集群启动成功了，接下来我们可以来部署 Kibana 服务，新建一个名为 kibana.yaml 的文件，对应的文件内容如下：</p>
+<h2 id="kibanayaml">kibana.yaml </h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: kibana
+</span></span><span class="line"><span class="cl">  namespace: logging
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: kibana
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">  - port: <span class="m">5601</span>
+</span></span><span class="line"><span class="cl">  type: NodePort
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: kibana
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: Deployment
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: kibana
+</span></span><span class="line"><span class="cl">  namespace: logging
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: kibana
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: kibana
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: kibana
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      nodeSelector:
+</span></span><span class="line"><span class="cl">        es: log
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">      - name: kibana
+</span></span><span class="line"><span class="cl">        image: docker.elastic.co/kibana/kibana:7.6.2
+</span></span><span class="line"><span class="cl">        resources:
+</span></span><span class="line"><span class="cl">          limits:
+</span></span><span class="line"><span class="cl">            cpu: 1000m
+</span></span><span class="line"><span class="cl">          requests:
+</span></span><span class="line"><span class="cl">            cpu: 1000m
+</span></span><span class="line"><span class="cl">        env:
+</span></span><span class="line"><span class="cl">        - name: ELASTICSEARCH_HOSTS
+</span></span><span class="line"><span class="cl">          value: http://elasticsearch:9200
+</span></span><span class="line"><span class="cl">        ports:
+</span></span><span class="line"><span class="cl">        - containerPort: <span class="m">5601</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面我们定义了两个资源对象，一个 Service 和 Deployment，为了测试方便，我们将 Service 设置为了 NodePort 类型，Kibana Pod 中配置都比较简单，唯一需要注意的是我们使用 <code>ELASTICSEARCH_HOSTS</code> 这个环境变量来设置Elasticsearch 集群的端点和端口，直接使用 Kubernetes DNS 即可，此端点对应服务名称为 elasticsearch，由于是一个 headless service，所以该域将解析为3个 Elasticsearch Pod 的 IP 地址列表。 配置完成后，直接使用 kubectl 工具创建：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl create -f kibana.yaml
+</span></span><span class="line"><span class="cl">service/kibana created
+</span></span><span class="line"><span class="cl">deployment.apps/kibana created
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>创建完成后，可以查看 Kibana Pod 的运行状态</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 new<span class="o">]</span><span class="c1">#  kubectl get pods --namespace=logging</span>
+</span></span><span class="line"><span class="cl">NAME                      READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">es-0                      1/1     Running   <span class="m">0</span>          13m
+</span></span><span class="line"><span class="cl">es-1                      1/1     Running   <span class="m">0</span>          9m48s
+</span></span><span class="line"><span class="cl">es-2                      1/1     Running   <span class="m">0</span>          7m46s
+</span></span><span class="line"><span class="cl">kibana-8476dc9bbf-6mm6k   1/1     Running   <span class="m">0</span>          3m2s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果 Pod 已经是 Running 状态了，证明应用已经部署成功了，然后可以通过 NodePort 来访问 Kibana 这个服务，在浏览器中打开<code>http://&lt;任意节点IP&gt;:31838</code>即可，</p>
+<p>出现 这个代表成功</p>
+<p><img src="http://image.ownit.top/csdn/9631236c38634351822510057c521ba3.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="部署-log-pilot">部署 <strong>log-Pilot</strong></h1>
+<p>Log-pilot是一个智能容器日志采集工具，它不仅能够高效便捷地将容器日志采集输出到多种存储日志后端，同时还能够动态地发现和采集容器内部的日志文件。</p>
+<p>针对前面提出的日志采集难题，Log-pilot通过声明式配置实现强大的容器事件管理，可同时获取容器标准输出和内部文件日志，解决了动态伸缩问题，此外，Log-pilot具有自动发现机制、CheckPoint及句柄保持的机制、自动日志数据打标、有效应对动态配置、日志重复和丢失以及日志源标记等问题。</p>
+<p>本质</p>
+<p>通过变量和模版文件生产日志收集配置文件，对日志进行采集。<br>
+容器内文件日志路径需要配置emptyDir</p>
+<h2 id="log-pilotyaml">log-pilot.yaml</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: DaemonSet
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: log-pilot
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: log-pilot
+</span></span><span class="line"><span class="cl">  <span class="c1"># 设置期望部署的namespace。</span>
+</span></span><span class="line"><span class="cl">  namespace: logging
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: log-pilot
+</span></span><span class="line"><span class="cl">  updateStrategy:
+</span></span><span class="line"><span class="cl">    type: RollingUpdate
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: log-pilot
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        scheduler.alpha.kubernetes.io/critical-pod: <span class="s1">&#39;&#39;</span>
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      <span class="c1"># 是否允许部署到Master节点上tolerations。</span>
+</span></span><span class="line"><span class="cl">      tolerations:
+</span></span><span class="line"><span class="cl">      - key: node-role.kubernetes.io/master
+</span></span><span class="line"><span class="cl">        effect: NoSchedule
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">      - name: log-pilot
+</span></span><span class="line"><span class="cl">        <span class="c1"># 版本请参考https://github.com/AliyunContainerService/log-pilot/releases。</span>
+</span></span><span class="line"><span class="cl">        image: heleicool/log-pilot:7.x-filebeat
+</span></span><span class="line"><span class="cl">        resources:
+</span></span><span class="line"><span class="cl">          limits:
+</span></span><span class="line"><span class="cl">            memory: 500Mi
+</span></span><span class="line"><span class="cl">          requests:
+</span></span><span class="line"><span class="cl">            cpu: 200m
+</span></span><span class="line"><span class="cl">            memory: 200Mi
+</span></span><span class="line"><span class="cl">        env:
+</span></span><span class="line"><span class="cl">          - name: <span class="s2">&#34;NODE_NAME&#34;</span>
+</span></span><span class="line"><span class="cl">            valueFrom:
+</span></span><span class="line"><span class="cl">              fieldRef:
+</span></span><span class="line"><span class="cl">                fieldPath: spec.nodeName
+</span></span><span class="line"><span class="cl">          - name: <span class="s2">&#34;LOGGING_OUTPUT&#34;</span>
+</span></span><span class="line"><span class="cl">            value: <span class="s2">&#34;elasticsearch&#34;</span>
+</span></span><span class="line"><span class="cl">          <span class="c1"># 请确保集群到ES网络可达。</span>
+</span></span><span class="line"><span class="cl">          - name: <span class="s2">&#34;ELASTICSEARCH_HOSTS&#34;</span>
+</span></span><span class="line"><span class="cl">            value: <span class="s2">&#34;elasticsearch:9200&#34;</span>
+</span></span><span class="line"><span class="cl">          <span class="c1"># 配置ES访问权限。</span>
+</span></span><span class="line"><span class="cl">         <span class="c1"># - name: &#34;ELASTICSEARCH_USER&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#    value: &#34;{es_username}&#34;</span>
+</span></span><span class="line"><span class="cl">         <span class="c1"># - name: &#34;ELASTICSEARCH_PASSWORD&#34;</span>
+</span></span><span class="line"><span class="cl">         <span class="c1">#   value: &#34;{es_password}&#34;</span>
+</span></span><span class="line"><span class="cl">        volumeMounts:
+</span></span><span class="line"><span class="cl">        - name: sock
+</span></span><span class="line"><span class="cl">          mountPath: /var/run/docker.sock
+</span></span><span class="line"><span class="cl">        - name: root
+</span></span><span class="line"><span class="cl">          mountPath: /host
+</span></span><span class="line"><span class="cl">          readOnly: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">        - name: varlib
+</span></span><span class="line"><span class="cl">          mountPath: /var/lib/filebeat
+</span></span><span class="line"><span class="cl">        - name: varlog
+</span></span><span class="line"><span class="cl">          mountPath: /var/log/filebeat
+</span></span><span class="line"><span class="cl">        - name: localtime
+</span></span><span class="line"><span class="cl">          mountPath: /etc/localtime
+</span></span><span class="line"><span class="cl">          readOnly: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">        livenessProbe:
+</span></span><span class="line"><span class="cl">          failureThreshold: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">          exec:
+</span></span><span class="line"><span class="cl">            command:
+</span></span><span class="line"><span class="cl">            - /pilot/healthz
+</span></span><span class="line"><span class="cl">          initialDelaySeconds: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">          periodSeconds: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">          successThreshold: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">          timeoutSeconds: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">        securityContext:
+</span></span><span class="line"><span class="cl">          capabilities:
+</span></span><span class="line"><span class="cl">            add:
+</span></span><span class="line"><span class="cl">            - SYS_ADMIN
+</span></span><span class="line"><span class="cl">      terminationGracePeriodSeconds: <span class="m">30</span>
+</span></span><span class="line"><span class="cl">      volumes:
+</span></span><span class="line"><span class="cl">      - name: sock
+</span></span><span class="line"><span class="cl">        hostPath:
+</span></span><span class="line"><span class="cl">          path: /var/run/docker.sock
+</span></span><span class="line"><span class="cl">      - name: root
+</span></span><span class="line"><span class="cl">        hostPath:
+</span></span><span class="line"><span class="cl">          path: /
+</span></span><span class="line"><span class="cl">      - name: varlib
+</span></span><span class="line"><span class="cl">        hostPath:
+</span></span><span class="line"><span class="cl">          path: /var/lib/filebeat
+</span></span><span class="line"><span class="cl">          type: DirectoryOrCreate
+</span></span><span class="line"><span class="cl">      - name: varlog
+</span></span><span class="line"><span class="cl">        hostPath:
+</span></span><span class="line"><span class="cl">          path: /var/log/filebeat
+</span></span><span class="line"><span class="cl">          type: DirectoryOrCreate
+</span></span><span class="line"><span class="cl">      - name: localtime
+</span></span><span class="line"><span class="cl">        hostPath:
+</span></span><span class="line"><span class="cl">          path: /etc/localtime
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>默认阿里云仓库只支持7.x以下版本es的数据写入，使用如下插件可以实现。<br>
+git地址：https://<a class="link" href="https://so.csdn.net/so/search?q=github&amp;spm=1001.2101.3001.7020"  title="github"
+     target="_blank" rel="noopener"
+    >github</a>.com/40kuai/log-pilot/tree/filebeat7.x<br>
+dockerhub：heleicool/log-pilot:7.x-filebeat</p>
+<p><img src="http://image.ownit.top/csdn/edbed7a4e717446f90285410123ca994.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="服务日志采集">服务日志采集</h1>
+<p>创建一个标准的 Nginx 服务, 主要是 env 添加了两种,上面我们介绍过</p>
+<p>一 是 基于 docker stdout 输出日志 (aliyun_logs_catalina)</p>
+<p>二 是 基于 程序指定输出到指定的目录中 (aliyun_logs_access)</p>
+<p>( elasticsearch )环境变量中的 name表示Index，这里name 表示 Index，这里 name表示Index，这里name 即是 catalina 和 access, 这里用于 Kibana 查询日志</p>
+<h2 id="nginxyaml"> nginx.yaml</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: Deployment 
+</span></span><span class="line"><span class="cl">metadata: 
+</span></span><span class="line"><span class="cl">  name: nginx-dm
+</span></span><span class="line"><span class="cl">spec: 
+</span></span><span class="line"><span class="cl">  replicas: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      name: nginx
+</span></span><span class="line"><span class="cl">  template: 
+</span></span><span class="line"><span class="cl">    metadata: 
+</span></span><span class="line"><span class="cl">      labels: 
+</span></span><span class="line"><span class="cl">        name: nginx 
+</span></span><span class="line"><span class="cl">    spec: 
+</span></span><span class="line"><span class="cl">      tolerations:
+</span></span><span class="line"><span class="cl">        - key: <span class="s2">&#34;node-role.kubernetes.io/master&#34;</span>
+</span></span><span class="line"><span class="cl">          effect: <span class="s2">&#34;NoSchedule&#34;</span>
+</span></span><span class="line"><span class="cl">      containers: 
+</span></span><span class="line"><span class="cl">        - name: nginx 
+</span></span><span class="line"><span class="cl">          image: nginx:alpine 
+</span></span><span class="line"><span class="cl">          imagePullPolicy: IfNotPresent
+</span></span><span class="line"><span class="cl">          env:
+</span></span><span class="line"><span class="cl">           - name: aliyun_logs_nginx-log
+</span></span><span class="line"><span class="cl">             value: <span class="s2">&#34;stdout&#34;</span>
+</span></span><span class="line"><span class="cl">           - name: aliyun_logs_access
+</span></span><span class="line"><span class="cl">             value: <span class="s2">&#34;/var/log/nginx/*.log&#34;</span>
+</span></span><span class="line"><span class="cl">          ports:
+</span></span><span class="line"><span class="cl">            - containerPort: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">              name: http
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">apiVersion: v1 
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata: 
+</span></span><span class="line"><span class="cl">  name: nginx-svc 
+</span></span><span class="line"><span class="cl">spec: 
+</span></span><span class="line"><span class="cl">  ports: 
+</span></span><span class="line"><span class="cl">    - port: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">      name: http
+</span></span><span class="line"><span class="cl">      targetPort: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">      protocol: TCP 
+</span></span><span class="line"><span class="cl">  selector: 
+</span></span><span class="line"><span class="cl">    name: nginx
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<p><img src="http://image.ownit.top/csdn/5938c75a67e6431a80d2011f1a285334.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/b844431d60b440909f12fb4c68000c4f.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> <img src="http://image.ownit.top/csdn/c72e1f67ca834b2890d9b0225dfe2494.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<h3 id="podyaml">pod.yaml</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 new<span class="o">]</span><span class="c1"># cat pod2.yaml </span>
+</span></span><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Pod
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: counter
+</span></span><span class="line"><span class="cl">  namespace: logging  <span class="c1">#可以添加空间名称，也会收集到的</span>
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  containers:
+</span></span><span class="line"><span class="cl">  - name: count
+</span></span><span class="line"><span class="cl">    image: busybox
+</span></span><span class="line"><span class="cl">    args: <span class="o">[</span>/bin/sh, -c,
+</span></span><span class="line"><span class="cl">            <span class="s1">&#39;i=0; while true; do echo &#34;$i: $(date)&#34;; i=$((i+1)); sleep 1; done&#39;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">    env:
+</span></span><span class="line"><span class="cl">    <span class="c1"># 1、stdout为约定关键字，表示采集标准输出日志。</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 2、配置标准输出日志采集到ES的catalina索引下。</span>
+</span></span><span class="line"><span class="cl">    - name: aliyun_logs_catalina
+</span></span><span class="line"><span class="cl">      value: <span class="s2">&#34;stdout&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 1、配置采集容器内文件日志，支持通配符。</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 2、配置该日志采集到ES的access索引下。</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="tomcatyaml">tomcat.yaml</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Pod
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: tomcat
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  containers:
+</span></span><span class="line"><span class="cl">  - name: tomcat
+</span></span><span class="line"><span class="cl">    image: <span class="s2">&#34;tomcat:7.0&#34;</span>
+</span></span><span class="line"><span class="cl">    env:
+</span></span><span class="line"><span class="cl">    <span class="c1"># 1、stdout为约定关键字，表示采集标准输出日志。</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 2、配置标准输出日志采集到ES的catalina索引下。</span>
+</span></span><span class="line"><span class="cl">    - name: aliyun_logs_catalina
+</span></span><span class="line"><span class="cl">      value: <span class="s2">&#34;stdout&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 1、配置采集容器内文件日志，支持通配符。</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 2、配置该日志采集到ES的access索引下。</span>
+</span></span><span class="line"><span class="cl">    - name: aliyun_logs_access
+</span></span><span class="line"><span class="cl">      value: <span class="s2">&#34;/usr/local/tomcat/logs/catalina.*.log&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 容器内文件日志路径需要配置emptyDir。</span>
+</span></span><span class="line"><span class="cl">    volumeMounts:
+</span></span><span class="line"><span class="cl">      - name: tomcat-log
+</span></span><span class="line"><span class="cl">        mountPath: /usr/local/tomcat/logs
+</span></span><span class="line"><span class="cl">  volumes:
+</span></span><span class="line"><span class="cl">    - name: tomcat-log
+</span></span><span class="line"><span class="cl">      emptyDir: <span class="o">{}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> <a class="link" href="https://www.cnblogs.com/lixinliang/p/14519118.html"  title="k8s 部署 log-pilot 收集容器标准输出日志和指定路径应用日志 \- lixinliang \- 博客园"
+     target="_blank" rel="noopener"
+    >k8s 部署 log-pilot 收集容器标准输出日志和指定路径应用日志 - lixinliang - 博客园</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/%E5%AE%B9%E5%99%A8/">容器</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/k8s%E9%83%A8%E7%BD%B2apollo%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/40.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/40.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">K8S部署Apollo配置中心</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%94wordpress%E7%9A%84hpa%E8%87%AA%E5%8A%A8%E6%89%A9%E7%BC%A9%E5%AE%B9/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/09.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/09.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟五（wordpress的HPA自动扩缩容）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E5%9B%9Bwordpress%E5%8D%87%E7%BA%A7%E6%9B%B4%E6%96%B0/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/56.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/56.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟四（wordpress升级更新）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%B8%89wordpress%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E5%92%8C%E6%9C%8D%E5%8A%A1%E8%B4%A8%E9%87%8Fqos/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/07.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/07.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟三（wordpress健康检查和服务质量QoS）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%8Cwordpress%E9%AB%98%E5%8F%AF%E7%94%A8/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/68.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/68.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟二（wordpress高可用）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

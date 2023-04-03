@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='一、什么是？基于企业内个人用户属于角色来访问计算和网络的常规访问控制方法。简单理解为权限与角色关联，用户通过成为角色的成员来得到角色的权限。的使用组驱动认证决策，准许管理员通过动态配置策略。为了启用，。。。。。。。'>
+<title>Kubernetes认证之RBAC</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/kubernetes%E8%AE%A4%E8%AF%81%E4%B9%8Brbac/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='Kubernetes认证之RBAC'>
+<meta property='og:description' content='一、什么是？基于企业内个人用户属于角色来访问计算和网络的常规访问控制方法。简单理解为权限与角色关联，用户通过成为角色的成员来得到角色的权限。的使用组驱动认证决策，准许管理员通过动态配置策略。为了启用，。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/kubernetes%E8%AE%A4%E8%AF%81%E4%B9%8Brbac/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='技术记录' /><meta property='article:published_time' content='2021-03-06T22:16:21&#43;00:00'/><meta property='article:modified_time' content='2021-03-06T22:16:21&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/100.jpg' />
+<meta name="twitter:title" content="Kubernetes认证之RBAC">
+<meta name="twitter:description" content="一、什么是？基于企业内个人用户属于角色来访问计算和网络的常规访问控制方法。简单理解为权限与角色关联，用户通过成为角色的成员来得到角色的权限。的使用组驱动认证决策，准许管理员通过动态配置策略。为了启用，。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/100.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#一什么是rbac">一、什么是RBAC？</a></li>
+        <li><a href="#二rbac分类介绍api-对象">二、RBAC分类介绍（API 对象）</a></li>
+        <li><a href="#三示例">三、示例</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/kubernetes%E8%AE%A4%E8%AF%81%E4%B9%8Brbac/">
+                
+                    <img src="http://image.ownit.top/4kdongman/100.jpg" loading="lazy" alt="Featured image of post Kubernetes认证之RBAC" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes/" >
+                Kubernetes
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/kubernetes%E8%AE%A4%E8%AF%81%E4%B9%8Brbac/">Kubernetes认证之RBAC</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            一、什么是？基于企业内个人用户属于角色来访问计算和网络的常规访问控制方法。简单理解为权限与角色关联，用户通过成为角色的成员来得到角色的权限。的使用组驱动认证决策，准许管理员通过动态配置策略。为了启用，。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 06, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h3 id="一什么是rbac">一、什么是RBAC？</h3>
+<blockquote>
+<p>    Role-based access control(RBAC)基于企业内个人用户属于角色来访问计算和网络的常规访问控制方法。<br>
+    简单理解为权限与角色关联，用户通过成为角色的成员来得到角色的权限。K8S的RBAC使用rbac.authorization.k8s.io/v1 API组驱动认证决策，准许管理员通过API动态配置策略。为了启用RBAC，需要在apiserver启动参数添加&ndash;authorization-mode=RBAC。目前支持RBAC,ABAC(基于属性的访问控制)，Node（默认node和apiserver就是采用这种模式）,Webhook。</p>
+</blockquote>
+<h3 id="二rbac分类介绍api-对象">二、RBAC分类介绍（API 对象）</h3>
+<p>2.1、RBAC有4种顶级资源</p>
+<ul>
+<li>Role</li>
+<li>ClusterRole</li>
+<li>RoleBinding</li>
+<li>ClusterRoleBinding</li>
+</ul>
+<p>2.2、资源介绍</p>
+<p><strong>Role</strong>：角色，包含一组权限的规则。没有拒绝规则，只是附加允许。Namespace隔离，只作用于命名空间内！</p>
+<p><strong>ClusterRole</strong>：集群角色，和Role一样。和Role的区别，Role是只作用于命名空间内，ClusterRole作用于整个集群！</p>
+<p><strong>RoleBinding</strong>：作用于命令空间内，将ClusterRole或者Role绑定到User、Group、ServiceAccount！</p>
+<p><strong>ClusterRoleBinding</strong>：作用于整个集群。</p>
+<p><strong>中文官方文档</strong>：<a class="link" href="https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/"  target="_blank" rel="noopener"
+    >https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/</a></p>
+<h3 id="三示例">三、示例</h3>
+<p>3.1、Role 示例</p>
+<p>Role 总是用来在某个名字空间内设置访问权限；在你创建 Role 时，你必须指定该 Role 所属的名字空间</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: Role
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  namespace: default
+</span></span><span class="line"><span class="cl">  name: pod-reader
+</span></span><span class="line"><span class="cl">rules:
+</span></span><span class="line"><span class="cl">- apiGroups: [&#34;&#34;] # &#34;&#34; 标明 core API 组
+</span></span><span class="line"><span class="cl">  resources: [&#34;pods&#34;]
+</span></span><span class="line"><span class="cl">  verbs: [&#34;get&#34;, &#34;watch&#34;, &#34;list&#34;]
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3.2、ClusterRole 示例</p>
+<p>ClusterRole 有若干用法。你可以用它来：</p>
+<ol>
+<li>
+<pre><code>定义对某名字空间域对象的访问权限，并将在各个名字空间内完成授权；
+</code></pre>
+</li>
+<li>
+<pre><code>为名字空间作用域的对象设置访问权限，并跨所有名字空间执行授权；
+</code></pre>
+</li>
+<li>
+<pre><code>为集群作用域的资源定义访问权限。
+</code></pre>
+</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: ClusterRole
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  <span class="c1"># &#34;namespace&#34; 被忽略，因为 ClusterRoles 不受名字空间限制</span>
+</span></span><span class="line"><span class="cl">  name: secret-reader
+</span></span><span class="line"><span class="cl">rules:
+</span></span><span class="line"><span class="cl">- apiGroups: <span class="o">[</span><span class="s2">&#34;&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 在 HTTP 层面，用来访问 Secret 对象的资源的名称为 &#34;secrets&#34;</span>
+</span></span><span class="line"><span class="cl">  resources: <span class="o">[</span><span class="s2">&#34;secrets&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  verbs: <span class="o">[</span><span class="s2">&#34;get&#34;</span>, <span class="s2">&#34;watch&#34;</span>, <span class="s2">&#34;list&#34;</span><span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3.3、RoleBinding 示例</p>
+<p>下面的例子中的 RoleBinding 将 &ldquo;pod-reader&rdquo; Role 授予在 &ldquo;default&rdquo; 名字空间中的用户 &ldquo;jane&rdquo;。 这样，用户 &ldquo;jane&rdquo; 就具有了读取 &ldquo;default&rdquo; 名字空间中 pods 的权限。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl"><span class="c1"># 此角色绑定允许 &#34;jane&#34; 读取 &#34;default&#34; 名字空间中的 Pods</span>
+</span></span><span class="line"><span class="cl">kind: RoleBinding
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: read-pods
+</span></span><span class="line"><span class="cl">  namespace: default
+</span></span><span class="line"><span class="cl">subjects:
+</span></span><span class="line"><span class="cl"><span class="c1"># 你可以指定不止一个“subject（主体）”</span>
+</span></span><span class="line"><span class="cl">- kind: User <span class="c1"># 这里可以是User,Group,ServiceAccount</span>
+</span></span><span class="line"><span class="cl">  name: jane <span class="c1"># &#34;name&#34; 是不区分大小写的</span>
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span><span class="line"><span class="cl">roleRef:
+</span></span><span class="line"><span class="cl">  <span class="c1"># &#34;roleRef&#34; 指定与某 Role 或 ClusterRole 的绑定关系</span>
+</span></span><span class="line"><span class="cl">  kind: Role <span class="c1"># 此字段必须是 Role 或 ClusterRole</span>
+</span></span><span class="line"><span class="cl">  name: pod-reader     <span class="c1"># 此字段必须与你要绑定的 Role 或 ClusterRole 的名称匹配</span>
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3.3.1、RoleBinding 引用 ClusterRole</p>
+<p>RoleBinding 也可以引用 ClusterRole，以将对应 ClusterRole 中定义的访问权限授予 RoleBinding 所在名字空间的资源。这种引用使得你可以跨整个集群定义一组通用的角色， 之后在多个名字空间中复用！</p>
+<p>下面的例子中的 RoleBinding，将&quot;secret-reader&quot; ClusterRole授予在&quot;development&quot; namespace中的用户&quot;dave&quot;。这样，用户 &ldquo;dave&rdquo; 就具有了读取 &ldquo;development&rdquo; 名字空间中 pods 的权限。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl"><span class="c1"># 此角色绑定使得用户 &#34;dave&#34; 能够读取 &#34;default&#34; 名字空间中的 Secrets</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 你需要一个名为 &#34;secret-reader&#34; 的 ClusterRole</span>
+</span></span><span class="line"><span class="cl">kind: RoleBinding
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: read-secrets
+</span></span><span class="line"><span class="cl">  <span class="c1"># RoleBinding 的名字空间决定了访问权限的授予范围。</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 这里仅授权在 &#34;development&#34; 名字空间内的访问权限。</span>
+</span></span><span class="line"><span class="cl">  namespace: development
+</span></span><span class="line"><span class="cl">subjects:
+</span></span><span class="line"><span class="cl">- kind: User
+</span></span><span class="line"><span class="cl">  name: dave <span class="c1"># &#39;name&#39; 是不区分大小写的</span>
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span><span class="line"><span class="cl">roleRef:
+</span></span><span class="line"><span class="cl">  kind: ClusterRole
+</span></span><span class="line"><span class="cl">  name: secret-reader
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3.4、ClusterRoleBinding 示例</p>
+<p>要跨整个集群完成访问权限的授予，你可以使用一个 ClusterRoleBinding。 下面的 ClusterRoleBinding 允许 &ldquo;manager&rdquo; 组内的所有用户访问任何名字空间中的 Secrets。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl"><span class="c1"># 此集群角色绑定允许 “manager” 组中的任何人访问任何名字空间中的 secrets</span>
+</span></span><span class="line"><span class="cl">kind: ClusterRoleBinding
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: read-secrets-global
+</span></span><span class="line"><span class="cl">subjects:
+</span></span><span class="line"><span class="cl">- kind: Group
+</span></span><span class="line"><span class="cl">  name: manager <span class="c1"># &#39;name&#39; 是不区分大小写的</span>
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span><span class="line"><span class="cl">roleRef:
+</span></span><span class="line"><span class="cl">  kind: ClusterRole
+</span></span><span class="line"><span class="cl">  name: secret-reader
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>注意：</strong></p>
+<p>​ 创建了绑定之后，你不能再修改绑定对象所引用的 Role 或 ClusterRole。 试图改变绑定对象的 <code>roleRef</code> 将导致合法性检查错误。 如果你想要改变现有绑定对象中 <code>roleRef</code> 字段的内容，必须删除重新创建绑定对象。</p>
+<p><strong>这种限制有两个主要原因：</strong></p>
+<ol>
+<li>针对不同角色的绑定是完全不一样的绑定。要求通过删除/重建绑定来更改 <code>roleRef</code>, 这样可以确保要赋予绑定的所有主体会被授予新的角色（而不是在允许修改 <code>roleRef</code> 的情况下导致所有现有主体胃镜验证即被授予新角色对应的权限）。</li>
+<li>将 <code>roleRef</code> 设置为不可以改变，这使得可以为用户授予对现有绑定对象的 <code>update</code> 权限， 这样可以让他们管理主体列表，同时不能更改被授予这些主体的角色。</li>
+</ol>
+<p>命令 <code>kubectl auth reconcile</code> 可以创建或者更新包含 RBAC 对象的清单文件， 并且在必要的情况下删除和重新创建绑定对象，以改变所引用的角色</p>
+<p>3.5、聚合的 ClusterRole</p>
+<p>下面是一个聚合 ClusterRole 的示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: ClusterRole
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: monitoring
+</span></span><span class="line"><span class="cl">aggregationRule:
+</span></span><span class="line"><span class="cl">  clusterRoleSelectors:
+</span></span><span class="line"><span class="cl">  - matchLabels:
+</span></span><span class="line"><span class="cl">      rbac.example.com/aggregate-to-monitoring: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">rules: <span class="o">[]</span> <span class="c1"># 控制面自动填充这里的规则</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-------
+</span></span><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: ClusterRole
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: monitoring-endpoints
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    rbac.example.com/aggregate-to-monitoring: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 当你创建 &#34;monitoring-endpoints&#34; ClusterRole 时，</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 下面的规则会被添加到 &#34;monitoring&#34; ClusterRole 中</span>
+</span></span><span class="line"><span class="cl">rules:
+</span></span><span class="line"><span class="cl">- apiGroups: <span class="o">[</span><span class="s2">&#34;&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  resources: <span class="o">[</span><span class="s2">&#34;services&#34;</span>, <span class="s2">&#34;endpoints&#34;</span>, <span class="s2">&#34;pods&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  verbs: <span class="o">[</span><span class="s2">&#34;get&#34;</span>, <span class="s2">&#34;list&#34;</span>, <span class="s2">&#34;watch&#34;</span><span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>下面的 ClusterRoles 让默认角色 &ldquo;admin&rdquo; 和 &ldquo;edit&rdquo; 拥有管理自定义资源 &ldquo;CronTabs&rdquo; 的权限， &ldquo;view&rdquo; 角色对 CronTab 资源拥有读操作权限。 你可以假定 CronTab 对象在 API 服务器所看到的 URL 中被命名为 <code>&quot;crontabs&quot;</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: ClusterRole
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: aggregate-cron-tabs-edit
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    <span class="c1"># 添加以下权限到默认角色 &#34;admin&#34; 和 &#34;edit&#34; 中</span>
+</span></span><span class="line"><span class="cl">    rbac.authorization.k8s.io/aggregate-to-admin: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">    rbac.authorization.k8s.io/aggregate-to-edit: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">rules:
+</span></span><span class="line"><span class="cl">- apiGroups: <span class="o">[</span><span class="s2">&#34;stable.example.com&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  resources: <span class="o">[</span><span class="s2">&#34;crontabs&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  verbs: <span class="o">[</span><span class="s2">&#34;get&#34;</span>, <span class="s2">&#34;list&#34;</span>, <span class="s2">&#34;watch&#34;</span>, <span class="s2">&#34;create&#34;</span>, <span class="s2">&#34;update&#34;</span>, <span class="s2">&#34;patch&#34;</span>, <span class="s2">&#34;delete&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">kind: ClusterRole
+</span></span><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: aggregate-cron-tabs-view
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    <span class="c1"># 添加以下权限到 &#34;view&#34; 默认角色中</span>
+</span></span><span class="line"><span class="cl">    rbac.authorization.k8s.io/aggregate-to-view: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">rules:
+</span></span><span class="line"><span class="cl">- apiGroups: <span class="o">[</span><span class="s2">&#34;stable.example.com&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  resources: <span class="o">[</span><span class="s2">&#34;crontabs&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">  verbs: <span class="o">[</span><span class="s2">&#34;get&#34;</span>, <span class="s2">&#34;list&#34;</span>, <span class="s2">&#34;watch&#34;</span><span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%8A%80%E6%9C%AF%E8%AE%B0%E5%BD%95/">技术记录</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E6%97%A0%E6%B3%95%E8%AE%BF%E9%97%AEgcr.io%E7%9A%84%E5%87%A0%E7%A7%8D%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/21.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/21.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker无法访问gcr.io的几种解决办法</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E7%9A%84etcd%E9%9B%86%E7%BE%A4%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/07.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/07.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes的ETCD集群备份、恢复</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/minio--mysql%E5%AD%98%E5%82%A8%E6%A1%B6%E9%80%9A%E7%9F%A5%E9%85%8D%E7%BD%AE/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/78.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/78.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Minio--Mysql存储桶通知配置</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/calico-node-%E6%8A%A5%E9%94%99calico/node-is-not-ready-bird-is-not-ready-bgp-not-established-with/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/06.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/06.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">calico-node 报错calico/node is not ready BIRD is not ready BGP not established with</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E8%A7%A3%E5%86%B3%E4%BA%8C%E8%BF%9B%E5%88%B6k8s%E5%B8%83%E7%BD%B2%E7%9A%84metrics-server%E6%9F%A5%E7%9C%8B%E9%9B%86%E7%BE%A4%E8%B5%84%E6%BA%90%E6%8A%A5%E9%94%99%E6%9D%83%E9%99%90%E9%97%AE%E9%A2%98/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/44.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/44.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">解决二进制K8S布署的metrics-server查看集群资源报错权限问题</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

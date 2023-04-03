@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='什么是确保全部或者一些上运行一个的副本。当有加入集群时，也会为他们新增一个。当有从集群移除时，这些也会被回收。删除将会删除它创建的所有使用的一些典型用法：运行集群存储，例如在每个上运行、在每个上运行日。。。。。。。'>
+<title>Kubernetes（k8s）资源控制器Daemonset、Job、CronJob详细介绍</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/kubernetesk8s%E8%B5%84%E6%BA%90%E6%8E%A7%E5%88%B6%E5%99%A8daemonsetjobcronjob%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='Kubernetes（k8s）资源控制器Daemonset、Job、CronJob详细介绍'>
+<meta property='og:description' content='什么是确保全部或者一些上运行一个的副本。当有加入集群时，也会为他们新增一个。当有从集群移除时，这些也会被回收。删除将会删除它创建的所有使用的一些典型用法：运行集群存储，例如在每个上运行、在每个上运行日。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/kubernetesk8s%E8%B5%84%E6%BA%90%E6%8E%A7%E5%88%B6%E5%99%A8daemonsetjobcronjob%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Kubernetes' /><meta property='article:tag' content='k8s' /><meta property='article:tag' content='Daemonset' /><meta property='article:tag' content='Job' /><meta property='article:tag' content='CronJob' /><meta property='article:published_time' content='2020-02-05T21:34:32&#43;00:00'/><meta property='article:modified_time' content='2020-02-05T21:34:32&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/20.jpg' />
+<meta name="twitter:title" content="Kubernetes（k8s）资源控制器Daemonset、Job、CronJob详细介绍">
+<meta name="twitter:description" content="什么是确保全部或者一些上运行一个的副本。当有加入集群时，也会为他们新增一个。当有从集群移除时，这些也会被回收。删除将会删除它创建的所有使用的一些典型用法：运行集群存储，例如在每个上运行、在每个上运行日。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/20.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#example">Example</a></li>
+        <li><a href="#httpimageownittopcsdn20200205212840212png"> <img src="http://image.ownit.top/csdn/20200205212840212.png" alt=""></a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/kubernetesk8s%E8%B5%84%E6%BA%90%E6%8E%A7%E5%88%B6%E5%99%A8daemonsetjobcronjob%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">
+                
+                    <img src="http://image.ownit.top/4kdongman/20.jpg" loading="lazy" alt="Featured image of post Kubernetes（k8s）资源控制器Daemonset、Job、CronJob详细介绍" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes/" >
+                Kubernetes
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/kubernetesk8s%E8%B5%84%E6%BA%90%E6%8E%A7%E5%88%B6%E5%99%A8daemonsetjobcronjob%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">Kubernetes（k8s）资源控制器Daemonset、Job、CronJob详细介绍</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            什么是确保全部或者一些上运行一个的副本。当有加入集群时，也会为他们新增一个。当有从集群移除时，这些也会被回收。删除将会删除它创建的所有使用的一些典型用法：运行集群存储，例如在每个上运行、在每个上运行日。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 05, 2020</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="什么是-daemonset">什么是 DaemonSet </h1>
+<p>DaemonSet 确保全部（或者一些）Node 上运行一个 Pod 的副本。当有 Node 加入集群时，也会为他们新增一 个 Pod 。当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod</p>
+<p><strong>使用 DaemonSet 的一些典型用法：</strong></p>
+<ul>
+<li>运行集群存储 daemon，例如在每个 Node 上运行 glusterd 、 ceph</li>
+<li>在每个 Node 上运行日志收集 daemon，例如 fluentd 、 logstash</li>
+<li>在每个 Node 上运行监控 daemon，例如 Prometheus Node Exporter、 collectd 、Datadog 代理、 New Relic 代理，或 Ganglia gmond</li>
+</ul>
+<p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: DaemonSet
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: deamonset-example
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: daemonset
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      name: deamonset-example
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        name: deamonset-example
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">      - name: daemonset-example
+</span></span><span class="line"><span class="cl">        image: wangyanglinux/myapp:v1
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20200205205134703.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200205205314918.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="job">Job </h1>
+<p>**Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束 **</p>
+<p>**特殊说明 **</p>
+<ul>
+<li>spec.template格式同Pod</li>
+<li>RestartPolicy仅支持Never或OnFailure</li>
+<li>单个Pod时，默认Pod成功运行后Job即结束</li>
+<li>.spec.completions 标志Job结束需要成功运行的Pod个数，默认为1</li>
+<li>.spec.parallelism 标志并行运行的Pod的个数，默认为1</li>
+<li>spec.activeDeadlineSeconds 标志失败Pod的重试大时间，超过这个时间不会继续重试<br>
+ </li>
+</ul>
+<p><strong>Example</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: batch/v1
+</span></span><span class="line"><span class="cl">kind: Job
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: pi
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      name: pi
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">      - name: pi
+</span></span><span class="line"><span class="cl">        image: perl
+</span></span><span class="line"><span class="cl">        command: <span class="o">[</span><span class="s2">&#34;perl&#34;</span>,  <span class="s2">&#34;-Mbignum=bpi&#34;</span>, <span class="s2">&#34;-wle&#34;</span>, <span class="s2">&#34;print bpi(2000)&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">      restartPolicy: Never
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20200205210847466.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200205211406490.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="cronjob-spec">CronJob Spec </h1>
+<ul>
+<li>spec.template格式同Pod</li>
+<li>RestartPolicy仅支持Never或OnFailure</li>
+<li>单个Pod时，默认Pod成功运行后Job即结束</li>
+<li>.spec.completions 标志Job结束需要成功运行的Pod个数，默认为1 .</li>
+<li>spec.parallelism 标志并行运行的Pod的个数，默认为1</li>
+<li>spec.activeDeadlineSeconds 标志失败Pod的重试大时间，超过这个时间不会继续重试<br>
+ </li>
+</ul>
+<h1 id="cronjob">CronJob </h1>
+<p><strong>Cron Job 管理基于时间的 Job，即：</strong></p>
+<ul>
+<li>在给定时间点只运行一次</li>
+<li>周期性地在给定时间点运行<br>
+ </li>
+</ul>
+<p>使用条件：当前使用的 Kubernetes 集群，版本 &gt;= 1.8（对 CronJob）<br>
+典型的用法如下所示：</p>
+<ul>
+<li>在给定的时间点调度 Job 运行</li>
+<li>创建周期性运行的 Job，例如：数据库备份、发送邮件<br>
+ </li>
+</ul>
+<h1 id="cronjob-spec-1">CronJob Spec </h1>
+<ul>
+<li>.spec.schedule ：调度，必需字段，指定任务运行周期，格式同 Cron</li>
+<li>.spec.jobTemplate ：Job 模板，必需字段，指定需要运行的任务，格式同 Job</li>
+<li>.spec.startingDeadlineSeconds  ：启动 Job 的期限（秒级别），该字段是可选的。如果因为任何原因而错过了被调度的时间，那么错过执行时间的 Job 将被认为是失败的。如果没有指定，则没有期限</li>
+<li>.spec.concurrencyPolicy ：并发策略，该字段也是可选的。它指定了如何处理被 Cron Job 创建的 Job 的并发执行。只允许指定下面策略中的一种：</li>
+</ul>
+<ol>
+<li>Allow （默认）：允许并发运行 Job</li>
+<li>Forbid  ：禁止并发运行，如果前一个还没有完成，则直接跳过下一个</li>
+<li>Replace ：取消当前正在运行的 Job，用一个新的来替换</li>
+</ol>
+<p>注意，当前策略只能应用于同一个 Cron Job 创建的 Job。如果存在多个 Cron Job，它们创建的 Job 之间总<br>
+是允许并发运行。</p>
+<ul>
+<li>.spec.suspend  ：挂起，该字段也是可选的。如果设置为  true   ，后续所有执行都会被挂起。它对已经开始执行的 Job 不起作用。默认值为  false   。</li>
+<li>.spec.successfulJobsHistoryLimit  和  .spec.failedJobsHistoryLimit   ：历史限制，是可选的字段。它们指定了可以保留多少完成和失败的 Job。默认情况下，它们分别设置为  3  和   1 。设置限制的值为   0  ，相关类型的 Job 完成后将不会被保留。</li>
+</ul>
+<h3 id="example">Example</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: batch/v1beta1
+</span></span><span class="line"><span class="cl">kind: CronJob
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: hello
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  schedule: <span class="s2">&#34;*/1 * * * *&#34;</span>
+</span></span><span class="line"><span class="cl">  jobTemplate:
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      template:
+</span></span><span class="line"><span class="cl">        spec:
+</span></span><span class="line"><span class="cl">          containers:
+</span></span><span class="line"><span class="cl">          - name: hello
+</span></span><span class="line"><span class="cl">            image: busybox
+</span></span><span class="line"><span class="cl">            args:
+</span></span><span class="line"><span class="cl">            - /bin/sh
+</span></span><span class="line"><span class="cl">            - -c
+</span></span><span class="line"><span class="cl">            - date<span class="p">;</span> <span class="nb">echo</span> Hello from the Kubernetes cluster
+</span></span><span class="line"><span class="cl">          restartPolicy: OnFailure
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="httpimageownittopcsdn20200205212840212png"> <img src="http://image.ownit.top/csdn/20200205212840212.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl get cronjob
+</span></span><span class="line"><span class="cl">NAME      SCHEDULE      SUSPEND   ACTIVE    LAST-SCHEDULE
+</span></span><span class="line"><span class="cl">hello     */1 * * * *   False     <span class="m">0</span>         &lt;none&gt;
+</span></span><span class="line"><span class="cl">$ kubectl get <span class="nb">jobs</span>
+</span></span><span class="line"><span class="cl">NAME               DESIRED   SUCCESSFUL   AGE
+</span></span><span class="line"><span class="cl">hello-1202039034   <span class="m">1</span>         <span class="m">1</span>            49s
+</span></span><span class="line"><span class="cl">$ <span class="nv">pods</span><span class="o">=</span><span class="k">$(</span>kubectl get pods --selector<span class="o">=</span>job-name<span class="o">=</span>hello-1202039034 --output<span class="o">=</span><span class="nv">jsonpath</span><span class="o">=</span>
+</span></span><span class="line"><span class="cl"><span class="o">{</span>.items..metadata.name<span class="o">}</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">$ kubectl logs <span class="nv">$pods</span>
+</span></span><span class="line"><span class="cl">Mon Aug <span class="m">29</span> 21:34:09 UTC <span class="m">2016</span>
+</span></span><span class="line"><span class="cl">Hello from the Kubernetes cluster
+</span></span><span class="line"><span class="cl"><span class="c1"># 注意，删除 cronjob 的时候不会自动删除 job，这些 job 可以用 kubectl delete job 来删除</span>
+</span></span><span class="line"><span class="cl">$ kubectl delete cronjob hello
+</span></span><span class="line"><span class="cl">cronjob <span class="s2">&#34;hello&#34;</span> deleted
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>CrondJob 本身的一些限制 <br>
+创建 Job 操作应该是 幂等的</strong></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/k8s/">k8s</a>
+        
+            <a href="/tags/daemonset/">Daemonset</a>
+        
+            <a href="/tags/job/">Job</a>
+        
+            <a href="/tags/cronjob/">CronJob</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetesk8s%E7%9A%84%E8%B0%83%E5%BA%A6%E5%99%A8-%E8%B0%83%E5%BA%A6%E4%BA%B2%E5%92%8C%E6%80%A7%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/80.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/80.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes（k8s）的调度器 - 调度亲和性详细介绍</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetesk8s%E7%9A%84%E8%B0%83%E5%BA%A6%E5%99%A8%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/27.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/27.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes（k8s）的调度器详细介绍</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetesk8s%E7%9A%84%E5%AD%98%E5%82%A8pv-pvc%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/25.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/25.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes（k8s）的存储PV-PVC详细介绍</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetesk8s%E7%9A%84%E5%AD%98%E5%82%A8volume-%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/40.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/40.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes（k8s）的存储Volume 详细介绍</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetesk8s%E7%9A%84%E5%AD%98%E5%82%A8secret-%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/40.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/40.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes（k8s）的存储Secret 详细介绍</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

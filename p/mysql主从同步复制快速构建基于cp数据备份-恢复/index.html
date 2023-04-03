@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='目录相关思路主库、检查主库是否开启、开启、重启、检查生成的目录、进入，锁表，记录号、备份文件，解表、主库传输文件到从库、添加防火墙规则为从库从库、停止从库的业务程序、停止票务开机自启程序、检查主库是否。。。。。。。'>
+<title>Mysql主从同步复制（快速构建，基于CP数据备份 恢复）</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/mysql%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6%E5%BF%AB%E9%80%9F%E6%9E%84%E5%BB%BA%E5%9F%BA%E4%BA%8Ecp%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD-%E6%81%A2%E5%A4%8D/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='Mysql主从同步复制（快速构建，基于CP数据备份 恢复）'>
+<meta property='og:description' content='目录相关思路主库、检查主库是否开启、开启、重启、检查生成的目录、进入，锁表，记录号、备份文件，解表、主库传输文件到从库、添加防火墙规则为从库从库、停止从库的业务程序、停止票务开机自启程序、检查主库是否。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/mysql%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6%E5%BF%AB%E9%80%9F%E6%9E%84%E5%BB%BA%E5%9F%BA%E4%BA%8Ecp%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD-%E6%81%A2%E5%A4%8D/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='mysql' /><meta property='article:tag' content='数据库' /><meta property='article:tag' content='database' /><meta property='article:published_time' content='2022-05-13T11:40:32&#43;00:00'/><meta property='article:modified_time' content='2022-05-13T11:40:32&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/19.jpg' />
+<meta name="twitter:title" content="Mysql主从同步复制（快速构建，基于CP数据备份 恢复）">
+<meta name="twitter:description" content="目录相关思路主库、检查主库是否开启、开启、重启、检查生成的目录、进入，锁表，记录号、备份文件，解表、主库传输文件到从库、添加防火墙规则为从库从库、停止从库的业务程序、停止票务开机自启程序、检查主库是否。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/19.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1检查主库是否开启log-bin"><strong>1、检查主库是否开启log-bin</strong></a></li>
+    <li><a href="#2开启log-bin"><strong>2、开启log-bin</strong></a></li>
+    <li><a href="#3重启mysql">3、重启MySQL</a></li>
+    <li><a href="#4检查生成的log-bin目录"><strong>4、检查生成的log-bin****目录</strong></a></li>
+    <li><a href="#5进入mysql锁表记录pos号">5、<strong>进入MySQL，锁表，记录POS****号</strong></a></li>
+    <li><a href="#6备份mysql文件解表">6、<strong>备份mysql文件，解表</strong></a></li>
+    <li><a href="#7主库传输mysql文件到从库"><strong>7、主库传输mysql****文件到从库</strong></a></li>
+    <li><a href="#8添加iptables防火墙规则ip为从库ip"><strong>8、添加iptables<strong><strong>防火墙规则（ip</strong></strong>为从库IP</strong>**）**</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#1停止从库的业务程序"><strong>1、停止从库的业务程序</strong></a></li>
+    <li><a href="#2停止票务开机自启程序"><strong>2、停止票务开机自启程序</strong></a></li>
+    <li><a href="#3检查主库是否开启log-bin">3、<strong>检查主库是否开启log-bin</strong></a></li>
+    <li><a href="#4开启log-bin添加配置修改id">4、<strong>开启log-bin，添加配置，修改id</strong></a></li>
+    <li><a href="#4停止mysql-备份目录">4、<strong>停止mysql ，备份目录</strong></a></li>
+    <li><a href="#5覆盖mysql目录删除autocnf">5、<strong>覆盖mysql目录，删除auto.cnf</strong></a></li>
+    <li><a href="#6启动mysql"><strong>6、启动mysql</strong></a></li>
+    <li><a href="#7启动主从">7、<strong>启动主从</strong></a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/mysql%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6%E5%BF%AB%E9%80%9F%E6%9E%84%E5%BB%BA%E5%9F%BA%E4%BA%8Ecp%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD-%E6%81%A2%E5%A4%8D/">
+                
+                    <img src="http://image.ownit.top/4kdongman/19.jpg" loading="lazy" alt="Featured image of post Mysql主从同步复制（快速构建，基于CP数据备份 恢复）" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/mysql/" >
+                MySQL
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/mysql%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6%E5%BF%AB%E9%80%9F%E6%9E%84%E5%BB%BA%E5%9F%BA%E4%BA%8Ecp%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD-%E6%81%A2%E5%A4%8D/">Mysql主从同步复制（快速构建，基于CP数据备份 恢复）</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            目录相关思路主库、检查主库是否开启、开启、重启、检查生成的目录、进入，锁表，记录号、备份文件，解表、主库传输文件到从库、添加防火墙规则为从库从库、停止从库的业务程序、停止票务开机自启程序、检查主库是否。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">May 13, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p><strong>目录</strong></p>
+<p><a class="link" href="#%E7%9B%B8%E5%85%B3%C2%A0" >相关 </a></p>
+<p><a class="link" href="#%E6%80%9D%E8%B7%AF" >思路</a></p>
+<p><a class="link" href="#%E4%B8%BB%E5%BA%93" >主库</a></p>
+<p><a class="link" href="#1%E3%80%81%E6%A3%80%E6%9F%A5%E4%B8%BB%E5%BA%93%E6%98%AF%E5%90%A6%E5%BC%80%E5%90%AFlog-bin" >1、检查主库是否开启log-bin</a></p>
+<p><a class="link" href="#2%E3%80%81%E5%BC%80%E5%90%AFlog-bin" >2、开启log-bin</a></p>
+<p><a class="link" href="#3%E3%80%81%E9%87%8D%E5%90%AFMySQL" >3、重启MySQL</a></p>
+<p><a class="link" href="#4%E3%80%81%E6%A3%80%E6%9F%A5%E7%94%9F%E6%88%90%E7%9A%84log-bin%E7%9B%AE%E5%BD%95" >4、检查生成的log-bin目录</a></p>
+<p><a class="link" href="#5%E3%80%81%E8%BF%9B%E5%85%A5MySQL%EF%BC%8C%E9%94%81%E8%A1%A8%EF%BC%8C%E8%AE%B0%E5%BD%95POS%E5%8F%B7" >5、进入MySQL，锁表，记录POS号</a></p>
+<p><a class="link" href="#6%E3%80%81%E5%A4%87%E4%BB%BDmysql%E6%96%87%E4%BB%B6%EF%BC%8C%E8%A7%A3%E8%A1%A8" >6、备份mysql文件，解表</a></p>
+<p><a class="link" href="#7%E3%80%81%E4%B8%BB%E5%BA%93%E4%BC%A0%E8%BE%93mysql%E6%96%87%E4%BB%B6%E5%88%B0%E4%BB%8E%E5%BA%93" >7、主库传输mysql文件到从库</a></p>
+<p><a class="link" href="#8%E3%80%81%E6%B7%BB%E5%8A%A0iptables%E9%98%B2%E7%81%AB%E5%A2%99%E8%A7%84%E5%88%99%EF%BC%88ip%E4%B8%BA%E4%BB%8E%E5%BA%93IP%EF%BC%89" >8、添加iptables防火墙规则（ip为从库IP）</a></p>
+<p><a class="link" href="#%E4%BB%8E%E5%BA%93" >从库</a></p>
+<p><a class="link" href="#1%E3%80%81%E5%81%9C%E6%AD%A2%E4%BB%8E%E5%BA%93%E7%9A%84%E4%B8%9A%E5%8A%A1%E7%A8%8B%E5%BA%8F" >1、停止从库的业务程序</a></p>
+<p><a class="link" href="#2%E3%80%81%E5%81%9C%E6%AD%A2%E7%A5%A8%E5%8A%A1%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E7%A8%8B%E5%BA%8F" >2、停止票务开机自启程序</a></p>
+<p><a class="link" href="#3%E3%80%81%E6%A3%80%E6%9F%A5%E4%B8%BB%E5%BA%93%E6%98%AF%E5%90%A6%E5%BC%80%E5%90%AFlog-bin" >3、检查主库是否开启log-bin</a></p>
+<p><a class="link" href="#4%E3%80%81%E5%BC%80%E5%90%AFlog-bin%EF%BC%8C%E6%B7%BB%E5%8A%A0%E9%85%8D%E7%BD%AE%EF%BC%8C%E4%BF%AE%E6%94%B9id" >4、开启log-bin，添加配置，修改id</a></p>
+<p><a class="link" href="#4%e3%80%81%e5%81%9c%e6%ad%a2mysql%20%ef%bc%8c%e5%a4%87%e4%bb%bd%e7%9b%ae%e5%bd%95" >4、停止mysql ，备份目录</a></p>
+<p><a class="link" href="#5%E3%80%81%E8%A6%86%E7%9B%96mysql%E7%9B%AE%E5%BD%95%EF%BC%8C%E5%88%A0%E9%99%A4auto.cnf" >5、覆盖mysql目录，删除auto.cnf</a></p>
+<p><a class="link" href="#6%E3%80%81%E5%90%AF%E5%8A%A8mysql" >6、启动mysql</a></p>
+<p><a class="link" href="#7%E3%80%81%E5%90%AF%E5%8A%A8%E4%B8%BB%E4%BB%8E" >7、启动主从</a></p>
+<hr>
+<h1 id="相关">相关 </h1>
+<p>相关原理可以查看此博客        </p>
+<p><a class="link" href="http://xn--mysql-ni1h1kkd34cien8anzj00an2yqrx8k1a1u9c2j7e9svvilaaa"  title="https://blog.csdn.net/heian_99/article/details/106647572"
+     target="_blank" rel="noopener"
+    >https://blog.csdn.net/heian_99/article/details/106647572<img src="http://image.ownit.top/csdn/icon-default.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+>http://xn&ndash;mysql-ni1h1kkd34cien8anzj00an2yqrx8k1a1u9c2j7e9svvilaaa</a></p>
+<p>以下作为 实际操作</p>
+<p>环境：</p>
+<p>主库：    mysql</p>
+<p>从库：        mysql</p>
+<h1 id="思路">思路</h1>
+<p>（1）主库A数据全，数据库B空的</p>
+<p>（2）锁表数据库A，记录pos号</p>
+<p>（3）复制数据库A目录数据（进行cp备份）然后 解锁表</p>
+<p>（4）把数据库A备份的数据进行scp 数据库B</p>
+<p>（5）把数据库A的目录，进行覆盖数据库B的目录。（数据覆盖，相当于备份恢复）</p>
+<p>（6）进行主共同步</p>
+<p>**注意：日志格式 **statement  row mixed   建议使用 <strong>mixed</strong></p>
+<p><img src="http://image.ownit.top/csdn/20200609163414418.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="主库">主库</h1>
+<h2 id="1检查主库是否开启log-bin"><strong>1、检查主库是否开启log-bin</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@92-69-xy-bak ~<span class="o">]</span><span class="c1"># cat /etc/my.cnf | grep log-bin</span>
+</span></span><span class="line"><span class="cl">log-bin<span class="o">=</span>/databak/mysql-bin/mysql-bin
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2开启log-bin"><strong>2、开启log-bin</strong></h2>
+<p>如果上面没有显示，需要开启log-bin</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">开启
+</span></span><span class="line"><span class="cl">vim /etc/my.cnf
+</span></span><span class="line"><span class="cl">log-bin<span class="o">=</span>/databak/mysql-bin/mysql-bin
+</span></span><span class="line"><span class="cl">创建目录，授权
+</span></span><span class="line"><span class="cl">mkdir  /databak/mysql-bin
+</span></span><span class="line"><span class="cl">chown  mysql.mysql  /databak/mysql-bin   -R
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3重启mysql">3、重启MySQL</h2>
+<p>重启mysql是因为刚开启log-bin日志，需要生成数据</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">service  mysql restart
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4检查生成的log-bin目录"><strong>4、检查生成的log-bin****目录</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">目的：是否开启log-bin成功，是否生成日志数据
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> ls /databak/mysql-bin/
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">生成的数据
+</span></span><span class="line"><span class="cl">mysql-bin.000001  mysql-bin.000002  mysql-bin.000003  mysql-bin.index
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5进入mysql锁表记录pos号">5、<strong>进入MySQL，锁表，记录POS****号</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mysql -ucpms -pudqjHDMkxQfGP4iy
+</span></span><span class="line"><span class="cl">FLUSH TABLES WITH READ LOCK<span class="p">;</span>
+</span></span><span class="line"><span class="cl">show master status<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span>  <span class="s2">&#34;日志名字    偏移量&#34;</span>   &gt;  /var/lib/mysql/记录文件
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="6备份mysql文件解表">6、<strong>备份mysql文件，解表</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cp  -r    /var/lib/mysql /opt/mysql_bak
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">UNLOCK TABLES<span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="7主库传输mysql文件到从库"><strong>7、主库传输mysql****文件到从库</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">cd</span> /opt
+</span></span><span class="line"><span class="cl">scp -r mysql_bak soft CMS3.10.21 192.168.0.3:/opt
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="8添加iptables防火墙规则ip为从库ip"><strong>8、添加iptables<strong><strong>防火墙规则（ip</strong></strong>为从库IP</strong>**）**</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"> vim /etc/sysconfig/iptables
+</span></span><span class="line"><span class="cl">-A INPUT -s 10.92.69.3 -p tcp --dport <span class="m">3306</span> -j ACCEPT
+</span></span><span class="line"><span class="cl">/etc/init.d/iptables restart
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>以上操作主库完成</strong></p>
+<h1 id="从库">从库</h1>
+<h2 id="1停止从库的业务程序"><strong>1、停止从库的业务程序</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">pkill java
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2停止票务开机自启程序"><strong>2、停止票务开机自启程序</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chkconfig --list <span class="p">|</span> grep cms <span class="p">|</span>awk <span class="s1">&#39;{print &#34;chkconfig&#34;,$1,&#34;off&#34;}&#39;</span><span class="p">|</span>bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3检查主库是否开启log-bin">3、<strong>检查主库是否开启log-bin</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@92-69-xy-bak ~<span class="o">]</span><span class="c1"># cat /etc/my.cnf | grep log-bin</span>
+</span></span><span class="line"><span class="cl">log-bin<span class="o">=</span>/databak/mysql-bin/mysql-bin
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4开启log-bin添加配置修改id">4、<strong>开启log-bin，添加配置，修改id</strong></h2>
+<p>如果上面没有显示，需要开启log-bin</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">开启
+</span></span><span class="line"><span class="cl">vim /etc/my.cnf
+</span></span><span class="line"><span class="cl">log-bin<span class="o">=</span>/databak/mysql-bin/mysql-bin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">server-id<span class="o">=</span><span class="m">2</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">replicate_ignore_table</span><span class="o">=</span>CMS.QC_TEMP
+</span></span><span class="line"><span class="cl"><span class="nv">replicate_ignore_table</span><span class="o">=</span>CMS.QM_TEMP
+</span></span><span class="line"><span class="cl"><span class="nv">replicate_ignore_table</span><span class="o">=</span>CMS.STORE_IN_TEMP
+</span></span><span class="line"><span class="cl"><span class="nv">replicate_ignore_table</span><span class="o">=</span>CMS.TEMP_POS_SALE_GOODS_ITEM_COST
+</span></span><span class="line"><span class="cl"><span class="nv">replicate_ignore_table</span><span class="o">=</span>CMS.TEMP_POS_REJECT_GOODS_ITEM_COST
+</span></span><span class="line"><span class="cl"><span class="nv">replicate_ignore_table</span><span class="o">=</span>CMS.MER_INTERFACE_DAY_STORE_CHECK
+</span></span><span class="line"><span class="cl">slave-skip-errors <span class="o">=</span> <span class="m">1062</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">创建目录，授权
+</span></span><span class="line"><span class="cl">mkdir  /databak/mysql-bin
+</span></span><span class="line"><span class="cl">chown  mysql.mysql  /databak/mysql-bin   -R
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4停止mysql-备份目录">4、<strong>停止mysql ，备份目录</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">service mysql stop
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">mv /var/lib/mysql /var/lib/bak_mysql
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5覆盖mysql目录删除autocnf">5、<strong>覆盖mysql目录，删除auto.cnf</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">cp -r /opt/mysql_bak /var/lib/mysql
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">\rm   /var/lib/mysql/auto.cnf
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="6启动mysql"><strong>6、启动mysql</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">service mysql start
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="7启动主从">7、<strong>启动主从</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">进入mysql
+</span></span><span class="line"><span class="cl">mysql -uroot -p^passswd
+</span></span><span class="line"><span class="cl">停止slave
+</span></span><span class="line"><span class="cl">stop  slave;
+</span></span><span class="line"><span class="cl">写入 配置信息（注意pos号，账号，主库ip 端口）
+</span></span><span class="line"><span class="cl">change master to
+</span></span><span class="line"><span class="cl">master_host=&#39;10.92.69.2&#39;,
+</span></span><span class="line"><span class="cl">master_port=3306,
+</span></span><span class="line"><span class="cl">master_user=&#39;admin&#39;,
+</span></span><span class="line"><span class="cl">master_password=&#39;udq5545adadefiy&#39;,
+</span></span><span class="line"><span class="cl">master_log_file=&#39;mysql-bin.000001&#39;,
+</span></span><span class="line"><span class="cl">master_log_pos=17503;
+</span></span><span class="line"><span class="cl">开启从库
+</span></span><span class="line"><span class="cl">start  slave;
+</span></span><span class="line"><span class="cl">查看状态
+</span></span><span class="line"><span class="cl">show slave status\G
+</span></span><span class="line"><span class="cl">两个yes为正常，检查pos号是否已经和主库同步
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>以上操作需谨慎，尤其主库上，输入命令需三思（文档仅供参考）</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/mysql/">mysql</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+            <a href="/tags/database/">database</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/xtrabackup%E5%B7%A5%E5%85%B7%E8%BF%9B%E8%A1%8C%E5%9C%A8%E7%BA%BF%E4%B8%BB%E4%BB%8E%E6%90%AD%E5%BB%BA/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/92.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/92.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Xtrabackup工具进行在线主从搭建</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/mysql%E5%AE%B9%E5%99%A8%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/75.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/75.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL容器部署及数据持久化（主从复制）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E4%BB%80%E4%B9%88%E4%BD%A0%E8%BF%98%E4%B8%8D%E4%BC%9Amysql%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E5%BF%AB%E6%9D%A5%E7%9C%8B/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/51.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/51.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">什么，你还不会Mysql主从复制？？？快来看</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/mysql%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E8%A3%85%E7%89%88%E6%9C%AC5.7.26/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/52.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/52.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL二进制安装（版本：5.7.26）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/mysql--%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8Dmysqdump-xtrabackupxbk/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/66.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/66.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL--备份恢复【Mysqdump&#43;xtrabackup（XBK）】</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

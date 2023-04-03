@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：上一篇文件我们使用的构建两个容器，但是问题也是一大堆，根本不适合生产方面。所以我们慢慢解决上面的问题，优化架构。。。。。。。。'>
+<title>Kubernetes实战模拟二（wordpress高可用）</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%8Cwordpress%E9%AB%98%E5%8F%AF%E7%94%A8/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='Kubernetes实战模拟二（wordpress高可用）'>
+<meta property='og:description' content='实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：上一篇文件我们使用的构建两个容器，但是问题也是一大堆，根本不适合生产方面。所以我们慢慢解决上面的问题，优化架构。。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%8Cwordpress%E9%AB%98%E5%8F%AF%E7%94%A8/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Kubernetes' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='数据库' /><meta property='article:tag' content='mysql' /><meta property='article:tag' content='docker' /><meta property='article:published_time' content='2021-04-03T23:50:52&#43;00:00'/><meta property='article:modified_time' content='2021-04-03T23:50:52&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/68.jpg' />
+<meta name="twitter:title" content="Kubernetes实战模拟二（wordpress高可用）">
+<meta name="twitter:description" content="实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：上一篇文件我们使用的构建两个容器，但是问题也是一大堆，根本不适合生产方面。所以我们慢慢解决上面的问题，优化架构。。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/68.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%8Cwordpress%E9%AB%98%E5%8F%AF%E7%94%A8/">
+                
+                    <img src="http://image.ownit.top/4kdongman/68.jpg" loading="lazy" alt="Featured image of post Kubernetes实战模拟二（wordpress高可用）" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%8Cwordpress%E9%AB%98%E5%8F%AF%E7%94%A8/">Kubernetes实战模拟二（wordpress高可用）</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：上一篇文件我们使用的构建两个容器，但是问题也是一大堆，根本不适合生产方面。所以我们慢慢解决上面的问题，优化架构。。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 03, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="kubernetes实战模拟一wordpress基础版httpsblogcsdnnetheian_99articledetails115422455"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115422455"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟一（wordpress基础版）</a></h1>
+<h1 id="kubernetes实战模拟二wordpress高可用httpsblogcsdnnetheian_99articledetails115422781"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115422781"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟二（wordpress高可用）</a></h1>
+<h1 id="kubernetes实战模拟三wordpress健康检查和服务质量qoshttpsblogcsdnnetheian_99articledetails115433372"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115433372"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟三（wordpress健康检查和服务质量QoS）</a></h1>
+<h1 id="kubernetes实战模拟四wordpress升级更新httpsblogcsdnnetheian_99articledetails115468779"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115468779"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟四（wordpress升级更新）</a></h1>
+<p>源码地址：<a class="link" href="https://github.com/nangongchengfeng/Kubernetes/tree/main/wordpress-example"  target="_blank" rel="noopener"
+    >https://github.com/nangongchengfeng/Kubernetes/tree/main/wordpress-example</a></p>
+<p>上一篇文件我们使用pod的构建两个容器，但是问题也是一大堆，根本不适合生产方面。</p>
+<p>所以我们慢慢解决上面的问题，优化架构。</p>
+<h1 id="版本2">版本2</h1>
+<p>思路：将 Pod 中的两个容器进行拆分，将 Wordpress 和 MySQL 分别部署</p>
+<p>Wordpress 用多个副本进行部署就可以实现应用的高可用了</p>
+<p>由于 MySQL 是有状态应用，一般来说需要用 StatefulSet 来进行管理，但是我们这里部署的 MySQL 并不是集群模式，而是单副本的，所以用 Deployment 也是没有问题的。如果生产环境的话，一般都是集群的，分别在宿主机上部署。</p>
+<p> </p>
+<h1 id="mysql资源清单">mysql资源清单</h1>
+<p><strong>mysql.yaml</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress-mysql
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">    tier: mysql
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">    - port: <span class="m">3306</span>
+</span></span><span class="line"><span class="cl">      targetPort: dbport
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: Deployment
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress-mysql
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">    tier: mysql
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  replicas: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      name: wordpress-mysql
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: wordpress
+</span></span><span class="line"><span class="cl">        tier: mysql
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">        - name: mysql
+</span></span><span class="line"><span class="cl">          image: mysql:5.7
+</span></span><span class="line"><span class="cl">          args:
+</span></span><span class="line"><span class="cl">          - --default_authentication_plugin<span class="o">=</span>mysql_native_password
+</span></span><span class="line"><span class="cl">          - --character-set-server<span class="o">=</span>utf8mb4
+</span></span><span class="line"><span class="cl">          - --collation-server<span class="o">=</span>utf8mb4_unicode_ci
+</span></span><span class="line"><span class="cl">          ports:
+</span></span><span class="line"><span class="cl">            - containerPort: <span class="m">3306</span>
+</span></span><span class="line"><span class="cl">              name: dbport
+</span></span><span class="line"><span class="cl">          env:
+</span></span><span class="line"><span class="cl">          - name: MYSQL_ROOT_PASSWORD
+</span></span><span class="line"><span class="cl">            value: rootPassW0rd
+</span></span><span class="line"><span class="cl">          - name: MYSQL_DATABASE
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          - name: MYSQL_USER
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          - name: MYSQL_PASSWORD
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          imagePullPolicy: IfNotPresent
+</span></span><span class="line"><span class="cl">      restartPolicy: Always
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: wordpress
+</span></span><span class="line"><span class="cl">      tier: mysql
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里给 MySQL 应用添加了一个 Service 对象，是因为 Wordpress 应用需要来连接数据库，之前在同一个 Pod 中用 <code>localhost</code> 即可，现在需要通过 Service 的 DNS 形式的域名进行连接。直接创建上面资源对象</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"># kubectl apply -f mysql.yaml    
+</span></span><span class="line"><span class="cl">service/wordpress-mysql created
+</span></span><span class="line"><span class="cl">deployment.apps/wordpress-mysql created
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="wordpress-清单">Wordpress 清单</h1>
+<p><strong>wordpress.yaml</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">    tier: frontend
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">    - port: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">      name: web
+</span></span><span class="line"><span class="cl">      targetPort: wdport
+</span></span><span class="line"><span class="cl">  type: NodePort
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: Deployment
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">    tier: frontend
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: wordpress
+</span></span><span class="line"><span class="cl">      tier: frontend
+</span></span><span class="line"><span class="cl">  replicas: <span class="m">4</span> 
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      name: wordpress
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: wordpress
+</span></span><span class="line"><span class="cl">        tier: frontend
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">        - name: wordpress
+</span></span><span class="line"><span class="cl">          image: wordpress:5.3.2-apache
+</span></span><span class="line"><span class="cl">          ports:
+</span></span><span class="line"><span class="cl">            - containerPort: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">              name: wdport
+</span></span><span class="line"><span class="cl">          env:
+</span></span><span class="line"><span class="cl">          - name: WORDPRESS_DB_HOST
+</span></span><span class="line"><span class="cl">            value: wordpress-mysql:3306
+</span></span><span class="line"><span class="cl">          - name: WORDPRESS_DB_USER
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          - name: WORDPRESS_DB_PASSWORD
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          imagePullPolicy: IfNotPresent
+</span></span><span class="line"><span class="cl">      restartPolicy: Always
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意这里的环境变量 <code>WORDPRESS_DB_HOST</code> 的值将之前的 <code>localhost</code> 地址更改成了上面 MySQL 服务的 DNS 地址，完整的域名应该是 <code>wordpress-mysql.kube-example.svc.cluster.local:3306</code>，由于这两个应该都处于同一个命名空间，所以直接简写成 <code>wordpress-mysql:3306</code> 也是可以的。</p>
+<p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 v2<span class="o">]</span><span class="c1"># kubectl apply -f wordpress.yaml </span>
+</span></span><span class="line"><span class="cl">service/wordpress created
+</span></span><span class="line"><span class="cl">deployment.apps/wordpress created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 v2<span class="o">]</span><span class="c1"># kubectl get pods -l app=wordpress -n kube-example</span>
+</span></span><span class="line"><span class="cl">NAME                              READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">wordpress-ddb4ff6cf-g2xf8         1/1     Running   <span class="m">0</span>          9s
+</span></span><span class="line"><span class="cl">wordpress-ddb4ff6cf-jjt5k         1/1     Running   <span class="m">0</span>          9s
+</span></span><span class="line"><span class="cl">wordpress-ddb4ff6cf-zmbc4         1/1     Running   <span class="m">0</span>          9s
+</span></span><span class="line"><span class="cl">wordpress-mysql-d9b4b8985-bqv2b   1/1     Running   <span class="m">0</span>          32s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="测试">测试</h1>
+<p>可以看到都已经是 <code>Running</code> 状态了，然后我们需要怎么来验证呢？是不是我们能想到的就是去访问下我们的 Wordpress 服务就可以了，我们这里还是使用的一个 NodePort 类型的 Service 来暴露服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 v2<span class="o">]</span><span class="c1"># kubectl get svc,ep -n kube-example </span>
+</span></span><span class="line"><span class="cl">NAME                      TYPE        CLUSTER-IP   EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>        AGE
+</span></span><span class="line"><span class="cl">service/wordpress         NodePort    10.0.0.49    &lt;none&gt;        80:30455/TCP   92s
+</span></span><span class="line"><span class="cl">service/wordpress-mysql   ClusterIP   10.0.0.142   &lt;none&gt;        3306/TCP       115s
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                        ENDPOINTS                                       AGE
+</span></span><span class="line"><span class="cl">endpoints/wordpress         10.244.0.5:80,10.244.1.135:80,10.244.1.136:80   92s
+</span></span><span class="line"><span class="cl">endpoints/wordpress-mysql   10.244.1.134:3306                               115s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到 wordpress 服务产生了一个 30455的端口，现在我们就可以通过 <code>http://&lt;任意节点的NodeIP&gt;:30012</code> 访问我们的应用了，在浏览器中打开，如果看到 wordpress 跳转到了安装页面，证明我们的安装是正确的，如果没有出现预期的效果，那么就需要去查看下 Pod 的日志来排查问题了，根据页面提示，填上对应的信息，点击<code>“安装”</code>即可，最终安装成功后</p>
+<p><img src="http://image.ownit.top/csdn/20210403233421893.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="避免单点故障">避免单点故障</h1>
+<p>为什么会有单点故障的问题呢？</p>
+<p>我们不是部署了多个副本的 Wordpress 应用吗？</p>
+<p>当我们设置 <code>replicas=1</code> 的时候肯定会存在单点故障问题，如果大于 1 但是所有副本都调度到了同一个节点的是不是同样就会存在单点问题了</p>
+<p>这个节点挂了所有副本就都挂了，所以我们不仅需要设置多个副本数量，还需要让这些副本调度到不同的节点上，来打散避免单点故障</p>
+<p><img src="http://image.ownit.top/csdn/20210403233825187.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> Pod 反亲和性来实现了，我们可以防止单点故障出现。</p>
+<p>但是要考虑要用<strong>弱策略</strong>还是<strong>硬策略</strong></p>
+<p><strong>我们首先弱的，如果硬策略，如果节点有问题，pod就不会被创建</strong></p>
+<p><img src="http://image.ownit.top/csdn/2021040323393294.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">    tier: frontend
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">    - port: 80
+</span></span><span class="line"><span class="cl">      name: web
+</span></span><span class="line"><span class="cl">      targetPort: wdport
+</span></span><span class="line"><span class="cl">  type: ClusterIP
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: Deployment
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: wordpress
+</span></span><span class="line"><span class="cl">    tier: frontend
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: wordpress
+</span></span><span class="line"><span class="cl">      tier: frontend
+</span></span><span class="line"><span class="cl">  replicas: 4 #多副本+pod的反亲合力可以实现pod的高可用
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      name: wordpress
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: wordpress
+</span></span><span class="line"><span class="cl">        tier: frontend
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">        - name: wordpress
+</span></span><span class="line"><span class="cl">          image: wordpress:5.3.2-apache
+</span></span><span class="line"><span class="cl">          ports:
+</span></span><span class="line"><span class="cl">            - containerPort: 80
+</span></span><span class="line"><span class="cl">              name: wdport
+</span></span><span class="line"><span class="cl">          env:
+</span></span><span class="line"><span class="cl">          - name: WORDPRESS_DB_HOST
+</span></span><span class="line"><span class="cl">            value: wordpress-mysql:3306
+</span></span><span class="line"><span class="cl">          - name: WORDPRESS_DB_USER
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          - name: WORDPRESS_DB_PASSWORD
+</span></span><span class="line"><span class="cl">            value: wordpress
+</span></span><span class="line"><span class="cl">          imagePullPolicy: IfNotPresent
+</span></span><span class="line"><span class="cl">      affinity: #pod的反亲和力
+</span></span><span class="line"><span class="cl">        podAffinity:
+</span></span><span class="line"><span class="cl">          preferredDuringSchedulingIgnoredDuringExecution:
+</span></span><span class="line"><span class="cl">            - weight: 1
+</span></span><span class="line"><span class="cl">              podAffinityTerm:
+</span></span><span class="line"><span class="cl">                topologyKey: kubernetes.io/hostname
+</span></span><span class="line"><span class="cl">                labelSelector:
+</span></span><span class="line"><span class="cl">                  matchExpressions:
+</span></span><span class="line"><span class="cl">                    - key: app
+</span></span><span class="line"><span class="cl">                      operator: In
+</span></span><span class="line"><span class="cl">                      values:
+</span></span><span class="line"><span class="cl">                        - wordpress
+</span></span><span class="line"><span class="cl">      restartPolicy: Always
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="pdb策略">PDB策略</h1>
+<p><strong>PDB能够限制同时中断的pod的数量,以保证集群的高可用性</strong></p>
+<p>有些时候线上的某些节点需要做一些维护操作，比如要升级内核，这个时候我们就需要将要维护的节点进行驱逐操作，驱逐节点首先是将节点设置为不可调度，这样可以避免有新的 Pod 调度上来，然后将该节点上的 Pod 全部删除，ReplicaSet 控制器检测到 Pod 数量减少了就会重新创建一个新的 Pod，调度到其他节点上面的，这个过程是先删除，再创建，并非是滚动更新，因此更新过程中，如果一个服务的所有副本都在被驱逐的节点上，则可能导致该服务不可用。</p>
+<p>如果服务本身存在单点故障，所有副本都在同一个节点，驱逐的时候肯定就会造成服务不可用了，这种情况我们使用上面的反亲和性和多副本就可以解决这个问题。但是如果我们的服务本身就被打散在多个节点上，这些节点如果都被同时驱逐的话，那么这个服务的所有实例都会被同时删除，这个时候也会造成服务不可用了，这种情况下我们可以通过配置 PDB（PodDisruptionBudget）对象来避免所有副本同时被删除，比如我们可以设置在驱逐的时候 wordpress 应用最多只有一个副本不可用，其实就相当于逐个删除并在其它节点上重建</p>
+<p><strong>pdb.yaml</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: policy/v1beta1
+</span></span><span class="line"><span class="cl">kind: PodDisruptionBudget
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress-pdb
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  maxUnavailable: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: wordpress
+</span></span><span class="line"><span class="cl">      tier: frontend
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 v2<span class="o">]</span><span class="c1"># kubectl apply -f pdb.yaml </span>
+</span></span><span class="line"><span class="cl">poddisruptionbudget.policy/wordpress-pdb created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 v2<span class="o">]</span><span class="c1"># kubectl get pdb -n kube-example </span>
+</span></span><span class="line"><span class="cl">NAME            MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+</span></span><span class="line"><span class="cl">wordpress-pdb   N/A             <span class="m">1</span>                 <span class="m">1</span>                     15s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> PDB 的更多详细信息可以查看官方文档：<a class="link" href="https://kubernetes.io/docs/tasks/run-application/configure-pdb/"  target="_blank" rel="noopener"
+    >https://kubernetes.io/docs/tasks/run-application/configure-pdb/</a>。</p>
+<p> </p>
+<p>此版本实现高可用，但是还有一些问题</p>
+<h1 id="问题">问题</h1>
+<p>（1）pod的健康检查，如果没有这些，pod额度重启策略都无法执行</p>
+<p>（2）内存，cpu等资源限制，服务质量Qos</p>
+<p>（3）数据持久化</p>
+<p>（4）mysql账号密码注入等</p>
+<p>这些一些列问题，都会在后面的版本架构中优化</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+            <a href="/tags/mysql/">mysql</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%B8%89wordpress%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E5%92%8C%E6%9C%8D%E5%8A%A1%E8%B4%A8%E9%87%8Fqos/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/07.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/07.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟三（wordpress健康检查和服务质量QoS）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%94wordpress%E7%9A%84hpa%E8%87%AA%E5%8A%A8%E6%89%A9%E7%BC%A9%E5%AE%B9/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/09.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/09.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟五（wordpress的HPA自动扩缩容）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E5%9B%9Bwordpress%E5%8D%87%E7%BA%A7%E6%9B%B4%E6%96%B0/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/56.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/56.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟四（wordpress升级更新）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%B8%80wordpress%E5%9F%BA%E7%A1%80%E7%89%88/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/83.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/83.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟一（wordpress基础版）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E9%AB%98%E6%95%88%E6%94%B6%E9%9B%86%E7%94%9F%E4%BA%A7%E6%97%A5%E5%BF%97/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/62.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/62.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes高效收集生产日志</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

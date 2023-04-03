@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='它是开源免费的支持数据库热备份的软件，它能对和存储引擎的数据库非阻塞地备份。它不暂停服务创建热备份；为做增量备份；在服务器之间做在线表迁移；使创建更加容易；备份而不增加服务器的负载。是一家老牌的技术咨。。。。。。。'>
+<title>MySQL数据物理备份之xtrabackup</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/mysql%E6%95%B0%E6%8D%AE%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B9%8Bxtrabackup/'>
+
+<link rel="stylesheet" href="/scss/style.min.5be32ca3f6e1a997c75795c4359147cc6d4fbd34948c0acd51e31d237033978a.css"><meta property='og:title' content='MySQL数据物理备份之xtrabackup'>
+<meta property='og:description' content='它是开源免费的支持数据库热备份的软件，它能对和存储引擎的数据库非阻塞地备份。它不暂停服务创建热备份；为做增量备份；在服务器之间做在线表迁移；使创建更加容易；备份而不增加服务器的负载。是一家老牌的技术咨。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/mysql%E6%95%B0%E6%8D%AE%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B9%8Bxtrabackup/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='技术记录' /><meta property='article:published_time' content='2019-04-21T22:18:59&#43;00:00'/><meta property='article:modified_time' content='2019-04-21T22:18:59&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/66.jpg' />
+<meta name="twitter:title" content="MySQL数据物理备份之xtrabackup">
+<meta name="twitter:description" content="它是开源免费的支持数据库热备份的软件，它能对和存储引擎的数据库非阻塞地备份。它不暂停服务创建热备份；为做增量备份；在服务器之间做在线表迁移；使创建更加容易；备份而不增加服务器的负载。是一家老牌的技术咨。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/66.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#完全备份">完全备份</a></li>
+    <li><a href="#增量备份">增量备份</a></li>
+    <li><a href="#差异备份">差异备份</a>
+      <ol>
+        <li><a href="#heading"></a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/mysql%E6%95%B0%E6%8D%AE%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B9%8Bxtrabackup/">
+                
+                    <img src="http://image.ownit.top/4kdongman/66.jpg" loading="lazy" alt="Featured image of post MySQL数据物理备份之xtrabackup" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/mysql/" >
+                MySQL
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/mysql%E6%95%B0%E6%8D%AE%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B9%8Bxtrabackup/">MySQL数据物理备份之xtrabackup</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            它是开源免费的支持数据库热备份的软件，它能对和存储引擎的数据库非阻塞地备份。它不暂停服务创建热备份；为做增量备份；在服务器之间做在线表迁移；使创建更加容易；备份而不增加服务器的负载。是一家老牌的技术咨。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 21, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="percona-xtrabackup"><strong>percona-xtrabackup</strong></h1>
+<p>它是开源免费的支持MySQL 数据库热备份的软件，它能对InnoDB和XtraDB存储引擎的数据库非阻塞地备份。它不暂停服务创建Innodb<strong>热备份</strong>；<br>
+为mysql做增量备份；在mysql服务器之间做在线表迁移；使创建replication更加容易；备份mysql而不增加服务器的负载。<br>
+percona是一家老牌的mysql技术咨询公司。它不仅提供mysql的技术支持、培训、咨询，还发布了mysql的分支版本&ndash;percona Server。并围绕<br>
+percona Server还发布了一系统的mysql工具。<br>
+=================================================================================<br>
+ </p>
+<h2 id="完全备份">完全备份</h2>
+<p> </p>
+<h2 id="增量备份">增量备份</h2>
+<p><img src="http://image.ownit.top/csdn/20190421220749983.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<h2 id="差异备份">差异备份</h2>
+<p><img src="http://image.ownit.top/csdn/20190421220813787.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>xtrabackup<br>
+Xtrabackup是一个对InnoDB做数据备份的工具，支持在线热备份（备份时不影响数据读写），是商业备份工具InnoDB Hotbackup的一个很好的替代品。<br>
+Xtrabackup有两个主要的工具：xtrabackup、innobackupex<br>
+xtrabackup 只能备份InnoDB和XtraDB两种数据表，而不能备份MyISAM数据表。 innobackupex 是参考了InnoDB Hotbackup的innoback脚本修改而来的.innobackupex是一个perl脚本封装，封装了xtrabackup。主要是为了方便的同时备份InnoDB和MyISAM引擎的表，但在处理myisam时需要加一个读锁。并且加入了一些使用的选项。如slave-info可以记录备份恢复后作为slave需要的一些信息，根据这些信息，可以很方便的利用备份来重做slave。支持完全备份和增量备份</p>
+<ul>
+<li> 备份过程快速、可靠；</li>
+<li>备份过程不会打断正在执行的事务；</li>
+<li> 能够基于压缩等功能节约磁盘空间和流量；</li>
+<li>自动实现备份检验；</li>
+<li>还原速度快；</li>
+</ul>
+<p>使用innobakupex备份时，其会调用xtrabackup备份所有的InnoDB表，复制所有关于表结构定义的相关文件(.frm)、以及MyISAM、MERGE、CSV和ARCHIVE表的相关文件，同时还会备份触发器和数据库配置信息相关的文件。这些文件会被保存至一个以时间命令的目录中。</p>
+<p>(1)xtrabackup_checkpoints —— 备份类型（如完全或增量）、备份状态（如是否已经为prepared状态）和LSN(日志序列号)范围信息；每个InnoDB页(通常为16k大小)都会包含一个日志序列号，即LSN。LSN是整个数据库系统的系统版本号，每个页面相关的LSN能够表明此页面最近是如何发生改变的。</p>
+<p>(2)xtrabackup_binlog_info —— mysql服务器当前正在使用的二进制日志文件及至备份这一刻为止二进制日志事件的位置。(3)xtrabackup_binlog_pos_innodb —— 二进制日志文件及用于InnoDB或XtraDB表的二进制日志文件的当前position。</p>
+<p>(4)xtrabackup_binary —— 备份中用到的xtrabackup的可执行文件；</p>
+<p>(5)backup-my.cnf —— 备份命令用到的配置选项信息；</p>
+<h3 id="heading"></h3>
+<p>安装xtrabackup<br>
+ </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# yum -y install percona-xtrabackup-2.1.9-744.rhel6.x86_64.rpm
+</span></span><span class="line"><span class="cl">[root@localhost ~]# rpm -ql percona-xtrabackup |grep bin
+</span></span><span class="line"><span class="cl">/usr/bin/innobackupex 支持myisam、innodb
+</span></span><span class="line"><span class="cl">/usr/bin/innobackupex-1.5.1
+</span></span><span class="line"><span class="cl">/usr/bin/xbcrypt
+</span></span><span class="line"><span class="cl">/usr/bin/xbstream
+</span></span><span class="line"><span class="cl">/usr/bin/xtrabackup 仅适用于percona Server
+</span></span><span class="line"><span class="cl">/usr/bin/xtrabackup_55 适用mysql 5.5数据库
+</span></span><span class="line"><span class="cl">/usr/bin/xtrabackup_56 适用mysql5.6数据库
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="完整备份实例">完整备份实例</h1>
+<p>：<br>
+==备份==</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 /mysqlbackup/full
+</span></span><span class="line"><span class="cl">[root@localhost ~]# ls /mysqlbackup/full/2015-09-15_11-03-03/
+</span></span><span class="line"><span class="cl">backup-my.cnf company mysql school test xtrabackup_binary xtrabackup_checkpoints
+</span></span><span class="line"><span class="cl">bbs 　　ibdata1 performance_schema shop weibo xtrabackup_binlog_info xtrabackup_logfile
+</span></span><span class="line"><span class="cl">[root@localhost 2015-09-15_11-03-03]# cat xtrabackup_binlog_info
+</span></span><span class="line"><span class="cl">localhost-bin.000003 2090096
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>==恢复==<br>
+a. 准备新环境</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# rm -rf /usr/local/mysql/data
+</span></span><span class="line"><span class="cl">[root@localhost ~]# chown -R mysql.mysql /usr/local/mysql
+</span></span><span class="line"><span class="cl">[root@localhost ~]# /usr/local/mysql/scripts/mysql_install_db --user=mysql --basedir=/usr/local/mysql/ --datadir=/usr/local/mysql/data
+</span></span><span class="line"><span class="cl">[root@localhost ~]# killall -9 mysqld
+</span></span><span class="line"><span class="cl">[root@localhost ~]# service mysqld start
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>b. 恢复</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --apply-log /mysqlbackup/full/2015-09-15_11-03-03/
+</span></span><span class="line"><span class="cl">[root@localhost ~]# rm -rf /usr/local/mysql/data/*
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --copy-back /mysqlbackup/full/2015-09-15_11-03-03/
+</span></span><span class="line"><span class="cl">[root@localhost ~]# cd /usr/local/mysql
+</span></span><span class="line"><span class="cl">[root@localhost ~]# chown -R mysql.mysql .
+</span></span><span class="line"><span class="cl">[root@localhost ~]# killall -9 mysqld
+</span></span><span class="line"><span class="cl">[root@localhost ~]# service mysqld start
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<h1 id="增量备份实例">增量备份实例：</h1>
+<p>==备份==<br>
+1、完整备份：周一</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">create database testdb;
+</span></span><span class="line"><span class="cl">use testdb;
+</span></span><span class="line"><span class="cl">create table test(id int);
+</span></span><span class="line"><span class="cl">insert into test values(1);
+</span></span><span class="line"><span class="cl">select * from test;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 /mysqlbackup/full
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>2、增量备份：周二　——　周六</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">insert into testdb.test values(2);
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --incremental /mysqlbackup/incremental
+</span></span><span class="line"><span class="cl">--incremental-basedir=完全备份目录
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">insert into testdb.test values(3);
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --incremental /mysqlbackup/incremental
+</span></span><span class="line"><span class="cl">--incremental-basedir=上次增量目录
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">insert into testdb.test values(4);
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --incremental /mysqlbackup/incremental
+</span></span><span class="line"><span class="cl">--incremental-basedir=上次增量目录
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<h1 id="恢复">==恢复==</h1>
+<p>1.恢复全量的redo log</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --apply-log --redo-only /mysqlbackup/full/...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>2.恢复增量的redo log</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --apply-log --redo-only /mysqlbackup/full/...
+</span></span><span class="line"><span class="cl">--incremental-dir=/mysqlbackup/incremental/第一次增量
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --apply-log --redo-only /mysqlbackup/full/...
+</span></span><span class="line"><span class="cl">--incremental-dir=/mysqlbackup/incremental/第二次增量
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --apply-log --redo-only /mysqlbackup/full/...
+</span></span><span class="line"><span class="cl">--incremental-dir=/mysqlbackup/incremental/第Ｎ次增量
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3.关闭mysqld，替换数据文件(cp,rsyn,innobackupex copy-back)，修改权限</p>
+<p>4.启动mysqld</p>
+<p>5.通过binlog增量恢复</p>
+<p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">create database testdb;
+</span></span><span class="line"><span class="cl">use testdb;
+</span></span><span class="line"><span class="cl">create table test(id int);
+</span></span><span class="line"><span class="cl">insert into test values(1);
+</span></span><span class="line"><span class="cl">select * from test;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 /mysqlbackup/full
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="差异备份实例">差异备份实例：</h1>
+<p>==备份==<br>
+1、完整备份：周一</p>
+<p>2、差异备份：周二　——　周六</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">insert into testdb.test values(2);
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --incremental /mysqlbackup/incremental
+</span></span><span class="line"><span class="cl">--incremental-basedir=完全备份目录
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">insert into testdb.test values(3);
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --incremental /mysqlbackup/incremental
+</span></span><span class="line"><span class="cl">--incremental-basedir=完全备份目录
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">insert into testdb.test values(4);
+</span></span><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --incremental /mysqlbackup/incremental
+</span></span><span class="line"><span class="cl">--incremental-basedir=完全备份目录
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="恢复-1">==恢复==</h1>
+<p>1.恢复全量的redo log</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --apply-log --redo-only /mysqlbackup/full/...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>2.恢复差异的redo log</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@localhost ~]# innobackupex --host=localhost --socket=/tmp/mysql.sock --defaults-file=/etc/my.cnf --user=root --password=888 --apply-log --redo-only /mysqlbackup/full/...
+</span></span><span class="line"><span class="cl">--incremental-dir=/mysqlbackup/incremental/某个差异备份
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3.关闭mysqld，替换数据文件(cp,rsyn)，修改权限</p>
+<p>4.启动mysqld</p>
+<p>5.通过binlog增量恢复</p>
+<p>备份单库、多库、多表单数据库备份<br>
+innobackupex --defaults-file=/etc/my.cnf --socket=/tmp/mysql.sock --databases=uplook --no-timestamp /server/backup/uplook<br>
+多数据库备份innobackupex --user=root --password=123456 --include=&lsquo;dba.*|dbb.*&rsquo; /server/backup<br>
+多表备份方法一：innobackupex --user=root --password=123456 --include=&lsquo;dba.tablea|dbb.tableb&rsquo; /server/backup<br>
+方法二：使用&ndash;tables-file参数，这种方式是将所有要备份的完整表名都写在一个文本文件中，每行一个完整表名，然后程序读取这个文本文件进行备份。完整表名即：databasename.tablename<br>
+echo &ldquo;lianxi.Student&rdquo; &gt;/tmp/table1.txt<br>
+innobackupex --defaults-file=/etc/my.cnf --socket=/tmp/mysql.sock --tables-file=&rsquo;/tmp/table1.txt&rsquo; --no-timestamp /server/backup/table1</p>
+<p>恢复单库、多库、多表单数据库恢复应用日志：<br>
+innobackupex --apply-log /server/backup/uplook<br>
+删除数据库数据文件：systemctl stop mysql；rm -rf /usr/local/mysql/data/*<br>
+还原数据：innobackupex --copy-back /server/backup/uplook<br>
+授权：chown -R mysql.mysql /usr/local/mysql<br>
+初始化数据库：/usr/local/mysql/scripts/mysql_install_db --user=mysql --datadir=/usr/local/mysql/data --basedir=/usr/local/mysql --explicit_defaults_for_timestamp<br>
+启动数据库：systemctl start mysql<br>
+测试：mysql -e &ldquo;select * from uplook.Student;&rdquo;</p>
+<p>多表数据恢复应用日志：<br>
+innobackupex --apply-log --export /server/backup/table1/<br>
+定义表&ndash;删除表空间&ndash;拷贝*.ibd/*.cfg文件&ndash;导入表空间<br>
+定义表：模拟删除表，重新定义表结构，过程略<br>
+删除表空间：mysql&gt; ALTER TABLE Student DISCARD TABLESPACE;<br>
+拷贝*.ibd/*.cfg文件：[root@localhost ~]# cp /server/backup/table1/lianxi/Student.{cfg,ibd} /usr/local/mysql/data/lianxi/<br>
+[root@localhost ~]# chown -R mysql.mysql /usr/local/mysql/data/lianxi/<br>
+导入表空间：mysql&gt; ALTER TABLE Student IMPORT TABLESPACE;<br>
+测试：mysql&gt; select * from Student;</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%8A%80%E6%9C%AF%E8%AE%B0%E5%BD%95/">技术记录</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/centos7%E9%83%A8%E7%BD%B2ejforum%E8%AE%BA%E5%9D%9Bjava-tomcat-mysql/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/72.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/72.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7部署ejforum论坛（Java&#43;tomcat&#43;mysql）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/centos7%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%90%AD%E5%BB%BA%E7%BD%91%E7%BB%9C%E5%AE%B6%E5%9B%AD%E5%92%8C%E8%AE%BA%E5%9D%9B/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/77.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/77.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7服务器搭建网络家园和论坛</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/navicat-premium-%E8%AF%A6%E8%A7%A3/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/18.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/18.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Navicat Premium 详解</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E4%B9%8Bmycat/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/86.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/86.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL读写分离之MyCAT</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E4%B9%8Bproxy/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/31.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/31.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL读写分离之Proxy</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2022030313号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
