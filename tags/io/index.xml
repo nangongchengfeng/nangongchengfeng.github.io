@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>io on 南宫乘风</title>
+        <link>https://www.ownit.top/tags/io/</link>
+        <description>Recent content in io on 南宫乘风</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Mon, 16 Mar 2020 17:43:53 +0000</lastBuildDate><atom:link href="https://www.ownit.top/tags/io/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Docker的资源限制（内存、CPU、IO）详细篇</title>
+        <link>https://www.ownit.top/p/202003161743/</link>
+        <pubDate>Mon, 16 Mar 2020 17:43:53 +0000</pubDate>
+        
+        <guid>https://www.ownit.top/p/202003161743/</guid>
+        <description>&lt;img src="https://www.ownit.top/title_pic/11.jpg" alt="Featured image of post Docker的资源限制（内存、CPU、IO）详细篇" /&gt;&lt;h3 id=&#34;一个docker-host-上会运行若干容器每个容器都需要cpu内存和i0资源对于kvmvmware-等虚拟化技术用户可以控制分配多少cpu内存资源给每个虚拟机对于容器docker-也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个host&#34;&gt;**一个docker host. 上会运行若干容器，每个容器都需要CPU、内存和I0资源。对于KVM、VMware 等虚拟化技术，用户可以控制分配多少CPU、内存资源给每个虚拟机。对于容器，Docker 也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个host&lt;/h3&gt;
+&lt;p&gt;的性能。**&lt;br&gt;
+ &lt;/p&gt;
+&lt;h1 id=&#34;内存限额&#34;&gt;内存限额&lt;/h1&gt;
+&lt;p&gt;与操作系统类似，容器可以使用的内存包括两部分：物理内存和Swap。&lt;/p&gt;
+&lt;p&gt;Docker通过下面两组参数来控制容器内存的使用量&lt;/p&gt;
+&lt;p&gt;（1）-m 或 --memory ：设置内存的使用限额，例如100MB，2GB&lt;/p&gt;
+&lt;p&gt;（2）&amp;ndash;memory-swap：设置内存+swawp的使用限额&lt;/p&gt;
+&lt;p&gt; &lt;/p&gt;
+&lt;p&gt;当我们执行如下的命令时&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -m 200M --memory-swap&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;300M ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;其含义是允许该容器最多使用200MB的内存和100MB 的swap。默认情况下，上面两组参数为-1, 即对容器内存和swap的使用没有限制。&lt;/p&gt;
+&lt;p&gt;下面我们将使用progrium/stress 镜像来学习如何为容器分配内存。该镜像可用于对容器执行压力测试。执行如下命令:&lt;br&gt;
+ &lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -it -m 200M --memory-swap&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;300M progrium/stress --vm &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; --vm-bytes 208M
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;--vm1:启动1个内存工作线程。&lt;/li&gt;
+&lt;li&gt;--vm-bytes 280M:每个线程分配280MB内存。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt; &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;运行如下图结果&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/2020031616300042.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;因为280MB在可分配的范围(300MB) 内，所以工作线程能够正常工作，其过程是:&lt;br&gt;
+(1)分配280MB内存。&lt;br&gt;
+(2)释放280MB内存。&lt;br&gt;
+(3)再分配280MB内存。&lt;br&gt;
+(4)再释放280MB内存。&lt;br&gt;
+(5)一-直循环&amp;hellip;..&lt;br&gt;
+如果让工作线程分配的内存超过300MB,结果如图&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -it -m 200M --memory-swap&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;300M progrium/stress --vm &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; --vm-bytes 310M
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316165917983.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;分配的内存超过限额，stress 线程报错，容器退出。&lt;br&gt;
+如果在启动容器时只指定-m而不指定-memoryswap, 那么-memory-swap 默认为-m的两倍，比如:&lt;br&gt;
+ &lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -it -m 200M ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;容器最多使用200M绒里内存和200swap&lt;/p&gt;
+&lt;h2 id=&#34;cpu限额&#34;&gt;CPU限额&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;默认设置下，所有容器可以平等地使用host CPU资源并且没有限制&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Docker可以通过-c或-pu-shares设置容器使用CPU的权重。如果不指定，默认值为1024。&lt;/strong&gt;&lt;br&gt;
+与内存限额不同，通过-c设置的cpu share 并不是CPU资源的绝对数量，而是一个相对的权重值。某个容器最终能分配到的CPU资源取决于它的cpu share占所有容器cpu share总和的比例。&lt;br&gt;
+换句话说:通过cpu share可以设置容器使用CPU的优先级。&lt;/p&gt;
+&lt;p&gt;比如在host中启动了两个容器:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --name &lt;span class=&#34;s2&#34;&gt;&amp;#34;cont_A&amp;#34;&lt;/span&gt; -c &lt;span class=&#34;m&#34;&gt;1024&lt;/span&gt; ubuntu docker run --name &lt;span class=&#34;s2&#34;&gt;&amp;#34;cont_B&amp;#34;&lt;/span&gt; -c &lt;span class=&#34;m&#34;&gt;512&lt;/span&gt; ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;containerA的cpu share 1024， 是containerB 的两倍。当两个容器都需要CPU资源时，containerA可以得到的CPU是containerB 的两倍。&lt;br&gt;
+需要特别注意的是，这种按权重分配CPU只会发生在CPU资源紧张的情况下。如果containerA处于空闲状态，这时，为了充分利用CPU资源，containerB 也可以分配到全部可用的CPU.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;下面我们继续用progrium/stress 做实验。&lt;/p&gt;
+&lt;h3 id=&#34;heading&#34;&gt;&lt;/h3&gt;
+&lt;p&gt;(1)启动(container_ A, cpu share为1024&lt;br&gt;
+ &lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --name &lt;span class=&#34;s2&#34;&gt;&amp;#34;cont_A&amp;#34;&lt;/span&gt; -it -c &lt;span class=&#34;m&#34;&gt;1024&lt;/span&gt;  progrium/stress --cpu &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316170953506.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;--cpu用来设置工作线程的数量。因为当前host 只有1颗CPU,所以一个工作线程就能将CPU压满。如果host有多颗CPU,则需要相应增加&amp;ndash;cpu的数量。&lt;br&gt;
+ &lt;/p&gt;
+&lt;h3 id=&#34;2启动container_b-cpu-share为512&#34;&gt;(2)启动(container_B, cpu share为512&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run --name &lt;span class=&#34;s2&#34;&gt;&amp;#34;cont_B&amp;#34;&lt;/span&gt; -it -c &lt;span class=&#34;m&#34;&gt;512&lt;/span&gt;  progrium/stress --cpu &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316171149233.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;3在host中执行top-查看容器对cpu的使用情况&#34;&gt;(3)在host中执行top, 查看容器对CPU的使用情况，&lt;/h3&gt;
+&lt;p&gt; &lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316171249683.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ps aux&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;head -1&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;ps aux&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;sort -k3nr &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;head -4
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316171752731.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;containera消耗的cpu是containerb-的两倍&#34;&gt;&lt;strong&gt;containerA消耗的CPU是containerB 的两倍。&lt;/strong&gt;&lt;/h3&gt;
+&lt;p&gt; &lt;/p&gt;
+&lt;h3 id=&#34;4现在暂停container-a&#34;&gt;(4)现在暂停container. A&lt;/h3&gt;
+&lt;h3 id=&#34;image20200316172530957png&#34;&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316172530957.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;5-top-显示containerb在containera空闲的情况下能够用满整颗cpu&#34;&gt;(5) top 显示containerB在containerA空闲的情况下能够用满整颗CPU&lt;/h3&gt;
+&lt;h3 id=&#34;image20200316172546902png&#34;&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316172546902.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/h3&gt;
+&lt;h1 id=&#34;block-io-带宽限额&#34;&gt;Block IO 带宽限额&lt;/h1&gt;
+&lt;p&gt;Block 10是另一种可以限制容器使用的资源。Block I0指的是磁盘的读写，docker 可通过设置权重、限制bps和iops 的方式控制容器读写磁盘的带宽，下 面分别讨论。&lt;br&gt;
+&lt;strong&gt;注:目前Block I0限额只对direct IO (不使用文件缓存)有效。&lt;/strong&gt;&lt;br&gt;
+Block IO权重&lt;br&gt;
+默认情况下，所有容器能平等地读写磁盘，可以通过设置**-blkio-weight**参数来改变容器block Io的优先级。&lt;br&gt;
+&lt;strong&gt;-blkio-weight&lt;/strong&gt;与&amp;ndash;cpu-shares 类似，设置的是相对权重值，默认为500。 在下面的例子中，containerA 读写磁盘的带宽是containerB 的两倍。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -it --name cont_A --blkip-weight &lt;span class=&#34;m&#34;&gt;600&lt;/span&gt; ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -it --name cont_B --blkip-weight &lt;span class=&#34;m&#34;&gt;300&lt;/span&gt; ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;限制bps和iops&#34;&gt;限制bps和iops&lt;/h3&gt;
+&lt;p&gt;bps是 byte per second ，每秒读写的数量&lt;/p&gt;
+&lt;p&gt;iops是 io per second ，每秒IO的次数&lt;/p&gt;
+&lt;p&gt;可以同过下面的参数控制容器的bps和iops；&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;--device-read-bps:限制读某个设备的bps.&lt;/li&gt;
+&lt;li&gt;--devce-write-bps:限制写某个设备的bps.&lt;/li&gt;
+&lt;li&gt;--device- read-iops:限制读某个设备的iops.&lt;/li&gt;
+&lt;li&gt;--device-write-iops: 限制写某个设备的iops。&lt;br&gt;
+ &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;下面这个例子限制容器写/dev/sda 的速率为30 MB/s:&lt;br&gt;
+ &lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;root@kvm ~&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;# docker run -it --device-write-bps /dev/sda:30MB ubuntu&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;root@10845a98036e:/# &lt;span class=&#34;nb&#34;&gt;time&lt;/span&gt; dd &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;/dev/zero &lt;span class=&#34;nv&#34;&gt;of&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;test.out &lt;span class=&#34;nv&#34;&gt;bs&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;1M &lt;span class=&#34;nv&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;800&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;oflag&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;direct
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;800+0 records in
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;800+0 records out
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;m&#34;&gt;838860800&lt;/span&gt; bytes &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;839&lt;/span&gt; MB, &lt;span class=&#34;m&#34;&gt;800&lt;/span&gt; MiB&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; copied, 26.6211 s, 31.5 MB/s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;real	0m26.623s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;user	0m0.000s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sys	0m0.106s
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;root@10845a98036e:/# 
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;docker run -it --device-write-bps /dev/sda:30MB ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;有限制&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/2020031617393618.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;没有限制&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200316174047490.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;通过dd测试在容器中写磁盘的速度。因为容器的文件系统是在host /dev/sda. 上的，在容器中写文件相当于对host /dev/sda 进行写操作。另外，oflag= -direct指定用direct I0方式写文件，这样&amp;ndash;device-write-bps才能生效。&lt;br&gt;
+ &lt;/p&gt;
+&lt;p&gt;看到，没有限速的话，速度很快，&lt;/p&gt;
+&lt;p&gt;其他参数，大家也可以试试&lt;/p&gt;</description>
+        </item>
+        
+    </channel>
+</rss>

@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>流量 on 南宫乘风</title>
+        <link>https://www.ownit.top/tags/%E6%B5%81%E9%87%8F/</link>
+        <description>Recent content in 流量 on 南宫乘风</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Fri, 20 Aug 2021 16:01:39 +0000</lastBuildDate><atom:link href="https://www.ownit.top/tags/%E6%B5%81%E9%87%8F/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Zabbix监控流量异常（偶尔超出交换机限制）</title>
+        <link>https://www.ownit.top/p/202108201601/</link>
+        <pubDate>Fri, 20 Aug 2021 16:01:39 +0000</pubDate>
+        
+        <guid>https://www.ownit.top/p/202108201601/</guid>
+        <description>&lt;img src="https://www.ownit.top/title_pic/53.jpg" alt="Featured image of post Zabbix监控流量异常（偶尔超出交换机限制）" /&gt;&lt;h3 id=&#34;前提&#34;&gt;&lt;strong&gt;前提：&lt;/strong&gt;&lt;/h3&gt;
+&lt;p&gt;近期业务做了集群的流量汇总，整体没有问题。后面慢慢优化一些参数项。但是这两天发现，集群流量数据增大，业务正常。&lt;/p&gt;
+&lt;h3 id=&#34;问题&#34;&gt;&lt;strong&gt;问题：&lt;/strong&gt;&lt;/h3&gt;
+&lt;p&gt;zabbix和prometheus 监控网卡，流量异常增大，超出限制，每次2分钟，偶尔性触发&lt;/p&gt;
+&lt;p&gt;看图，这个和7月对比，简介翻了几倍，但是业务没有增长，这就很奇怪了&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20210820154341424.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt; &lt;img src=&#34;https://www.ownit.top/../../image/20210820154446171.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt; &lt;img src=&#34;https://www.ownit.top/../../image/20210820154520134.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;上面介绍相关截图。&lt;/p&gt;
+&lt;h3 id=&#34;解决&#34;&gt;解决：&lt;/h3&gt;
+&lt;p&gt;首先以为业务导致网卡过大加载，导致流量增大，我们使用  &lt;strong&gt;ifstat-1.1.tar.gz&lt;/strong&gt;  工具记录每一秒的网卡速度，记录一晚上再看。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20210820154806631.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;分析上图，虽然流量有超过100M的，但是网卡是能够支撑的。没有zabbix和prometheus显示的那么恐怖。&lt;/p&gt;
+&lt;h3 id=&#34;思考&#34;&gt;思考&lt;/h3&gt;
+&lt;p&gt;我和大佬分交流一下。说是zabbix的单位转换，要加8倍，我也是添加了的&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20210820155043875.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt; &lt;img src=&#34;https://www.ownit.top/../../image/20210820155108496.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt; &lt;/p&gt;
+&lt;p&gt;嗯。。。。。。。。。。。。。。。。。。。。。正常&lt;/p&gt;
+&lt;p&gt;大佬建议让我使用snmp监控对比一下，思路不错，可以搞。直接部署上去对比了&lt;/p&gt;
+&lt;h3 id=&#34;分析&#34;&gt;分析&lt;/h3&gt;
+&lt;p&gt;snmp对比一下&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20210820155324221.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt; zabbix的（还是这么高）&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20210820155427739.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;snmp的（这个是正常的）&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20210820155518591.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt; 很明显，这是snmp是准确的。但是为什么会这样&lt;/p&gt;
+&lt;h3 id=&#34;结果&#34;&gt;结果：&lt;/h3&gt;
+&lt;p&gt;首先，业务正常，服务器正常，现在就是zabbix不正常，怀疑是zabbix的问题&lt;/p&gt;
+&lt;p&gt;回想一下，在数据量增加前做了什么操作。&lt;/p&gt;
+&lt;p&gt;之前，我当时增加一批监控指标，因为监控点比较重要，所有设置抓取时间为10s。谁知道这个10s就是罪魁祸首。集群内部机器较多，可能会产生数据积压。&lt;/p&gt;
+&lt;h3 id=&#34;后续&#34;&gt;后续&lt;/h3&gt;
+&lt;p&gt;取消关联模板，监控整体流量，确定无虚假流量&lt;/p&gt;
+&lt;p&gt;调整监控项的抓取指标为：1m  再次关联模板正常&lt;/p&gt;</description>
+        </item>
+        <item>
+        <title>宝塔Nginx配置防盗链</title>
+        <link>https://www.ownit.top/p/202007131034/</link>
+        <pubDate>Mon, 13 Jul 2020 10:34:13 +0000</pubDate>
+        
+        <guid>https://www.ownit.top/p/202007131034/</guid>
+        <description>&lt;img src="https://www.ownit.top/title_pic/17.jpg" alt="Featured image of post 宝塔Nginx配置防盗链" /&gt;&lt;h1 id=&#34;nginx配置防盗链&#34;&gt;Nginx配置防盗链&lt;/h1&gt;
+&lt;h2 id=&#34;1什么是资源盗链&#34;&gt;&lt;strong&gt;1.什么是资源盗链&lt;/strong&gt;&lt;/h2&gt;
+&lt;p&gt;简单地说，就是某些不法网站未经许可，通过在其自身网站程序里非法调用其他网站的资源，然后在自己的网站上显示这些调用的资源，达到填充自身网站的效果。这一举动不仅浪费了调用资源网站的网络流量，还造成其他网站的带宽及服务压力吃紧，甚至宕机。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200712001931869.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;2网站资源被盗链带来的问题&#34;&gt;** 2.网站资源被盗链带来的问题**&lt;/h2&gt;
+&lt;p&gt;若网站图片及相关资源被盗链，最直接的影响就是网络带宽占用加大了，带宽费用多了，网络流量也可能忽高忽低，Nagios/Zabbix等报警服务频繁报警&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200712002043920.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;最严重的情况就是网站的资源被非法使用，使网站带宽成本加大和服务器压力加大，这有可能导致数万元的损失，且网站的正常用户访问也会受到影响&lt;/p&gt;
+&lt;h2 id=&#34;3企业真实案例网站资源被盗链出现严重问题&#34;&gt;3.企业真实案例：网站资源被盗链，出现严重问题&lt;/h2&gt;
+&lt;p&gt;某日，接到从事运维工作的朋友的紧急求助，其公司的CDN源站，源站的流量没有变动，但CDN加速那边的流量无故超了好几个GB，不知道怎么处理。&lt;/p&gt;
+&lt;p&gt;该故障的影响：由于是购买的CDN网站加速服务，因此虽然流量多了几个GB，但是业务未受影响。只是，这么大的异常流量，持续下去可直接导致公司无故损失数万元。解决这个问题可体现运维的价值。&lt;/p&gt;
+&lt;h2 id=&#34;4常见防盗链解决方案的基本原理&#34;&gt;4.常见防盗链解决方案的基本原理&lt;/h2&gt;
+&lt;h3 id=&#34;1根据http-referer实现防盗链&#34;&gt;（1）根据HTTP referer实现防盗链&lt;/h3&gt;
+&lt;p&gt;在HTTP协议中，有一个表头字段叫referer，使用URL格式来表示是哪里的链接用了当前网页的资源。通过referer可以检测访问的来源网页，如果是资源文件，可以跟踪到显示它的网页地址，一旦检测出来源不是本站，马上进行阻止或返回指定的页面。&lt;/p&gt;
+&lt;p&gt;HTTP referer是header的一部分，当浏览器向Web服务器发送请求时，一般会带上referer，告诉服务器我是从哪个页面链接过来的，服务器借此获得一些信息用于处理。Apache、Nginx、Lighttpd三者都支持根据HTTP referer实现防盗链，referer是目前网站图片、附件、html等最常用的防盗链手段&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200712002247128.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;2根据cookie防盗链&#34;&gt;（2）根据cookie防盗链&lt;/h3&gt;
+&lt;p&gt;对于一些特殊的业务数据，例如流媒体应用通过ActiveX显示的内容（例如，Flash、Windows Media视频、流媒体的RTSP协议等），因为它们不向服务器提供referer header，所以若采用上述的referer的防盗链手段，就达不到想要的效果。&lt;/p&gt;
+&lt;p&gt;对于Flash、Windows Media视频这种占用流量较大的业务数据，防盗链是比较困难的，此时可以采用Cookie技术，解决Flash、Windows Media视频等的防盗链问题。&lt;/p&gt;
+&lt;p&gt;例如：ActiveX插件不传递referer，但会传递Cookie，可以在显示ActiveX的页面的&amp;lt;head&amp;gt;&amp;lt;/head&amp;gt;标签内嵌入一段JavaScript代码，设置“Cookie：Cache=av”如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;script&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;document&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cookie&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Cache=av；
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;domain=domain.com；
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;path=/&amp;#34;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;/script&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;然后就可以通过各种手段来判断这个Cookie的存在，以及验证其值的操作了。&lt;/p&gt;
+&lt;p&gt;根据Cookie来防盗链的技术非本书的内容，读者了解即可，如果企业确实有需要，可以阅读其他书籍或进入交流群获取这部分的知识。&lt;/p&gt;
+&lt;h2 id=&#34;3通过加密变换访问路径实现防盗链&#34;&gt;（3）通过加密变换访问路径实现防盗链&lt;/h2&gt;
+&lt;p&gt;此种方法比较适合视频及下载类业务数据的网站。例如：Lighttpd有类似的插件mod_secdownload来实现此功能。先在服务器端配置此模块，设置一个固定用于加密的字符串，比如oldboy，然后设置一个url前缀，比如/mp4/，再设置一个过期时间，比如1小时，然后写一段PHP代码，利用加密字符串和系统时间等通过md5算法生成一个加密字符串。最终获取到的文件的URL链接中会带有一个时间戳和一个加密字符的md5数值，在访问时系统会对这两个数据进行验证。如果时间不在预期的时间段内（如1小时内）则失效；如果时间戳符合条件，但是加密的字符串不符合条件也会失效，从而达到防盗链的效果。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-php&#34; data-lang=&#34;php&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;php&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$secret&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;oldboy&amp;#34;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;c1&#34;&gt;// 加密字符串，必须和
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lighttpd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;conf里的保持一致&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$uri_prefix&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/mp4/&amp;#34;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;c1&#34;&gt;// 虚拟的路径、前缀，必须和
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lighttpd&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;conf里的保持一致&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$file&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/test.mp4&amp;#34;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;c1&#34;&gt;// 实际文件名，必须加
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;/&amp;#34;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;斜杠&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$timestamp&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time（）；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;c1&#34;&gt;// current timestamp
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$t_hex&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sprintf（&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;%08x&amp;#34;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;，&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;$timestamp）；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$m&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;md5（&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;$secret&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$file&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$t_hex）；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;printf（&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;s1&#34;&gt;&amp;#39;%s&amp;#39;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;，&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;$uri_prefix，&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;$m，&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;$t_hex，&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;$file，&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nv&#34;&gt;$file）；&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;     &lt;span class=&#34;c1&#34;&gt;//生成
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;url地址串&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;nginx-web服务实现防盗链实战&#34;&gt;Nginx Web服务实现防盗链实战&lt;/h2&gt;
+&lt;p&gt;在默认情况下，只需要进行简单的配置，即可实现防盗链处理&lt;/p&gt;
+&lt;p&gt;利用referer，并且针对扩展名rewrite重定向&lt;/p&gt;
+&lt;p&gt;第一步&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200713102729988.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;第二步&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200713102916129.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;第三步&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200713103058257.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;相关配置&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;配置前
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    location ~ .*&lt;span class=&#34;se&#34;&gt;\.&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;gif&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;jpg&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;jpeg&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;png&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;bmp&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;swf&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;$
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        expires      30d&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        error_log off&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        access_log /dev/null&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;配置后
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	location ~ .*&lt;span class=&#34;se&#34;&gt;\.&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;gif&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;jpg&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;jpeg&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;png&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;bmp&lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;swf&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;$
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; valid_referers *.heian99.top heian99.top&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$invalid_referer&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  rewrite ^/ https://ftp.bmp.ovh/imgs/2020/06/75d45131a596abbd.jpg&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;c1&#34;&gt;#return 404;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; expires  30d&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;效果图&lt;/p&gt;
+&lt;p&gt;打开这个图片，放到别的浏览器查看&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200713103143191.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;就会变成下面这个图片了&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200713103259330.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;</description>
+        </item>
+        <item>
+        <title>企业级-Shell案例6——查看网卡的实时流量</title>
+        <link>https://www.ownit.top/p/202001181550/</link>
+        <pubDate>Sat, 18 Jan 2020 15:50:52 +0000</pubDate>
+        
+        <guid>https://www.ownit.top/p/202001181550/</guid>
+        <description>&lt;img src="https://www.ownit.top/title_pic/69.jpg" alt="Featured image of post 企业级-Shell案例6——查看网卡的实时流量" /&gt;&lt;h1 id=&#34;查看网卡的实时流量&#34;&gt;查看网卡的实时流量&lt;/h1&gt;
+&lt;p&gt;监控流量&lt;/p&gt;
+&lt;h2 id=&#34;脚本编写&#34;&gt;脚本编写&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#!/bin/bash
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;eth0&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt;  -e    &lt;span class=&#34;s2&#34;&gt;&amp;#34;流量进入--流量传出    &amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;while&lt;/span&gt; true&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;do&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nv&#34;&gt;old_in&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;cat /proc/net/dev &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;grep &lt;span class=&#34;nv&#34;&gt;$eth0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;awk &lt;span class=&#34;s1&#34;&gt;&amp;#39;{print $2}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nv&#34;&gt;old_out&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;cat /proc/net/dev &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;grep &lt;span class=&#34;nv&#34;&gt;$eth0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;awk &lt;span class=&#34;s1&#34;&gt;&amp;#39;{print $10}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	sleep &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nv&#34;&gt;new_in&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;cat /proc/net/dev &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;grep &lt;span class=&#34;nv&#34;&gt;$eth0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;awk &lt;span class=&#34;s1&#34;&gt;&amp;#39;{print $2}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nv&#34;&gt;new_out&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;cat /proc/net/dev &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;grep &lt;span class=&#34;nv&#34;&gt;$eth0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt;awk &lt;span class=&#34;s1&#34;&gt;&amp;#39;{print $10}&amp;#39;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nv&#34;&gt;in&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;printf&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;%.1f%s&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$((&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$new_in&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$old_in&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)/&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1024&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;))&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;KB/s&amp;#34;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nv&#34;&gt;out&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;printf&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;%.1f%s&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$((&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$new_out&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$old_out&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)/&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;1024&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;))&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;KB/s&amp;#34;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;	&lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$in&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$out&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;done&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/20200118154838985.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h1 id=&#34;相关博文&#34;&gt;相关博文：&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例1服务器系统配置初始化httpsblogcsdnnetheian_99articledetails104027379&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104027379&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt; 企业级-Shell案例1——服务器系统配置初始化&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例2发送告警邮件httpsblogcsdnnetheian_99articledetails104028229&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104028229&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例2——发送告警邮件&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例3批量创建多个用户并设置密码httpsblogcsdnnetheian_99articledetails104028407&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104028407&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例3——批量创建多个用户并设置密码&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例4一键查看服务器利用率httpsblogcsdnnetheian_99articledetails104028739&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104028739&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例4——一键查看服务器利用率&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例5找出占用cpu-内存过高的进程httpsblogcsdnnetheian_99articledetails104030019&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104030019&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例5——找出占用CPU 内存过高的进程&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例6查看网卡的实时流量httpsblogcsdnnetheian_99articledetails104030173&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104030173&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例6——查看网卡的实时流量&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例7监控多台服务器磁盘利用率脚本httpsblogcsdnnetheian_99articledetails104031458&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104031458&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例7——监控多台服务器磁盘利用率脚本&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例8批量检测网站是否异常并邮件通知httpsblogcsdnnetheian_99articledetails104032121&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104032121&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例8——批量检测网站是否异常并邮件通知&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例9批量主机远程执行命令脚本httpsblogcsdnnetheian_99articledetails104039706&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104039706&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例9——批量主机远程执行命令脚本&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例10一键部署lnmp网站平台脚本httpsblogcsdnnetheian_99articledetails104039886&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104039886&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例10——一键部署LNMP网站平台脚本&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例11监控mysql主从同步状态是否异常脚本httpsblogcsdnnetheian_99articledetails104040379&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104040379&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例11——监控MySQL主从同步状态是否异常脚本&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例12mysql数据库备份脚本httpsblogcsdnnetheian_99articledetails104061077&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104061077&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例12——MySql数据库备份脚本&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例13nginx访问日志分析httpsblogcsdnnetheian_99articledetails104061361&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104061361&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例13——Nginx访问日志分析&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例14nginx访问日志自动按天周月切割httpsblogcsdnnetheian_99articledetails104061818&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104061818&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例14——Nginx访问日志自动按天（周、月）切割&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例15自动发布java项目tomcathttpsblogcsdnnetheian_99articledetails104062470&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104062470&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例15——自动发布Java项目（Tomcat）&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例16自动发布php项目httpsblogcsdnnetheian_99articledetails104062967&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104062967&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例16——自动发布PHP项目&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例17dos攻击防范自动屏蔽攻击iphttpsblogcsdnnetheian_99articledetails104063402&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104063402&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例17——DOS攻击防范（自动屏蔽攻击IP）&lt;/a&gt;&lt;/h1&gt;
+&lt;h1 id=&#34;企业级-shell案例18目录入侵检测与告警httpsblogcsdnnetheian_99articledetails104063746&#34;&gt;&lt;a class=&#34;link&#34; href=&#34;https://blog.csdn.net/heian_99/article/details/104063746&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;企业级-Shell案例18——目录入侵检测与告警&lt;/a&gt;&lt;/h1&gt;</description>
+        </item>
+        
+    </channel>
+</rss>

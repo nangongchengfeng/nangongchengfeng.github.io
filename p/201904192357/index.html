@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='事务特性事务隔离级别事务控制语句优化事务的概念事务指逻辑上的一组操作，组成这组操作的各个单元，要么全部成功，要么全部不成功。例如：转帐，对应于如下两条语句数据库开启事务命令开启事务回滚事务提交事务事务。。。。。。。'>
+<title>MySQL事务优化</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/201904192357/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='MySQL事务优化'>
+<meta property='og:description' content='事务特性事务隔离级别事务控制语句优化事务的概念事务指逻辑上的一组操作，组成这组操作的各个单元，要么全部成功，要么全部不成功。例如：转帐，对应于如下两条语句数据库开启事务命令开启事务回滚事务提交事务事务。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/201904192357/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='技术记录' /><meta property='article:published_time' content='2019-04-19T23:57:56&#43;00:00'/><meta property='article:modified_time' content='2019-04-19T23:57:56&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/36.jpg' />
+<meta name="twitter:title" content="MySQL事务优化">
+<meta name="twitter:description" content="事务特性事务隔离级别事务控制语句优化事务的概念事务指逻辑上的一组操作，组成这组操作的各个单元，要么全部成功，要么全部不成功。例如：转帐，对应于如下两条语句数据库开启事务命令开启事务回滚事务提交事务事务。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/36.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#heading">====================</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/201904192357/">
+                
+                    <img src="/../../title_pic/36.jpg" loading="lazy" alt="Featured image of post MySQL事务优化" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/mysql/" >
+                MySQL
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/201904192357/">MySQL事务优化</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            事务特性事务隔离级别事务控制语句优化事务的概念事务指逻辑上的一组操作，组成这组操作的各个单元，要么全部成功，要么全部不成功。例如：转帐，对应于如下两条语句数据库开启事务命令开启事务回滚事务提交事务事务。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 19, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h3 id="heading">====================</h3>
+<p><strong>事务特性<br>
+事务隔离级别<br>
+事务控制语句<br>
+MySQL优化</strong><br>
+====================</p>
+<p>事务的概念<br>
+事务指逻辑上的一组操作，组成这组操作的各个单元，要么全部成功，要么全部不成功。<br>
+例如：A——B转帐，对应于如下两条sql语句<br>
+update from account set money=money-100 where name=‘a’;<br>
+update from account set money=money+100 where name=‘b’;</p>
+<p>数据库开启事务命令<br>
+start transaction 开启事务<br>
+rollback 回滚事务<br>
+commit 提交事务</p>
+<p>事务的特性(ACID)<br>
+原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操作要么都发生，要么都不发生。 <br>
+一致性（Consistency）事务必须使数据库从一个一致性状态变换到另外一个一致性状态。<br>
+隔离性（Isolation）事务的隔离性是多个用户并发访问数据库时，数据库为每一个用户开启的事务，不能被其他事务的操作数据所干扰，多个并发事务之间要相互隔离。<br>
+持久性（Durability）持久性是指一个事务一旦被提交，它对数据库中数据的改变就是永久性的，接下来即使数据库发生故障也不应该对其有任何影响。</p>
+<p>事务的隔离级别<br>
+多个线程开启各自事务操作数据库中数据时，数据库系统要负责隔离操作，以保证各个线程在获取数据时的准确性。<br>
+如果不考虑隔离性，可能会引发如下问题：<br>
+脏读：指一个事务读取了另外一个事务未提交的数据。 这是非常危险的，假设Ａ向Ｂ转帐100元，对应sql语句如下所示<br>
+1.update account set money=money+100 while name=‘b’;<br>
+2.update account set money=money-100 while name=‘a’;</p>
+<p>不可重复读：在一个事物内读取表中的某一行数据，多次读取结果不同。<br>
+例如银行想查询A帐户余额，第一次查询A帐户为200元，此时A向帐户内存了100元并提交了，银行接着又进行了一次查询，此时A帐户为300元了。银行两次查询不一致，可能就会很困惑，不知道哪次查询是准的。<br>
+和脏读的区别是，脏读是读取前一事务未提交的脏数据，不可重复读是重新读取了前一事务已提交的数据。<br>
+很多人认为这种情况就对了，无须困惑，当然是后面的为准。我们可以考虑这样一种情况，比如银行程序需要将查询结果分别输出到电脑屏幕和写到文件中，结果在一个事务中针对输出的目的地，进行的两次查询不一致，导致文件和屏幕中的结果不一致，银行工作人员就不知道以哪个为准了。</p>
+<p>虚读/幻读是指在一个事务内读取到了别的事务插入的数据，导致前后读取不一致。<br>
+如丙存款100元未提交，这时银行做报表统计account表中所有用户的总额为500元，然后丙提交了，这时银行再统计发现帐户为600元了，造成虚读同样会使银行不知所措，到底以哪个为准。</p>
+<p><img src="/../../image/2019041923563744.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>事务隔离性的设置语句<br>
+数据库共定义了四种隔离级别：<br>
+Serializable：可避免脏读、不可重复读、虚读情况的发生。（串行化）<br>
+Repeatable read：可避免脏读、不可重复读情况的发生。（可重复读）<br>
+Read committed：可避免脏读情况发生（读已提交）。<br>
+Read uncommitted：最低级别，以上情况均无法保证。(读未提交)</p>
+<p>set transaction isolation level 设置事务隔离级别<br>
+select @@tx_isolation 查询当前事务隔离级别</p>
+<p>MySQL优化<br>
+系统优化：硬件、架构<br>
+服务优化<br>
+应用优化</p>
+<p>影响性能的因素：<br>
+应用程序、查询、事务管理、数据库设计、数据分布、网络操作系统、硬件</p>
+<p>系统优化：<br>
+1、硬件优化<br>
+cpu 64位 一台机器8-16颗CPU 内存 96-128G 3-4个实例<br>
+硬盘：数量越多越好<br>
+性能：ssd（高并发业务） &gt; sas （普通业务）&gt;sata（线下业务） raid 4块盘，性能 raid0 &gt; raid10 &gt; raid5 &gt; raid1<br>
+网卡：多块网卡bond</p>
+<p>2、软件优化 操作系统：使用64位系统 软件：MySQL 编译优化</p>
+<p>服务优化：<br>
+MySQL配置原则<br>
+配置合理的MySQL服务器，尽量在应用本身达到一个MySQL最合理的使用<br>
+针对 MyISAM 或 InnoDB 不同引擎进行不同定制性配置<br>
+针对不同的应用情况进行合理配置针对 my.cnf 进行配置，后面设置是针对内存为2G的服务器进行的合理设置<br>
+公共选项</p>
+<div class="table-wrapper"><table><tbody><tr><td>选项</td><td>缺省值</td><td>推荐值</td><td>说明</td></tr><tr><td>max_connections</td><td>100</td><td>1024</td><td>MySQL服务器同时处理的数据库连接的最大数量</td></tr><tr><td>query_cache_size</td><td>0 (不打开）</td><td>16M</td><td>查询缓存区的最大长度，按照当前需求，一倍一倍增加，本选项比较重要</td></tr><tr><td>sort_buffer_size</td><td>512K</td><td>16M</td><td>每个线程的排序缓存大小，一般按照内存可以设置为2M以上，推荐是16M，该选项对排序order by，group by起作用</td></tr><tr><td>record_buffer</td><td>128K</td><td>16M</td><td>每个进行一个顺序扫描的线程为其扫描的每张表分配这个大小的一个缓冲区，可以设置为2M以上</td></tr><tr><td>table_cache</td><td>64</td><td>512</td><td>为所有线程打开表的数量。增加该值能增加mysqld要求的文件描述符的数量。MySQL对每个唯一打开的表需要2个文件描述符。</td></tr></tbody></table></div>
+<p>MyISAM 选项</p>
+<div class="table-wrapper"><table><tbody><tr><td>选项</td><td>缺省值</td><td>推荐值</td><td>说明</td></tr><tr><td>key_buffer_size</td><td>8M</td><td>256M</td><td>用来存放索引区块的缓存值, 建议128M以上，不要大于内存的30%</td></tr><tr><td>read_buffer_size</td><td>128K</td><td>16M</td><td>用来做MyISAM表全表扫描的缓冲大小. 为从数据表顺序读取数据的读操作保留的缓存区的长度</td></tr><tr><td>myisam_sort_buffer_size</td><td>16M</td><td>128M</td><td>设置,恢复,修改表的时候使用的缓冲大小，值不要设的太大</td></tr></tbody></table></div>
+<p>InnoDB 选项</p>
+<div class="table-wrapper"><table><tbody><tr><td>选项</td><td>缺省值</td><td>推荐值</td><td>说明</td></tr><tr><td>innodb_buffer_pool_size</td><td>32M</td><td>1G</td><td>InnoDB使用一个缓冲池来保存索引和原始数据, 这里你设置越大,你在存取表里面数据时所需要的磁盘I/O越少，一般是内存的一半，不超过2G，否则系统会崩溃，这个参数非常重要</td></tr><tr><td>innodb_additional_mem_pool_size</td><td>2M</td><td>128M</td><td>InnoDB用来保存 metadata 信息, 如果内存是4G，最好本值超过200M</td></tr><tr><td>innodb_flush_log_at_trx_commit</td><td>1</td><td>0</td><td>0 代表日志只大约每秒写入日志文件并且日志文件刷新到磁盘; 1 为执行完没执行一条SQL马上commit; 2 代表日志写入日志文件在每次提交后,但是日志文件只有大约每秒才会刷新到磁盘上. 对速度影响比较大，同时也关系数据完整性</td></tr><tr><td>innodb_log_file_size</td><td>8M</td><td>256M</td><td>在日志组中每个日志文件的大小, 一般是innodb_buffer_pool_size的25%，官方推荐是 innodb_buffer_pool_size 的 40-50%, 设置大一点来避免在日志文件覆写上不必要的缓冲池刷新行为</td></tr><tr><td>innodb_log_buffer_size</td><td>128K</td><td>8M</td><td>用来缓冲日志数据的缓冲区的大小. 推荐是8M，官方推荐该值小于16M，最好是 1M-8M 之间</td></tr></tbody></table></div>
+<p>应用优化：<br>
+设计合理的数据表结构：<br>
+适当的数据冗余对数据表建立合适有效的数据库索引数据查询：<br>
+编写简洁高效的SQL语句</p>
+<p>表结构设计原则<br>
+选择合适的数据类型，如果能够定长尽量定长<br>
+使用 ENUM 而不是 VARCHAR,ENUM类型是非常快和紧凑的，在实际上，其保存的是 TINYINT，但其外表上显示为字符串。这样一来，用这个字段来做一些选项列表变得相当的完美 。<br>
+不要使用无法加索引的类型作为关键字段，比如 text类型<br>
+为了避免联表查询，有时候可以适当的数据冗余，比如邮箱、姓名这些不容易更改的数据<br>
+选择合适的表引擎，有时候 MyISAM 适合，有时候InnoDB适合<br>
+为保证查询性能，最好每个表都建立有 auto_increment 字段， 建立合适的数据库索引<br>
+最好给每个字段都设定 default 值</p>
+<p>索引建立原则<br>
+一般针对数据分散的关键字进行建立索引，比如ID、QQ，像性别、状态值等等建立索引没有意义字段唯一，最少，不可为null<br>
+对大数据量表建立聚集索引，避免更新操作带来的碎片。<br>
+尽量使用短索引，一般对int、char/varchar、date/time 等类型的字段建立索引<br>
+需要的时候建立联合索引，但是要注意查询SQL语句的编写<br>
+谨慎建立 unique 类型的索引（唯一索引）<br>
+大文本字段不建立为索引，如果要对大文本字段进行检索， 可以考虑全文索引<br>
+频繁更新的列不适合建立索引<br>
+order by 字句中的字段，where 子句中字段，最常用的sql语句中字段，应建立索引。<br>
+唯一性约束，系统将默认为改字段建立索引。<br>
+对于只是做查询用的数据库索引越多越好，但对于在线实时系统建议控制在5个以内。<br>
+索引不仅能提高查询SQL性能，同时也可以提高带where字句的update，Delete SQL性能。<br>
+Decimal 类型字段不要单独建立为索引，但覆盖索引可以包含这些字段。<br>
+只有建立索引以后，表内的行才按照特地的顺序存储，按照需要可以是asc或desc方式。<br>
+如果索引由多个字段组成将最用来查询过滤的字段放在前面可能会有更好的性能。</p>
+<p>编写高效的 SQL<br>
+能够快速缩小结果集的 WHERE 条件写在前面，如果有恒量条件，也尽量放在前面<br>
+尽量避免使用 GROUP BY、DISTINCT 、OR、IN 等语句的使用，避免使用联表查询和子查询，因为将使执行效率大大下降<br>
+能够使用索引的字段尽量进行有效的合理排列，如果使用了联合索引，请注意提取字段的前后顺序<br>
+针对索引字段使用 &gt;, &gt;=, =, &lt;, &lt;=, IF NULL和BETWEEN 将会使用索引，如果对某个索引字段进行 LIKE 查询，使用 LIKE ‘%abc%’不能使用索引，使用 LIKE ‘abc%’ 将能够使用索引<br>
+如果在SQL里使用了MySQL部分自带函数，索引将失效，同时将无法使用 MySQL 的 Query Cache，比如 LEFT(), SUBSTR(), TO_DAYS()，DATE_FORMAT(), 等，如果使用了 OR 或 IN，索引也将失效<br>
+使用 Explain 语句来帮助改进我们的SQL语句<br>
+不要在where 子句中的“=”左边进行算术或表达式运算，否则系统将可能无法正确使用索引<br>
+尽量不要在where条件中使用函数，否则将不能使用索引<br>
+避免使用 select *, 只取需要的字段<br>
+对于大数据量的查询，尽量避免在SQL语句中使用order by 字句，避免额外的开销，替代为使用ADO.NET 来实现。<br>
+如果插入的数据量很大，用select into 替代 insert into 能带来更好的性能<br>
+采用连接操作，避免过多的子查询，产生的CPU和IO开销<br>
+只关心需要的表和满足条件的数据<br>
+适当使用临时表或表变量<br>
+对于连续的数值，使用between代替in<br>
+where 字句中尽量不要使用CASE条件<br>
+尽量不用触发器，特别是在大数据表上<br>
+更新触发器如果不是所有情况下都需要触发，应根据业务需要加上必要判断条件<br>
+使用union all 操作代替OR操作，注意此时需要注意一点查询条件可以使用聚集索引，如果是非聚集索引将起到相反的结果<br>
+当只要一行数据时使用 LIMIT 1<br>
+尽可能的使用 NOT NULL填充数据库<br>
+拆分大的 DELETE 或 INSERT 语句<br>
+批量提交SQL语句</p>
+<p>架构优化<br>
+1）业务拆分：搜索功能，like ，前后都有%，一般不用MySQL数据库<br>
+2）业务拆分：某些应用使用nosql持久化存储，例如memcahcedb、redis、ttserver 比如粉丝关注、好友关系等；<br>
+3）数据库前端必须要加cache，例如memcached，用户登录，商品查询<br>
+4）动态数据静态化。整个文件静态化，页面片段静态化<br>
+5）数据库集群与读写分离；<br>
+6）单表超过2000万，拆库拆表，人工或自动拆分（登录、商品、订单等）</p>
+<p>流程、制度、安全优化<br>
+任何一次人为数据库记录的更新，都要走一个流程<br>
+1）人的流程：开发&ndash;&gt;核心开发&ndash;&gt;运维或DBA<br>
+2）测试流程：内网测试&ndash;&gt;IDC测试&ndash;&gt;线上执行<br>
+3）客户端管理：phpmyadmin等</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%8A%80%E6%9C%AF%E8%AE%B0%E5%BD%95/">技术记录</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/201905142348/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/41.jpg" loading="lazy" data-key="201905142348" data-hash="/../../title_pic/41.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7部署ejforum论坛（Java&#43;tomcat&#43;mysql）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/201904292343/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/71.jpg" loading="lazy" data-key="201904292343" data-hash="/../../title_pic/71.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7服务器搭建网络家园和论坛</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/201904272135/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/17.jpg" loading="lazy" data-key="201904272135" data-hash="/../../title_pic/17.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Navicat Premium 详解</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/201904262107/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/31.jpg" loading="lazy" data-key="201904262107" data-hash="/../../title_pic/31.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL读写分离之MyCAT</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/201904240000/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/35.jpg" loading="lazy" data-key="201904240000" data-hash="/../../title_pic/35.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL读写分离之Proxy</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

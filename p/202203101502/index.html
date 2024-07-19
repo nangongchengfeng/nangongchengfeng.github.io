@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='首先，我们使用的都知道，是的核心所在，会记录各个的状态信息。所以重要性极为重要。是集群极为重要的一块服务，存储了集群所有的数据信息，如、、、路由等状态信息。如果集群发生灾难或者集群数据丢失，都会影响集。。。。。。。'>
+<title>Kubernetes的ETCD集群备份、恢复</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202203101502/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='Kubernetes的ETCD集群备份、恢复'>
+<meta property='og:description' content='首先，我们使用的都知道，是的核心所在，会记录各个的状态信息。所以重要性极为重要。是集群极为重要的一块服务，存储了集群所有的数据信息，如、、、路由等状态信息。如果集群发生灾难或者集群数据丢失，都会影响集。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202203101502/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Kubernetes应用' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='etcd' /><meta property='article:tag' content='docker' /><meta property='article:published_time' content='2022-03-10T15:02:58&#43;00:00'/><meta property='article:modified_time' content='2022-03-10T15:02:58&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/67.jpg' />
+<meta name="twitter:title" content="Kubernetes的ETCD集群备份、恢复">
+<meta name="twitter:description" content="首先，我们使用的都知道，是的核心所在，会记录各个的状态信息。所以重要性极为重要。是集群极为重要的一块服务，存储了集群所有的数据信息，如、、、路由等状态信息。如果集群发生灾难或者集群数据丢失，都会影响集。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/67.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#imagec0849547240c4eae84d11a414839acafpng"><img src="../../image/c0849547240c4eae84d11a414839acaf.png" alt=""></a></li>
+    <li><a href="#一etcd集群备份"><strong>一、etcd集群备份</strong></a></li>
+    <li><a href="#二etcd集群恢复">二、etcd集群恢复</a></li>
+    <li><a href="#三最后总结"><strong>三、最后总结</strong></a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202203101502/">
+                
+                    <img src="/../../title_pic/67.jpg" loading="lazy" alt="Featured image of post Kubernetes的ETCD集群备份、恢复" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes/" >
+                Kubernetes
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202203101502/">Kubernetes的ETCD集群备份、恢复</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            首先，我们使用的都知道，是的核心所在，会记录各个的状态信息。所以重要性极为重要。是集群极为重要的一块服务，存储了集群所有的数据信息，如、、、路由等状态信息。如果集群发生灾难或者集群数据丢失，都会影响集。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 10, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 9 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>首先，我们使用Kubernetes的都知道，etcd是k8s的核心所在，会记录各个pod的状态信息。所以重要性极为重要。</p>
+<p>etcd是kubernetes集群极为重要的一块服务，存储了kubernetes集群所有的数据信息，如Namespace、Pod、Service、路由等状态信息。如果etcd集群发生灾难或者 etcd 集群数据丢失，都会影响k8s集群数据的恢复。因此，通过备份etcd数据来实现kubernetes集群的灾备环境十分重要。</p>
+<p>我们一点要养成，重要的东西<strong>备份、备份、在备份</strong>的习惯。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"> <span class="nv">ETCDCTL_API</span><span class="o">=</span><span class="m">3</span> /opt/kube/bin/etcdctl  --endpoints<span class="o">=</span><span class="s2">&#34;https://172.17.1.20:2379,https://172.17.1.21:2379,https://172.17.1.22:2379&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cacert<span class="o">=</span>/etc/kubernetes/ssl/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cert<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--key<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>endpoint status --write-out<span class="o">=</span>table  <span class="c1">#状态</span>
+</span></span><span class="line"><span class="cl">（配合替换最后一行使用）
+</span></span><span class="line"><span class="cl">member list --write-out<span class="o">=</span>table   <span class="c1">#列表</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">endpoint health --write-out<span class="o">=</span>table <span class="c1">#健康检查</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1">#  ETCDCTL_API=3 /opt/kube/bin/etcdctl  --endpoints=&#34;https://172.17.1.20:2379,https://172.17.1.21:2379,https://172.17.1.22:2379&#34; --cacert=/etc/kubernetes/ssl/ca.pem --cert=/etc/kubernetes/ssl/etcd.pem --key=/etc/kubernetes/ssl/etcd-key.pem endpoint status --write-out=table</span>
+</span></span><span class="line"><span class="cl">+--------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span>         ENDPOINT         <span class="p">|</span>        ID        <span class="p">|</span> VERSION <span class="p">|</span> DB SIZE <span class="p">|</span> IS LEADER <span class="p">|</span> IS LEARNER <span class="p">|</span> RAFT TERM <span class="p">|</span> RAFT INDEX <span class="p">|</span> RAFT APPLIED INDEX <span class="p">|</span> ERRORS <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+--------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span> https://172.17.1.20:2379 <span class="p">|</span> 20eec45319ea02e1 <span class="p">|</span>  3.4.13 <span class="p">|</span>  4.3 MB <span class="p">|</span>     <span class="nb">false</span> <span class="p">|</span>      <span class="nb">false</span> <span class="p">|</span>         <span class="m">5</span> <span class="p">|</span>      <span class="m">14715</span> <span class="p">|</span>              <span class="m">14715</span> <span class="p">|</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span> https://172.17.1.21:2379 <span class="p">|</span>  395af18f6bbef1a <span class="p">|</span>  3.4.13 <span class="p">|</span>  4.3 MB <span class="p">|</span>     <span class="nb">false</span> <span class="p">|</span>      <span class="nb">false</span> <span class="p">|</span>         <span class="m">5</span> <span class="p">|</span>      <span class="m">14715</span> <span class="p">|</span>              <span class="m">14715</span> <span class="p">|</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span> https://172.17.1.22:2379 <span class="p">|</span> fc24d224af6a71d9 <span class="p">|</span>  3.4.13 <span class="p">|</span>  4.3 MB <span class="p">|</span>      <span class="nb">true</span> <span class="p">|</span>      <span class="nb">false</span> <span class="p">|</span>         <span class="m">5</span> <span class="p">|</span>      <span class="m">14715</span> <span class="p">|</span>              <span class="m">14715</span> <span class="p">|</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+--------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="imagec0849547240c4eae84d11a414839acafpng"><img src="/../../image/c0849547240c4eae84d11a414839acaf.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h2>
+<p> </p>
+<h2 id="一etcd集群备份"><strong>一、etcd集群备份</strong></h2>
+<p>etcd不同版本的 etcdctl 命令不一样，但大致差不多，这里备份使用 napshot save进行快照备份。</p>
+<p>需要注意几点：</p>
+<ul>
+<li>备份操作在etcd集群的其中一个节点执行就可以。</li>
+<li>这里使用的是etcd v3的api，因为从 k8s 1.13 开始，k8s不再支持 v2 版本的 etcd，即k8s的集群数据都存在了v3版本的etcd中。故备份的数据也只备份了使用v3添加的etcd数据，v2添加的etcd数据是没有做备份的。</li>
+<li>本案例使用的是二进制部署的k8s v1.20.2 + Calico 容器环境（下面命令中的&quot;ETCDCTL_API=3 etcdctl&quot; 等同于 &ldquo;etcdctl&rdquo;）</li>
+</ul>
+<p><img src="/../../image/9f51bc5bfd39451b809a2dd2fee08ebc.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p><strong>1）开始备份之前，先来查看下etcd数据</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@master01 ~]# cat /etc/systemd/system/etcd.service
+</span></span><span class="line"><span class="cl">[Unit]
+</span></span><span class="line"><span class="cl">Description=Etcd Server
+</span></span><span class="line"><span class="cl">After=network.target
+</span></span><span class="line"><span class="cl">After=network-online.target
+</span></span><span class="line"><span class="cl">Wants=network-online.target
+</span></span><span class="line"><span class="cl">Documentation=https://github.com/coreos
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">[Service]
+</span></span><span class="line"><span class="cl">Type=notify
+</span></span><span class="line"><span class="cl">WorkingDirectory=/var/lib/etcd/
+</span></span><span class="line"><span class="cl">ExecStart=/opt/kube/bin/etcd \
+</span></span><span class="line"><span class="cl">  --name=etcd-172.17.1.20 \
+</span></span><span class="line"><span class="cl">  --cert-file=/etc/kubernetes/ssl/etcd.pem \
+</span></span><span class="line"><span class="cl">  --key-file=/etc/kubernetes/ssl/etcd-key.pem \
+</span></span><span class="line"><span class="cl">  --peer-cert-file=/etc/kubernetes/ssl/etcd.pem \
+</span></span><span class="line"><span class="cl">  --peer-key-file=/etc/kubernetes/ssl/etcd-key.pem \
+</span></span><span class="line"><span class="cl">  --trusted-ca-file=/etc/kubernetes/ssl/ca.pem \
+</span></span><span class="line"><span class="cl">  --peer-trusted-ca-file=/etc/kubernetes/ssl/ca.pem \
+</span></span><span class="line"><span class="cl">  --initial-advertise-peer-urls=https://172.17.1.20:2380 \
+</span></span><span class="line"><span class="cl">  --listen-peer-urls=https://172.17.1.20:2380 \
+</span></span><span class="line"><span class="cl">  --listen-client-urls=https://172.17.1.20:2379,http://127.0.0.1:2379 \
+</span></span><span class="line"><span class="cl">  --advertise-client-urls=https://172.17.1.20:2379 \
+</span></span><span class="line"><span class="cl">  --initial-cluster-token=etcd-cluster-0 \
+</span></span><span class="line"><span class="cl">  --initial-cluster=etcd-172.17.1.20=https://172.17.1.20:2380,etcd-172.17.1.21=https://172.17.1.21:2380,etcd-172.17.1.22=https://172.17.1.22:2380 \
+</span></span><span class="line"><span class="cl">  --initial-cluster-state=new \
+</span></span><span class="line"><span class="cl">  --data-dir=/var/lib/etcd \
+</span></span><span class="line"><span class="cl">  --snapshot-count=50000 \
+</span></span><span class="line"><span class="cl">  --auto-compaction-retention=1 \
+</span></span><span class="line"><span class="cl">  --max-request-bytes=10485760 \
+</span></span><span class="line"><span class="cl">  --auto-compaction-mode=periodic \
+</span></span><span class="line"><span class="cl">  --quota-backend-bytes=8589934592
+</span></span><span class="line"><span class="cl">Restart=always
+</span></span><span class="line"><span class="cl">RestartSec=15
+</span></span><span class="line"><span class="cl">LimitNOFILE=65536
+</span></span><span class="line"><span class="cl">OOMScoreAdjust=-999
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">[root@master01 ~]# tree /var/lib/etcd
+</span></span><span class="line"><span class="cl">/var/lib/etcd
+</span></span><span class="line"><span class="cl">└── member
+</span></span><span class="line"><span class="cl">    ├── snap
+</span></span><span class="line"><span class="cl">    │   └── db
+</span></span><span class="line"><span class="cl">    └── wal
+</span></span><span class="line"><span class="cl">        ├── 0000000000000000-0000000000000000.wal
+</span></span><span class="line"><span class="cl">        └── 0.tmp
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">3 directories, 3 files
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>2）执行etcd集群数据备份</strong></p>
+<p>在etcd集群的其中一个节点执行备份操作，然后将备份文件拷贝到其他节点上。</p>
+<p>先在etcd集群的每个节点上创建备份目录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">mkdir -p /data/etcd_backup_dir
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在etcd集群其中个一个节点（这里在k8s-master01）上执行备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">ETCDCTL_API=3 /opt/kube/bin/etcdctl  \
+</span></span><span class="line"><span class="cl">snapshot  save /data/etcd_backup_dir/etcd-snapshot-`date +%Y%m%d`.db \
+</span></span><span class="line"><span class="cl">--endpoints=https://172.17.1.20:2379 \
+</span></span><span class="line"><span class="cl">--cacert=/etc/kubernetes/ssl/ca.pem \
+</span></span><span class="line"><span class="cl">--cert=/etc/kubernetes/ssl/etcd.pem \
+</span></span><span class="line"><span class="cl">--key=/etc/kubernetes/ssl/etcd-key.pem
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/0aef38721c5f464a84693ba5720cdd82.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> 将备份文件拷贝到其他的etcd节点</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># scp /data/etcd_backup_dir/etcd-snapshot-20220310.db 172.17.1.21:/data/etcd_backup_dir/</span>
+</span></span><span class="line"><span class="cl">etcd-snapshot-20220310.db                                                                     100% 4208KB 158.6MB/s   00:00    
+</span></span><span class="line"><span class="cl">您在 /var/spool/mail/root 中有新邮件
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># scp /data/etcd_backup_dir/etcd-snapshot-20220310.db 172.17.1.22:/data/etcd_backup_dir/</span>
+</span></span><span class="line"><span class="cl">etcd-snapshot-20220310.db                                                                     100% 4208KB 158.3MB/s   00:00    
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># </span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以将上面k8s-master01节点的etcd备份命令放在脚本里，结合crontab进行定时备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 ~<span class="o">]</span><span class="c1"># cat /data/etcd_backup_dir/etcd_backup.sh</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#!/usr/bin/bash</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">date<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ETCDCTL_API</span><span class="o">=</span><span class="m">3</span> /opt/kube/bin/etcdctl  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>snapshot  save /data/etcd_backup_dir/etcd-snapshot-<span class="sb">`</span>date +%Y%m%d<span class="sb">`</span>.db <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--endpoints<span class="o">=</span>https://172.17.1.20:2379 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cacert<span class="o">=</span>/etc/kubernetes/ssl/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cert<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--key<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 备份保留30天</span>
+</span></span><span class="line"><span class="cl">find /data/etcd_backup_dir/ -name <span class="s2">&#34;*.db&#34;</span> -mtime +30 -exec rm -f <span class="o">{}</span> <span class="se">\;</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 同步到其他两个etcd节点</span>
+</span></span><span class="line"><span class="cl">scp /data/etcd_backup_dir/etcd-snapshot-<span class="sb">`</span>date +%Y%m%d<span class="sb">`</span>.db 172.17.1.21:/data/etcd_backup_dir/
+</span></span><span class="line"><span class="cl"> scp /data/etcd_backup_dir/etcd-snapshot-<span class="sb">`</span>date +%Y%m%d<span class="sb">`</span>.db 172.17.1.22:/data/etcd_backup_dir/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>设置crontab定时备份任务，每天凌晨5点执行备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># chmod 755 /data/etcd_backup_dir/etcd_backup.sh</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># crontab -e</span>
+</span></span><span class="line"><span class="cl">crontab: installing new crontab
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># crontab -l</span>
+</span></span><span class="line"><span class="cl">*/10 * * * * ntpdate time.windows.com
+</span></span><span class="line"><span class="cl"><span class="m">0</span> <span class="m">5</span> * * * /bin/bash -x /data/etcd_backup_dir/etcd_backup.sh &gt; /dev/null 2&gt;<span class="p">&amp;</span><span class="m">1</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="二etcd集群恢复">二、etcd集群恢复</h2>
+<p>etcd集群备份操作只需要在其中的一个etcd节点上完成，然后将备份文件拷贝到其他节点。<br>
+但etcd集群恢复操作必须要所有的etcd节点上完成！</p>
+<p><strong>1）模拟etcd集群数据丢失</strong><br>
+删除三个etcd集群节点的data数据 (或者直接删除data目录)</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ls /var/lib/etcd/</span>
+</span></span><span class="line"><span class="cl">member
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ansible master -m shell -a &#34;mv /var/lib/etcd/member /var/lib/etcd/member_bak&#34;</span>
+</span></span><span class="line"><span class="cl">172.17.1.21 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.22 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.20 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ls /var/lib/etcd/</span>
+</span></span><span class="line"><span class="cl">member_bak
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>查看k8s集群状态：</p>
+<p>由于此时etcd集群的三个节点服务还在，过一会儿查看集群状态恢复正常：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># kubectl get cs</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Warning: v1 ComponentStatus is deprecated in v1.19+
+</span></span><span class="line"><span class="cl">NAME                 STATUS    MESSAGE             ERROR
+</span></span><span class="line"><span class="cl">controller-manager   Healthy   ok                  
+</span></span><span class="line"><span class="cl">scheduler            Healthy   ok                  
+</span></span><span class="line"><span class="cl">etcd-1               Healthy   <span class="o">{</span><span class="s2">&#34;health&#34;</span>:<span class="s2">&#34;true&#34;</span><span class="o">}</span>   
+</span></span><span class="line"><span class="cl">etcd-0               Healthy   <span class="o">{</span><span class="s2">&#34;health&#34;</span>:<span class="s2">&#34;true&#34;</span><span class="o">}</span>   
+</span></span><span class="line"><span class="cl">etcd-2               Healthy   <span class="o">{</span><span class="s2">&#34;health&#34;</span>:<span class="s2">&#34;true&#34;</span><span class="o">}</span>   
+</span></span><span class="line"><span class="cl">您在 /var/spool/mail/root 中有新邮件
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># </span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># </span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1">#  ETCDCTL_API=3 /opt/kube/bin/etcdctl  --endpoints=&#34;https://172.17.1.20:2379,https://172.17.1.21:2379,https://172.17.1.22:2379&#34; \</span>
+</span></span><span class="line"><span class="cl">&gt; --cacert<span class="o">=</span>/etc/kubernetes/ssl/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --cert<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --key<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; endpoint status --write-out<span class="o">=</span>table  <span class="c1">#状态</span>
+</span></span><span class="line"><span class="cl">+--------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span>         ENDPOINT         <span class="p">|</span>        ID        <span class="p">|</span> VERSION <span class="p">|</span> DB SIZE <span class="p">|</span> IS LEADER <span class="p">|</span> IS LEARNER <span class="p">|</span> RAFT TERM <span class="p">|</span> RAFT INDEX <span class="p">|</span> RAFT APPLIED INDEX <span class="p">|</span> ERRORS <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+--------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span> https://172.17.1.20:2379 <span class="p">|</span> 20eec45319ea02e1 <span class="p">|</span>  3.4.13 <span class="p">|</span>  <span class="m">143</span> kB <span class="p">|</span>     <span class="nb">false</span> <span class="p">|</span>      <span class="nb">false</span> <span class="p">|</span>         <span class="m">7</span> <span class="p">|</span>        <span class="m">191</span> <span class="p">|</span>                <span class="m">191</span> <span class="p">|</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span> https://172.17.1.21:2379 <span class="p">|</span>  395af18f6bbef1a <span class="p">|</span>  3.4.13 <span class="p">|</span>  <span class="m">143</span> kB <span class="p">|</span>      <span class="nb">true</span> <span class="p">|</span>      <span class="nb">false</span> <span class="p">|</span>         <span class="m">7</span> <span class="p">|</span>        <span class="m">191</span> <span class="p">|</span>                <span class="m">191</span> <span class="p">|</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span> https://172.17.1.22:2379 <span class="p">|</span> fc24d224af6a71d9 <span class="p">|</span>  3.4.13 <span class="p">|</span>  <span class="m">152</span> kB <span class="p">|</span>     <span class="nb">false</span> <span class="p">|</span>      <span class="nb">false</span> <span class="p">|</span>         <span class="m">7</span> <span class="p">|</span>        <span class="m">191</span> <span class="p">|</span>                <span class="m">191</span> <span class="p">|</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+--------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># kubectl get svc,pod -A</span>
+</span></span><span class="line"><span class="cl">NAMESPACE   NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>   AGE
+</span></span><span class="line"><span class="cl">default     service/kubernetes   ClusterIP   10.68.0.1    &lt;none&gt;        443/TCP   18s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>但是，k8s集群数据其实已经丢失了。namespace命名空间下的pod等资源都没有了。此时就需要通过etcd集群备份文件来恢复，即通过上面的etcd集群快照文件恢复。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># kubectl get ns</span>
+</span></span><span class="line"><span class="cl">NAME              STATUS   AGE
+</span></span><span class="line"><span class="cl">default           Active   2m20s
+</span></span><span class="line"><span class="cl">kube-node-lease   Active   2m20s
+</span></span><span class="line"><span class="cl">kube-public       Active   2m20s
+</span></span><span class="line"><span class="cl">kube-system       Active   2m20s
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># kubectl get pod -n kube-system</span>
+</span></span><span class="line"><span class="cl">No resources found in kube-system namespace.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>2）etcd集群数据恢复，即kubernetes集群数据恢复</strong></p>
+<p>在etcd数据恢复之前，先依次关闭所有master节点的kube-aposerver服务，所有etcd节点的etcd服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ansible master -m shell -a &#34;systemctl stop kube-apiserver &amp;&amp; systemctl stop etcd&#34;</span>
+</span></span><span class="line"><span class="cl">172.17.1.21 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.22 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.20 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>**特别注意：**在进行etcd集群数据恢复之前，一定要先将所有etcd节点的data和wal旧工作目录删掉，否则，可能会导致恢复失败（恢复命令执行时报错数据目录已存在）。</p>
+<p>在每个etcd节点执行恢复操作：</p>
+<p>master01</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># </span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ETCDCTL_API=3 /opt/kube/bin/etcdctl \</span>
+</span></span><span class="line"><span class="cl">&gt; --name<span class="o">=</span>etcd-172.17.1.20  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --endpoints<span class="o">=</span><span class="s2">&#34;https://172.17.1.20:2379&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --cacert<span class="o">=</span>/etc/kubernetes/ssl/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --cert<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --key<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --initial-cluster-token<span class="o">=</span>etcd-cluster-0  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --initial-advertise-peer-urls<span class="o">=</span>https://172.17.1.20:2380  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; --initial-cluster<span class="o">=</span>etcd-172.17.1.20<span class="o">=</span>https://172.17.1.20:2380,etcd-172.17.1.21<span class="o">=</span>https://172.17.1.21:2380,etcd-172.17.1.22<span class="o">=</span>https://172.17.1.22:2380  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt;  --data-dir<span class="o">=</span>/var/lib/etcd <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>&gt; snapshot restore /data/etcd_backup_dir/etcd-snapshot-20220310.db
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/e1a52c9e0d974d0a805539840cbffa9b.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>master02</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">ETCDCTL_API</span><span class="o">=</span><span class="m">3</span> /opt/kube/bin/etcdctl <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--name<span class="o">=</span>etcd-172.17.1.21  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--endpoints<span class="o">=</span><span class="s2">&#34;https://172.17.1.21:2379&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cacert<span class="o">=</span>/etc/kubernetes/ssl/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cert<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--key<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--initial-cluster-token<span class="o">=</span>etcd-cluster-0  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--initial-advertise-peer-urls<span class="o">=</span>https://172.17.1.21:2380  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--initial-cluster<span class="o">=</span>etcd-172.17.1.20<span class="o">=</span>https://172.17.1.20:2380,etcd-172.17.1.21<span class="o">=</span>https://172.17.1.21:2380,etcd-172.17.1.22<span class="o">=</span>https://172.17.1.22:2380  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span> --data-dir<span class="o">=</span>/var/lib/etcd <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>snapshot restore /data/etcd_backup_dir/etcd-snapshot-20220310.db
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> master03</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">ETCDCTL_API</span><span class="o">=</span><span class="m">3</span> /opt/kube/bin/etcdctl <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--name<span class="o">=</span>etcd-172.17.1.22  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--endpoints<span class="o">=</span><span class="s2">&#34;https://172.17.1.22:2379&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cacert<span class="o">=</span>/etc/kubernetes/ssl/ca.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--cert<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--key<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--initial-cluster-token<span class="o">=</span>etcd-cluster-0  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--initial-advertise-peer-urls<span class="o">=</span>https://172.17.1.22:2380  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--initial-cluster<span class="o">=</span>etcd-172.17.1.20<span class="o">=</span>https://172.17.1.20:2380,etcd-172.17.1.21<span class="o">=</span>https://172.17.1.21:2380,etcd-172.17.1.22<span class="o">=</span>https://172.17.1.22:2380  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span> --data-dir<span class="o">=</span>/var/lib/etcd <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>snapshot restore /data/etcd_backup_dir/etcd-snapshot-20220310.db
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>依次启动所有etcd节点的etcd服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># systemctl start etcd</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># systemctl status etcd</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ansible master -m shell -a &#34;systemctl start etcd&#34;</span>
+</span></span><span class="line"><span class="cl">172.17.1.22 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.21 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.20 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">您在 /var/spool/mail/root 中有新邮件
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ansible master -m shell -a &#34;systemctl status etcd&#34;</span>
+</span></span><span class="line"><span class="cl">172.17.1.21 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">● etcd.service - Etcd Server
+</span></span><span class="line"><span class="cl">   Loaded: loaded <span class="o">(</span>/etc/systemd/system/etcd.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: disabled<span class="o">)</span>
+</span></span><span class="line"><span class="cl">   Active: active <span class="o">(</span>running<span class="o">)</span> since 四 2022-03-10 14:43:41 CST<span class="p">;</span> 8s ago
+</span></span><span class="line"><span class="cl">     Docs: https://github.com/coreos
+</span></span><span class="line"><span class="cl"> Main PID: <span class="m">81855</span> <span class="o">(</span>etcd<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    Tasks: <span class="m">13</span>
+</span></span><span class="line"><span class="cl">   Memory: 23.4M
+</span></span><span class="line"><span class="cl">   CGroup: /system.slice/etcd.service
+</span></span><span class="line"><span class="cl">           └─81855 /opt/kube/bin/etcd --name<span class="o">=</span>etcd-172.17.1.21 --cert-file<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem --key-file<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem --peer-cert-file<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem --peer-key-file<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem --trusted-ca-file<span class="o">=</span>/etc/kubernetes/ssl/ca.pem --peer-trusted-ca-file<span class="o">=</span>/etc/kubernetes/ssl/ca.pem --initial-advertise-peer-urls<span class="o">=</span>https://172.17.1.21:2380 --listen-peer-urls<span class="o">=</span>https://172.17.1.21:2380 --listen-client-urls<span class="o">=</span>https://172.17.1.21:2379,http://127.0.0.1:2379 --advertise-client-urls<span class="o">=</span>https://172.17.1.21:2379 --initial-cluster-token<span class="o">=</span>etcd-cluster-0 --initial-cluster<span class="o">=</span>etcd-172.17.1.20<span class="o">=</span>https://172.17.1.20:2380,etcd-172.17.1.21<span class="o">=</span>https://172.17.1.21:2380,etcd-172.17.1.22<span class="o">=</span>https://172.17.1.22:2380 --initial-cluster-state<span class="o">=</span>new --data-dir<span class="o">=</span>/var/lib/etcd --snapshot-count<span class="o">=</span><span class="m">50000</span> --auto-compaction-retention<span class="o">=</span><span class="m">1</span> --max-request-bytes<span class="o">=</span><span class="m">10485760</span> --auto-compaction-mode<span class="o">=</span>periodic --quota-backend-bytes<span class="o">=</span><span class="m">8589934592</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: published <span class="o">{</span>Name:etcd-172.17.1.21 ClientURLs:<span class="o">[</span>https://172.17.1.21:2379<span class="o">]}</span> to cluster 948e35f16fc80e25
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: ready to serve client requests
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: ready to serve client requests
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 systemd<span class="o">[</span>1<span class="o">]</span>: Started Etcd Server.
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: serving insecure client requests on 127.0.0.1:2379, this is strongly discouraged!
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: serving client requests on 172.17.1.21:2379
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: <span class="nb">set</span> the initial cluster version to 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: enabled capabilities <span class="k">for</span> version 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: established a TCP streaming connection with peer 20eec45319ea02e1 <span class="o">(</span>stream Message reader<span class="o">)</span>
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master02 etcd<span class="o">[</span>81855<span class="o">]</span>: established a TCP streaming connection with peer 20eec45319ea02e1 <span class="o">(</span>stream MsgApp v2 reader<span class="o">)</span>
+</span></span><span class="line"><span class="cl">172.17.1.22 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">● etcd.service - Etcd Server
+</span></span><span class="line"><span class="cl">   Loaded: loaded <span class="o">(</span>/etc/systemd/system/etcd.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: disabled<span class="o">)</span>
+</span></span><span class="line"><span class="cl">   Active: active <span class="o">(</span>running<span class="o">)</span> since 四 2022-03-10 14:43:41 CST<span class="p">;</span> 8s ago
+</span></span><span class="line"><span class="cl">     Docs: https://github.com/coreos
+</span></span><span class="line"><span class="cl"> Main PID: <span class="m">81803</span> <span class="o">(</span>etcd<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    Tasks: <span class="m">13</span>
+</span></span><span class="line"><span class="cl">   Memory: 20.7M
+</span></span><span class="line"><span class="cl">   CGroup: /system.slice/etcd.service
+</span></span><span class="line"><span class="cl">           └─81803 /opt/kube/bin/etcd --name<span class="o">=</span>etcd-172.17.1.22 --cert-file<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem --key-file<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem --peer-cert-file<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem --peer-key-file<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem --trusted-ca-file<span class="o">=</span>/etc/kubernetes/ssl/ca.pem --peer-trusted-ca-file<span class="o">=</span>/etc/kubernetes/ssl/ca.pem --initial-advertise-peer-urls<span class="o">=</span>https://172.17.1.22:2380 --listen-peer-urls<span class="o">=</span>https://172.17.1.22:2380 --listen-client-urls<span class="o">=</span>https://172.17.1.22:2379,http://127.0.0.1:2379 --advertise-client-urls<span class="o">=</span>https://172.17.1.22:2379 --initial-cluster-token<span class="o">=</span>etcd-cluster-0 --initial-cluster<span class="o">=</span>etcd-172.17.1.20<span class="o">=</span>https://172.17.1.20:2380,etcd-172.17.1.21<span class="o">=</span>https://172.17.1.21:2380,etcd-172.17.1.22<span class="o">=</span>https://172.17.1.22:2380 --initial-cluster-state<span class="o">=</span>new --data-dir<span class="o">=</span>/var/lib/etcd --snapshot-count<span class="o">=</span><span class="m">50000</span> --auto-compaction-retention<span class="o">=</span><span class="m">1</span> --max-request-bytes<span class="o">=</span><span class="m">10485760</span> --auto-compaction-mode<span class="o">=</span>periodic --quota-backend-bytes<span class="o">=</span><span class="m">8589934592</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: ready to serve client requests
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: ready to serve client requests
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 systemd<span class="o">[</span>1<span class="o">]</span>: Started Etcd Server.
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: serving insecure client requests on 127.0.0.1:2379, this is strongly discouraged!
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: serving client requests on 172.17.1.22:2379
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: setting up the initial cluster version to 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: <span class="nb">set</span> the initial cluster version to 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: enabled capabilities <span class="k">for</span> version 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: established a TCP streaming connection with peer 20eec45319ea02e1 <span class="o">(</span>stream Message reader<span class="o">)</span>
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master03 etcd<span class="o">[</span>81803<span class="o">]</span>: established a TCP streaming connection with peer 20eec45319ea02e1 <span class="o">(</span>stream MsgApp v2 reader<span class="o">)</span>
+</span></span><span class="line"><span class="cl">172.17.1.20 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">● etcd.service - Etcd Server
+</span></span><span class="line"><span class="cl">   Loaded: loaded <span class="o">(</span>/etc/systemd/system/etcd.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: disabled<span class="o">)</span>
+</span></span><span class="line"><span class="cl">   Active: active <span class="o">(</span>running<span class="o">)</span> since 四 2022-03-10 14:43:41 CST<span class="p">;</span> 9s ago
+</span></span><span class="line"><span class="cl">     Docs: https://github.com/coreos
+</span></span><span class="line"><span class="cl"> Main PID: <span class="m">103123</span> <span class="o">(</span>etcd<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    Tasks: <span class="m">13</span>
+</span></span><span class="line"><span class="cl">   Memory: 10.7M
+</span></span><span class="line"><span class="cl">   CGroup: /system.slice/etcd.service
+</span></span><span class="line"><span class="cl">           └─103123 /opt/kube/bin/etcd --name<span class="o">=</span>etcd-172.17.1.20 --cert-file<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem --key-file<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem --peer-cert-file<span class="o">=</span>/etc/kubernetes/ssl/etcd.pem --peer-key-file<span class="o">=</span>/etc/kubernetes/ssl/etcd-key.pem --trusted-ca-file<span class="o">=</span>/etc/kubernetes/ssl/ca.pem --peer-trusted-ca-file<span class="o">=</span>/etc/kubernetes/ssl/ca.pem --initial-advertise-peer-urls<span class="o">=</span>https://172.17.1.20:2380 --listen-peer-urls<span class="o">=</span>https://172.17.1.20:2380 --listen-client-urls<span class="o">=</span>https://172.17.1.20:2379,http://127.0.0.1:2379 --advertise-client-urls<span class="o">=</span>https://172.17.1.20:2379 --initial-cluster-token<span class="o">=</span>etcd-cluster-0 --initial-cluster<span class="o">=</span>etcd-172.17.1.20<span class="o">=</span>https://172.17.1.20:2380,etcd-172.17.1.21<span class="o">=</span>https://172.17.1.21:2380,etcd-172.17.1.22<span class="o">=</span>https://172.17.1.22:2380 --initial-cluster-state<span class="o">=</span>new --data-dir<span class="o">=</span>/var/lib/etcd --snapshot-count<span class="o">=</span><span class="m">50000</span> --auto-compaction-retention<span class="o">=</span><span class="m">1</span> --max-request-bytes<span class="o">=</span><span class="m">10485760</span> --auto-compaction-mode<span class="o">=</span>periodic --quota-backend-bytes<span class="o">=</span><span class="m">8589934592</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: serving insecure client requests on 127.0.0.1:2379, this is strongly discouraged!
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: serving client requests on 172.17.1.20:2379
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 systemd<span class="o">[</span>1<span class="o">]</span>: Started Etcd Server.
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: 20eec45319ea02e1 initialized peer connection<span class="p">;</span> fast-forwarding <span class="m">8</span> ticks <span class="o">(</span>election ticks 10<span class="o">)</span> with <span class="m">2</span> active peer<span class="o">(</span>s<span class="o">)</span>
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: <span class="nb">set</span> the initial cluster version to 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: enabled capabilities <span class="k">for</span> version 3.4
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: established a TCP streaming connection with peer fc24d224af6a71d9 <span class="o">(</span>stream Message writer<span class="o">)</span>
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: established a TCP streaming connection with peer fc24d224af6a71d9 <span class="o">(</span>stream MsgApp v2 writer<span class="o">)</span>
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: established a TCP streaming connection with peer 395af18f6bbef1a <span class="o">(</span>stream Message writer<span class="o">)</span>
+</span></span><span class="line"><span class="cl">3月 <span class="m">10</span> 14:43:41 master01 etcd<span class="o">[</span>103123<span class="o">]</span>: established a TCP streaming connection with peer 395af18f6bbef1a <span class="o">(</span>stream MsgApp v2 writer<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>检查 ETCD 集群状态（如下，发现etcd集群里已经成功选主了）</p>
+<p><img src="/../../image/803fea704a0c43c7ac0e7b9d8eb93a8a.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> 再依次启动所有master节点的kube-apiserver服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># systemctl start kube-apiserver</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># systemctl status kube-apiserver</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># ansible master -m shell -a &#34;systemctl start kube-apiserver&#34;</span>
+</span></span><span class="line"><span class="cl">172.17.1.22 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.21 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">172.17.1.20 <span class="p">|</span> CHANGED <span class="p">|</span> <span class="nv">rc</span><span class="o">=</span><span class="m">0</span> &gt;&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>查看kubernetes集群状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># kubectl get cs</span>
+</span></span><span class="line"><span class="cl">Warning: v1 ComponentStatus is deprecated in v1.19+
+</span></span><span class="line"><span class="cl">NAME                 STATUS    MESSAGE             ERROR
+</span></span><span class="line"><span class="cl">scheduler            Healthy   ok                  
+</span></span><span class="line"><span class="cl">controller-manager   Healthy   ok                  
+</span></span><span class="line"><span class="cl">etcd-1               Healthy   <span class="o">{</span><span class="s2">&#34;health&#34;</span>:<span class="s2">&#34;true&#34;</span><span class="o">}</span>   
+</span></span><span class="line"><span class="cl">etcd-2               Healthy   <span class="o">{</span><span class="s2">&#34;health&#34;</span>:<span class="s2">&#34;true&#34;</span><span class="o">}</span>   
+</span></span><span class="line"><span class="cl">etcd-0               Healthy   <span class="o">{</span><span class="s2">&#34;health&#34;</span>:<span class="s2">&#34;true&#34;</span><span class="o">}</span>   
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>查看kubernetes的资源情况：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master01 ~<span class="o">]</span><span class="c1"># kubectl get pod -A</span>
+</span></span><span class="line"><span class="cl">NAMESPACE     NAME                                      READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">kube-system   calico-kube-controllers-5677ffd49-t7dbx   1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   calico-node-2hrhv                         1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   calico-node-5kc79                         1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   calico-node-6v294                         1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   calico-node-hkm8l                         1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   calico-node-kkpmd                         1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   calico-node-tsmwx                         1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   coredns-5787695b7f-8ql8q                  1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   metrics-server-8568cf894b-ztcgf           1/1     Running   <span class="m">1</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   node-local-dns-5mbzg                      1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   node-local-dns-c5d9j                      1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   node-local-dns-nqnjw                      1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   node-local-dns-rz565                      1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   node-local-dns-skmzk                      1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   node-local-dns-zcncq                      1/1     Running   <span class="m">0</span>          3h27m
+</span></span><span class="line"><span class="cl">kube-system   traefik-79f5f7879c-nwhlq                  1/1     Running   <span class="m">0</span>          3h27m
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在etcd集群数据恢复后，pod容器也会慢慢恢复到running状态。至此，kubernetes整个集群已经通过etcd备份数据恢复了</p>
+<h2 id="三最后总结"><strong>三、最后总结</strong></h2>
+<p>Kubernetes 集群备份主要是备份 ETCD 集群。而恢复时，主要考虑恢复整个顺序：</p>
+<p><strong>停止kube-apiserver --&gt; 停止ETCD --&gt; 恢复数据 --&gt; 启动ETCD --&gt; 启动kube-apiserve</strong></p>
+<p><strong>特别注意：</strong></p>
+<ul>
+<li>备份ETCD集群时，只需要备份一个ETCD数据，然后同步到其他节点上。</li>
+<li>恢复ETCD数据时，拿其中一个节点的备份数据恢复即可</li>
+</ul>
+<p>参考</p>
+<p>K8S集群灾备环境部署 - 散尽浮华 - 博客园<br>
+<a class="link" href="https://www.cnblogs.com/kevingrace/p/14616824.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/kevingrace/p/14616824.html</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes%E5%BA%94%E7%94%A8/">Kubernetes应用</a>
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/etcd/">etcd</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202103181801/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/45.jpg" loading="lazy" data-key="202103181801" data-hash="/../../title_pic/45.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">prometheus黑盒测试</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103111058/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/67.jpg" loading="lazy" data-key="202103111058" data-hash="/../../title_pic/67.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes通过插件，自动发现注册Rabbitmq集群</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103091036/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/07.jpg" loading="lazy" data-key="202103091036" data-hash="/../../title_pic/07.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes部署单Redis</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103082205/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/65.jpg" loading="lazy" data-key="202103082205" data-hash="/../../title_pic/65.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes搭建RooK&#43;Ceph</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103291715/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/29.jpg" loading="lazy" data-key="202103291715" data-hash="/../../title_pic/29.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes 1.18.3 部署 Traefik2.2</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

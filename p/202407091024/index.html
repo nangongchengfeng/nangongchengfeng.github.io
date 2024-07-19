@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='、简介在现代的微服务架构中，对系统的实时监控变得尤为重要。作为一款开源的系统监控与报警工具，以其强大的数据模型和灵活的查询语言，成为了监控领域的佼佼者。然而，对于特定的硬件设备，如基于固件的路由器，直。。。。。。。'>
+<title>基于Padavan Exporter的Prometheus客户端二次开发实践</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202407091024/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='基于Padavan Exporter的Prometheus客户端二次开发实践'>
+<meta property='og:description' content='、简介在现代的微服务架构中，对系统的实时监控变得尤为重要。作为一款开源的系统监控与报警工具，以其强大的数据模型和灵活的查询语言，成为了监控领域的佼佼者。然而，对于特定的硬件设备，如基于固件的路由器，直。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202407091024/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='prometheus' /><meta property='article:published_time' content='2024-07-09T10:24:28&#43;00:00'/><meta property='article:modified_time' content='2024-07-09T10:24:28&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/27.jpg' />
+<meta name="twitter:title" content="基于Padavan Exporter的Prometheus客户端二次开发实践">
+<meta name="twitter:description" content="、简介在现代的微服务架构中，对系统的实时监控变得尤为重要。作为一款开源的系统监控与报警工具，以其强大的数据模型和灵活的查询语言，成为了监控领域的佼佼者。然而，对于特定的硬件设备，如基于固件的路由器，直。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/27.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1简介">1、简介</a></li>
+    <li><a href="#2项目背景">2、项目背景</a></li>
+    <li><a href="#3环境介绍">3、环境介绍</a></li>
+    <li><a href="#4设计思路">4、设计思路</a></li>
+    <li><a href="#5maingo">5、main.go</a>
+      <ol>
+        <li><a href="#1-命令行参数解析">1. 命令行参数解析</a></li>
+        <li><a href="#2-初始化-ssh-客户端">2. 初始化 SSH 客户端</a></li>
+        <li><a href="#3-初始化-prometheus-注册表和收集器">3. 初始化 Prometheus 注册表和收集器</a></li>
+        <li><a href="#4-启动-http-服务器">4. 启动 HTTP 服务器</a></li>
+        <li><a href="#5整体代码">5、整体代码</a></li>
+      </ol>
+    </li>
+    <li><a href="#6collectorgo">6、collector.go</a>
+      <ol>
+        <li><a href="#1整体思路">1、整体思路</a></li>
+        <li><a href="#2功能解释">2、功能解释</a></li>
+        <li><a href="#3整体代码">3、整体代码</a></li>
+      </ol>
+    </li>
+    <li><a href="#7memorygo">7、memory.go</a>
+      <ol>
+        <li><a href="#1整体思路-1">1、整体思路</a></li>
+        <li><a href="#2功能解释-1">2、功能解释</a></li>
+        <li><a href="#3整体流程">3、整体流程</a></li>
+        <li><a href="#4整体代码">4、整体代码</a></li>
+      </ol>
+    </li>
+    <li><a href="#8调用-newmemorycollector-的原理">8、调用 NewMemoryCollector 的原理</a>
+      <ol>
+        <li><a href="#1newmemorycollector-函数的定义">1、<code>NewMemoryCollector</code> 函数的定义</a></li>
+        <li><a href="#2memorycollector-的定义">2、<code>memoryCollector</code> 的定义</a></li>
+        <li><a href="#3在-main-函数中调用-newmemorycollector">3、在 <code>main</code> 函数中调用 <code>NewMemoryCollector</code></a></li>
+        <li><a href="#4memorycollector-的工作原理">4、<code>memoryCollector</code> 的工作原理</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202407091024/">
+                
+                    <img src="/../../title_pic/27.jpg" loading="lazy" alt="Featured image of post 基于Padavan Exporter的Prometheus客户端二次开发实践" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus%E7%9B%91%E6%8E%A7/" >
+                Prometheus监控
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202407091024/">基于Padavan Exporter的Prometheus客户端二次开发实践</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            、简介在现代的微服务架构中，对系统的实时监控变得尤为重要。作为一款开源的系统监控与报警工具，以其强大的数据模型和灵活的查询语言，成为了监控领域的佼佼者。然而，对于特定的硬件设备，如基于固件的路由器，直。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jul 09, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 11 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="1简介">1、简介</h2>
+<p>在现代的微服务架构中，对系统的实时监控变得尤为重要。Prometheus作为一款开源的系统监控与报警工具，以其强大的数据模型和灵活的查询语言，成为了监控领域的佼佼者。然而，对于特定的硬件设备，如基于Padavan固件的路由器，直接集成Prometheus可能并非易事。因此，开发一个针对Padavan设备的Prometheus exporter，能够极大地简化监控集成过程，提升运维效率。</p>
+<p>本文将以<a class="link" href="https://github.com/Bpazy/padavan_exporter"  target="_blank" rel="noopener"
+    >padavan_exporter</a>项目为例，探讨如何基于此项目进行二次开发，以适应更广泛的监控需求。我们将深入分析代码结构，了解其工作原理，并探索如何扩展其功能。
+项目地址：<a class="link" href="https://github.com/Bpazy/padavan_exporter"  target="_blank" rel="noopener"
+    >https://github.com/Bpazy/padavan_exporter</a>
+<img src="/../../image/2f734ca98f5f43f1b0b6551ea57535f6.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="2项目背景">2、项目背景</h2>
+<p>padavan_exporter是一个专门为基于Padavan固件的路由器设计的Prometheus exporter。它通过SSH连接至路由器，收集包括CPU使用率、内存状态、网络接口状态、网络连接统计在内的关键指标，然后以Prometheus兼容的格式暴露这些指标，供Prometheus服务器抓取。</p>
+<h2 id="3环境介绍">3、环境介绍</h2>
+<p>在开始之前，我们需要确保开发环境的正确配置。以下是开发此项目所需的环境和工具：</p>
+<ul>
+<li>Go 语言：Padavan Exporter 是用 Go 语言编写的，因此我们需要安装 Go 语言环境。</li>
+<li>Prometheus：用于采集和存储来自 Exporter 的指标数据。</li>
+<li>Grafana：用于可视化 Prometheus 存储的数据（可选，但推荐）。</li>
+<li>Padavan 固件设备：实际运行的 Padavan 固件设备，用于测试和验证。</li>
+</ul>
+<h2 id="4设计思路">4、设计思路</h2>
+<p>项目主要包括以下几个部分：</p>
+<ol>
+<li><strong>命令行参数解析</strong>：使用 <code>kingpin</code> 库解析命令行参数，获取 SSH 连接信息和 Web 服务监听地址。</li>
+<li><strong>SSH 客户端初始化</strong>：使用 <code>golang.org/x/crypto/ssh</code> 库建立 SSH 连接，获取 Padavan 设备的性能数据。</li>
+<li><strong>Prometheus 收集器</strong>：实现 Prometheus 收集器，用于从 SSH 客户端获取数据并提供给 Prometheus 服务器。</li>
+<li><strong>HTTP 服务器</strong>：启动一个 HTTP 服务器，提供 <code>/metrics</code> 接口供 Prometheus 服务器抓取数据。</li>
+</ol>
+<h2 id="5maingo">5、main.go</h2>
+<p><img src="/../../image/6a9036089a4c4ef08cd98893abaafb59.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="1-命令行参数解析">1. 命令行参数解析</h3>
+<p>在 <code>init</code> 函数中，使用 <code>kingpin</code> 库解析命令行参数。定义了四个命令行参数：</p>
+<ul>
+<li><code>web.listen-address</code>：监听的 HTTP 服务地址，默认为 <code>:9100</code>。</li>
+<li><code>padavan.ssh.host</code>：Padavan 设备的 SSH 主机地址，默认为 <code>127.0.0.1:22</code>。</li>
+<li><code>padavan.ssh.username</code>：SSH 登录的用户名，默认为 <code>admin</code>。</li>
+<li><code>padavan.ssh.password</code>：SSH 登录的密码，默认为 <code>admin</code>。</li>
+<li><code>debug</code>：是否开启调试模式。</li>
+</ul>
+<p>通过解析这些参数，设置日志级别为 <code>Debug</code>，并输出解析后的参数值。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">init</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 定义命令行参数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">la</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;web.listen-address&#34;</span><span class="p">,</span> <span class="s">&#34;Address on which to expose metrics and web interface&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;:9100&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">ph</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;padavan.ssh.host&#34;</span><span class="p">,</span> <span class="s">&#34;Padavan ssh host&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;127.0.0.1:22&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">pu</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;padavan.ssh.username&#34;</span><span class="p">,</span> <span class="s">&#34;Padavan ssh username&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;admin&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">pp</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;padavan.ssh.password&#34;</span><span class="p">,</span> <span class="s">&#34;Padavan ssh password&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;admin&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">isDebug</span> <span class="o">:=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;debug&#34;</span><span class="p">,</span> <span class="s">&#34;Debug mode&#34;</span><span class="p">).</span><span class="nf">Bool</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">*</span><span class="nx">isDebug</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">SetLevel</span><span class="p">(</span><span class="nx">log</span><span class="p">.</span><span class="nx">DebugLevel</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Debugf</span><span class="p">(</span><span class="s">&#34;web.listen-address(%s) padavan.ssh.host(%s) padavan.ssh.username(%s) padavan.ssh.password(%s)&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">la</span><span class="p">,</span> <span class="o">*</span><span class="nx">ph</span><span class="p">,</span> <span class="o">*</span><span class="nx">pu</span><span class="p">,</span> <span class="o">*</span><span class="nx">pp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2-初始化-ssh-客户端">2. 初始化 SSH 客户端</h3>
+<p><code>initSshClient</code> 函数用于创建和返回一个 SSH 客户端。该客户端用于与 Padavan 设备进行 SSH 连接，以收集监控数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">initSshClient</span><span class="p">()</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">sshConfig</span> <span class="o">:=</span> <span class="nx">ssh</span><span class="p">.</span><span class="nx">ClientConfig</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">User</span><span class="p">:</span>            <span class="o">*</span><span class="nx">pu</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Auth</span><span class="p">:</span>            <span class="p">[]</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">AuthMethod</span><span class="p">{</span><span class="nx">ssh</span><span class="p">.</span><span class="nf">Password</span><span class="p">(</span><span class="o">*</span><span class="nx">pp</span><span class="p">)},</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Timeout</span><span class="p">:</span>         <span class="mi">5</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">HostKeyCallback</span><span class="p">:</span> <span class="nx">ssh</span><span class="p">.</span><span class="nf">InsecureIgnoreHostKey</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Connecting to %s&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">ph</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">sshClient</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ssh</span><span class="p">.</span><span class="nf">Dial</span><span class="p">(</span><span class="s">&#34;tcp&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">ph</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">sshConfig</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;create ssh client failed: %+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">sshClient</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3-初始化-prometheus-注册表和收集器">3. 初始化 Prometheus 注册表和收集器</h3>
+<p>在 <code>main</code> 函数中，初始化 Prometheus 注册表（<code>pedantic registry</code>）和 SSH 客户端。然后注册各种收集器到 Prometheus 注册表。这些收集器将从 Padavan 设备获取不同类型的性能数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">reg</span> <span class="o">:=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewPedanticRegistry</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">sc</span> <span class="o">:=</span> <span class="nf">initSshClient</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewLoadAverageCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewNetDevController</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewCpuCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewMemoryCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewNetconnCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">gatherers</span> <span class="o">:=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">Gatherers</span><span class="p">{</span><span class="nx">reg</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">h</span> <span class="o">:=</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nf">HandlerFor</span><span class="p">(</span><span class="nx">gatherers</span><span class="p">,</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nx">HandlerOpts</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">ErrorLog</span><span class="p">:</span>      <span class="nx">log</span><span class="p">.</span><span class="nf">StandardLogger</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">ErrorHandling</span><span class="p">:</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nx">ContinueOnError</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/metrics&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">h</span><span class="p">.</span><span class="nf">ServeHTTP</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span> <span class="nx">r</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">_</span><span class="p">,</span> <span class="nx">_</span> <span class="p">=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintln</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span> <span class="nf">homePage</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Start server at %s&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">la</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">http</span><span class="p">.</span><span class="nf">ListenAndServe</span><span class="p">(</span><span class="o">*</span><span class="nx">la</span><span class="p">,</span> <span class="kc">nil</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="4-启动-http-服务器">4. 启动 HTTP 服务器</h3>
+<p>在 <code>main</code> 函数中，启动一个 HTTP 服务器，提供 <code>/metrics</code> 接口供 Prometheus 服务器抓取数据。同时提供一个简单的首页，通过 <code>/</code> 路径访问，显示一些基本信息和有用的链接。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">homePage</span><span class="p">()</span> <span class="kt">string</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="s">`
+</span></span></span><span class="line"><span class="cl"><span class="s">&lt;html&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;head&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;title&gt;padavan_exporter&lt;/title&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;/head&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;body&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;h2&gt;padavan_exporter&lt;/h2&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;span&gt;See docs at &lt;a href=&#34;https://github.com/Bpazy/padavan_exporter&#34;&gt;https://github.com/Bpazy/padavan_exporter&lt;/a&gt;&lt;/span&gt;  
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;br&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;br&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;span&gt; Useful endpoints: &lt;/span&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;br&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;span&gt; &lt;a href=&#34;/metrics&#34;&gt;metrics&lt;/a&gt; &lt;span&gt; - available service metrics &lt;/span&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;/body&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">&lt;/html&gt;`</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="5整体代码">5、整体代码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/Bpazy/padavan_exporter/collector&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/prometheus/client_golang/prometheus&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/prometheus/client_golang/prometheus/promhttp&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span> <span class="s">&#34;github.com/sirupsen/logrus&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;golang.org/x/crypto/ssh&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;gopkg.in/alecthomas/kingpin.v2&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;net/http&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;time&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">ph</span> <span class="o">*</span><span class="kt">string</span> <span class="c1">// Padavan address
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">pu</span> <span class="o">*</span><span class="kt">string</span> <span class="c1">// Padavan username
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">pp</span> <span class="o">*</span><span class="kt">string</span> <span class="c1">// Padavan password
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">la</span> <span class="o">*</span><span class="kt">string</span> <span class="c1">// Address on which to expose metrics and web interface
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// init 函数用于初始化命令行参数。
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 通过 kingpin 解析命令行参数，包括 web 服务监听地址、Padavan SSH 主机地址、用户名、密码等。
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 并根据是否开启 debug 模式设置日志级别。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">init</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 定义命令行参数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">la</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;web.listen-address&#34;</span><span class="p">,</span> <span class="s">&#34;Address on which to expose metrics and web interface&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;:9100&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">ph</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;padavan.ssh.host&#34;</span><span class="p">,</span> <span class="s">&#34;Padavan ssh host&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;127.0.0.1:22&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">pu</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;padavan.ssh.username&#34;</span><span class="p">,</span> <span class="s">&#34;Padavan ssh username&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;admin&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">pp</span> <span class="p">=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;padavan.ssh.password&#34;</span><span class="p">,</span> <span class="s">&#34;Padavan ssh password&#34;</span><span class="p">).</span><span class="nf">Default</span><span class="p">(</span><span class="s">&#34;admin&#34;</span><span class="p">).</span><span class="nf">String</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 解析命令行参数，并在 debug 模式下设置日志级别
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">isDebug</span> <span class="o">:=</span> <span class="nx">kingpin</span><span class="p">.</span><span class="nf">Flag</span><span class="p">(</span><span class="s">&#34;debug&#34;</span><span class="p">,</span> <span class="s">&#34;Debug mode&#34;</span><span class="p">).</span><span class="nf">Bool</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">kingpin</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="o">*</span><span class="nx">isDebug</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">log</span><span class="p">.</span><span class="nf">SetLevel</span><span class="p">(</span><span class="nx">log</span><span class="p">.</span><span class="nx">DebugLevel</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span><span class="p">.</span><span class="nf">Debugf</span><span class="p">(</span><span class="s">&#34;web.listen-address(%s) padavan.ssh.host(%s) padavan.ssh.username(%s) padavan.ssh.password(%s)&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">la</span><span class="p">,</span> <span class="o">*</span><span class="nx">ph</span><span class="p">,</span> <span class="o">*</span><span class="nx">pu</span><span class="p">,</span> <span class="o">*</span><span class="nx">pp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// main 函数作为程序入口点，负责初始化 Prometheus 监控数据收集器、SSH 客户端，并启动 HTTP 服务提供监控数据。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 初始化 Prometheus 注册表和 SSH 客户端
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">reg</span> <span class="o">:=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewPedanticRegistry</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">sc</span> <span class="o">:=</span> <span class="nf">initSshClient</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 注册各种收集器到 Prometheus
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewLoadAverageCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewNetDevController</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewCpuCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewMemoryCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewNetconnCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">gatherers</span> <span class="o">:=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">Gatherers</span><span class="p">{</span><span class="nx">reg</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">h</span> <span class="o">:=</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nf">HandlerFor</span><span class="p">(</span><span class="nx">gatherers</span><span class="p">,</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nx">HandlerOpts</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">ErrorLog</span><span class="p">:</span>      <span class="nx">log</span><span class="p">.</span><span class="nf">StandardLogger</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">ErrorHandling</span><span class="p">:</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nx">ContinueOnError</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">	<span class="p">})</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 处理 /metrics 请求以提供监控数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/metrics&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">h</span><span class="p">.</span><span class="nf">ServeHTTP</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span> <span class="nx">r</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">})</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 处理根路径请求，提供简单信息页面
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">_</span><span class="p">,</span> <span class="nx">_</span> <span class="p">=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintln</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span> <span class="nf">homePage</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">	<span class="p">})</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Start server at %s&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">la</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 启动 HTTP 服务
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">http</span><span class="p">.</span><span class="nf">ListenAndServe</span><span class="p">(</span><span class="o">*</span><span class="nx">la</span><span class="p">,</span> <span class="kc">nil</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">homePage</span><span class="p">()</span> <span class="kt">string</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="s">`
+</span></span></span><span class="line"><span class="cl"><span class="s">&lt;html&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;head&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;title&gt;padavan_exporter&lt;/title&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;/head&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;body&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;h2&gt;padavan_exporter&lt;/h2&gt; 
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;span&gt;See docs at &lt;a href=&#34;https://github.com/Bpazy/padavan_exporter&#34;&gt;https://github.com/Bpazy/padavan_exporter&lt;/a&gt;&lt;/span&gt;  
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;br&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;br&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;span&gt; Useful endpoints: &lt;/span&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;br&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">  &lt;span&gt; &lt;a href=&#34;/metrics&#34;&gt;metrics&lt;/a&gt; &lt;span&gt; - available service metrics &lt;/span&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s"> &lt;/body&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">&lt;/html&gt;`</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// initSshClient 函数用于初始化并返回一个 SSH 客户端。
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 该客户端用于与 Padavan 设备进行 SSH 连接以收集监控数据。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">initSshClient</span><span class="p">()</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 创建 SSH 客户端配置，包括用户名、密码和一些连接选项
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">sshConfig</span> <span class="o">:=</span> <span class="nx">ssh</span><span class="p">.</span><span class="nx">ClientConfig</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">User</span><span class="p">:</span>            <span class="o">*</span><span class="nx">pu</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">Auth</span><span class="p">:</span>            <span class="p">[]</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">AuthMethod</span><span class="p">{</span><span class="nx">ssh</span><span class="p">.</span><span class="nf">Password</span><span class="p">(</span><span class="o">*</span><span class="nx">pp</span><span class="p">)},</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">Timeout</span><span class="p">:</span>         <span class="mi">5</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">HostKeyCallback</span><span class="p">:</span> <span class="nx">ssh</span><span class="p">.</span><span class="nf">InsecureIgnoreHostKey</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Connecting to %s&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">ph</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 尝试建立 SSH 连接
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">sshClient</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ssh</span><span class="p">.</span><span class="nf">Dial</span><span class="p">(</span><span class="s">&#34;tcp&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">ph</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">sshConfig</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;create ssh client failed: %+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="nx">sshClient</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="6collectorgo">6、collector.go</h2>
+<h3 id="1整体思路">1、整体思路</h3>
+<ol>
+<li><strong>建立 SSH 会话并执行命令</strong>：通过 SSH 客户端连接到远程设备并执行命令，获取命令的输出结果。</li>
+<li><strong>获取文件内容</strong>：通过执行 <code>cat</code> 命令获取远程设备上指定文件的内容。</li>
+<li><strong>解析浮点数</strong>：将字符串形式的数字解析为浮点数。</li>
+</ol>
+<h3 id="2功能解释">2、功能解释</h3>
+<ol>
+<li>
+<p><strong>import 部分</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span> <span class="s">&#34;github.com/sirupsen/logrus&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;golang.org/x/crypto/ssh&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;strconv&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这部分代码导入了所需的包。<code>fmt</code> 用于格式化输出，<code>log</code> 用于日志记录，<code>ssh</code> 用于 SSH 连接，<code>strconv</code> 用于字符串和数值之间的转换。</p>
+</li>
+<li>
+<p><strong>mustGetContent 函数</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">mustGetContent</span><span class="p">(</span><span class="nx">sshClient</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">,</span> <span class="nx">path</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">rsp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">execCommand</span><span class="p">(</span><span class="nx">sshClient</span><span class="p">,</span> <span class="s">&#34;cat &#34;</span><span class="o">+</span><span class="nx">path</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">rsp</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个函数接受一个 SSH 客户端和一个文件路径，通过调用 <code>execCommand</code> 函数执行 <code>cat</code> 命令获取文件内容。如果执行命令失败，会引发 panic。成功执行后，返回文件内容作为字符串。</p>
+</li>
+<li>
+<p><strong>execCommand 函数</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">execCommand</span><span class="p">(</span><span class="nx">sshClient</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">,</span> <span class="nx">command</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="kt">string</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">session</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">sshClient</span><span class="p">.</span><span class="nf">NewSession</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;create ssh session failed: %+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">defer</span> <span class="nx">session</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">rsp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">session</span><span class="p">.</span><span class="nf">CombinedOutput</span><span class="p">(</span><span class="nx">command</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;execute ssh command failed: %+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">string</span><span class="p">(</span><span class="nx">rsp</span><span class="p">),</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个函数接受一个 SSH 客户端和一个命令，创建一个新的 SSH 会话并执行命令，获取命令的输出结果。如果创建会话或执行命令失败，返回相应的错误信息。成功执行后，返回命令输出结果作为字符串。</p>
+</li>
+<li>
+<p><strong>mustParseFloat 函数</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">mustParseFloat</span><span class="p">(</span><span class="nx">fs</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">float</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">ParseFloat</span><span class="p">(</span><span class="nx">fs</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="kt">float</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个函数接受一个字符串，尝试将其解析为浮点数。如果解析失败，记录错误信息并返回 0。成功解析后，返回浮点数。</p>
+</li>
+</ol>
+<h3 id="3整体代码">3、整体代码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;fmt&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span> <span class="s">&#34;github.com/sirupsen/logrus&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;golang.org/x/crypto/ssh&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;strconv&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// mustGetContent 从指定路径读取文件内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">mustGetContent</span><span class="p">(</span><span class="nx">sshClient</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">,</span> <span class="nx">path</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 执行SSH命令读取文件内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">rsp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">execCommand</span><span class="p">(</span><span class="nx">sshClient</span><span class="p">,</span> <span class="s">&#34;cat &#34;</span><span class="o">+</span><span class="nx">path</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果发生错误，panic
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 返回文件内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">return</span> <span class="nx">rsp</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// execCommand 执行SSH命令并返回结果
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">execCommand</span><span class="p">(</span><span class="nx">sshClient</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">,</span> <span class="nx">command</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="kt">string</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 创建一个新的SSH会话
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">session</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">sshClient</span><span class="p">.</span><span class="nf">NewSession</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果创建会话失败，返回错误
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;create ssh session failed: %+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 确保会话在函数结束时关闭
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">defer</span> <span class="nx">session</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 执行命令并获取结果
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">rsp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">session</span><span class="p">.</span><span class="nf">CombinedOutput</span><span class="p">(</span><span class="nx">command</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果执行命令失败，返回错误
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;execute ssh command failed: %+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 返回命令执行结果
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">return</span> <span class="nb">string</span><span class="p">(</span><span class="nx">rsp</span><span class="p">),</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// mustParseFloat 解析字符串为浮点数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">mustParseFloat</span><span class="p">(</span><span class="nx">fs</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">float64</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 尝试解析字符串为浮点数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="kt">float</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">ParseFloat</span><span class="p">(</span><span class="nx">fs</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 如果解析失败，记录错误并返回0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%+v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 返回解析后的浮点数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">return</span> <span class="kt">float</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="7memorygo">7、memory.go</h2>
+<h3 id="1整体思路-1">1、整体思路</h3>
+<p>这个代码片段的目的是通过 Prometheus 采集远程设备的内存指标。通过 SSH 连接远程设备，读取 <code>/proc/meminfo</code> 文件的内容，然后解析出相关的内存信息，最后将这些信息作为 Prometheus 指标发送。</p>
+<h3 id="2功能解释-1">2、功能解释</h3>
+<ol>
+<li>
+<p><strong>正则表达式</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">meminfoReg</span> <span class="p">=</span> <span class="nx">regexp</span><span class="p">.</span><span class="nf">MustCompile</span><span class="p">(</span><span class="s">`(\w+):\s+(\d+) kB`</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个正则表达式用于匹配 <code>/proc/meminfo</code> 文件中的每一行，捕获内存指标的名称和数值。</p>
+</li>
+<li>
+<p><strong>memoryCollector 结构体</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">memoryCollector</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">metrics</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span> <span class="c1">// 存储指标描述信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">sc</span>      <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span>                 <span class="c1">// SSH客户端，用于远程收集指标信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>memoryCollector</code> 结构体包含两个字段：一个用于存储 Prometheus 指标描述信息的字典 <code>metrics</code>，另一个是 SSH 客户端 <code>sc</code>，用于连接远程设备。</p>
+</li>
+<li>
+<p><strong>Describe 方法</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">memoryCollector</span><span class="p">)</span> <span class="nf">Describe</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// metrics created when Collect
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个方法是 Prometheus 采集器接口的一部分，用于描述指标。但在这个实现中，指标是在 <code>Collect</code> 方法中动态创建的，所以这里没有具体实现。</p>
+</li>
+<li>
+<p><strong>Collect 方法</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">memoryCollector</span><span class="p">)</span> <span class="nf">Collect</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">Metric</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 通过SSH客户端获取远程机器的/proc/meminfo文件内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">content</span> <span class="o">:=</span> <span class="nf">mustGetContent</span><span class="p">(</span><span class="nx">m</span><span class="p">.</span><span class="nx">sc</span><span class="p">,</span> <span class="s">&#34;/proc/meminfo&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 创建Scanner用于逐行读取内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">scanner</span> <span class="o">:=</span> <span class="nx">bufio</span><span class="p">.</span><span class="nf">NewScanner</span><span class="p">(</span><span class="nx">strings</span><span class="p">.</span><span class="nf">NewReader</span><span class="p">(</span><span class="nx">content</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 使用正则表达式匹配行内容，获取指标名和值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="nx">scanner</span><span class="p">.</span><span class="nf">Scan</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">parts</span> <span class="o">:=</span> <span class="nx">meminfoReg</span><span class="p">.</span><span class="nf">FindStringSubmatch</span><span class="p">(</span><span class="nx">scanner</span><span class="p">.</span><span class="nf">Text</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// 如果匹配不成功，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 指标名
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">key</span> <span class="o">:=</span> <span class="nx">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 解析指标值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">value</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">ParseFloat</span><span class="p">(</span><span class="nx">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">64</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// 如果解析失败，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">value</span> <span class="o">*=</span> <span class="mi">1024</span> <span class="c1">// 将值从kB转换为B
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="kd">var</span> <span class="nx">desc</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span>
+</span></span><span class="line"><span class="cl">        <span class="kd">var</span> <span class="nx">ok</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 根据指标名，获取或创建对应的Desc对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">switch</span> <span class="nx">key</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;MemTotal&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemTotal&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_total_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Total memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemTotal&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;MemFree&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemFree&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_free_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Free memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemFree&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;Buffers&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Buffers&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_buffers_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Buffers memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Buffers&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;Cached&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Cached&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(!</span><span class="nx">ok</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_cached_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Cached memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Cached&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">default</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span> <span class="c1">// 如果不是我们关心的指标，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 向通道发送指标
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">MustNewConstMetric</span><span class="p">(</span><span class="nx">desc</span><span class="p">,</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">GaugeValue</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个方法是 Prometheus 采集器接口的另一部分，用于收集指标数据并向 Prometheus 发送。具体步骤如下：</p>
+<ul>
+<li>通过 <code>mustGetContent</code> 函数获取远程设备上 <code>/proc/meminfo</code> 文件的内容。</li>
+<li>使用 <code>bufio.Scanner</code> 逐行读取文件内容。</li>
+<li>使用正则表达式匹配每一行，提取内存指标名称和值。</li>
+<li>根据指标名称创建或获取对应的 <code>prometheus.Desc</code> 对象。</li>
+<li>将解析后的指标值乘以 1024，从 kB 转换为字节。</li>
+<li>使用 <code>prometheus.MustNewConstMetric</code> 函数创建 Prometheus 指标并发送到通道 <code>ch</code>。</li>
+</ul>
+</li>
+<li>
+<p><strong>NewMemoryCollector 函数</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">NewMemoryCollector</span><span class="p">(</span><span class="nx">sc</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">)</span> <span class="o">*</span><span class="nx">memoryCollector</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">memoryCollector</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">sc</span><span class="p">:</span>      <span class="nx">sc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">metrics</span><span class="p">:</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span><span class="p">{},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个函数用于创建一个新的 <code>memoryCollector</code> 实例，初始化 SSH 客户端和指标描述信息的字典。</p>
+</li>
+</ol>
+<h3 id="3整体流程">3、整体流程</h3>
+<ol>
+<li>
+<p><strong>初始化</strong>：通过 <code>NewMemoryCollector</code> 函数创建一个 <code>memoryCollector</code> 实例，传入 SSH 客户端。</p>
+</li>
+<li>
+<p>收集指标：</p>
+<ul>
+<li><code>Collect</code> 方法通过 SSH 客户端获取远程设备上的 <code>/proc/meminfo</code> 文件内容。</li>
+<li>使用正则表达式解析文件内容，提取内存指标。</li>
+<li>将解析后的指标转换为 Prometheus 格式并发送到通道 <code>ch</code>。</li>
+</ul>
+</li>
+<li>
+<p><strong>描述指标</strong>：<code>Describe</code> 方法用于向 Prometheus 描述指标，但具体实现中是在 <code>Collect</code> 方法中动态创建指标。</p>
+</li>
+</ol>
+<h3 id="4整体代码">4、整体代码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">collector</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;bufio&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/prometheus/client_golang/prometheus&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;golang.org/x/crypto/ssh&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;regexp&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;strconv&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;strings&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @Author: 南宫乘风
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @Description:
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @File:  memory.go
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @Email: 1794748404@qq.com
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @Date: 2024-05-22 15:05
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">meminfoReg</span> <span class="p">=</span> <span class="nx">regexp</span><span class="p">.</span><span class="nf">MustCompile</span><span class="p">(</span><span class="s">`(\w+):\s+(\d+) kB`</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// memoryCollector 收集内存相关指标信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">memoryCollector</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">metrics</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span> <span class="c1">// 存储指标描述信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">sc</span>      <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span>                 <span class="c1">// SSH客户端，用于远程收集指标信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Describe 向通道发送描述指标的Desc对象
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 这个方法不具体实现，因为metrics在Collect方法中动态创建。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">memoryCollector</span><span class="p">)</span> <span class="nf">Describe</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// metrics created when Collect
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Collect 向通道发送内存指标数据
+</span></span></span><span class="line"><span class="cl"><span class="c1">// @param ch 用于发送指标的通道
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">memoryCollector</span><span class="p">)</span> <span class="nf">Collect</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">Metric</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 通过SSH客户端获取远程机器的/proc/meminfo文件内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">content</span> <span class="o">:=</span> <span class="nf">mustGetContent</span><span class="p">(</span><span class="nx">m</span><span class="p">.</span><span class="nx">sc</span><span class="p">,</span> <span class="s">&#34;/proc/meminfo&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 创建Scanner用于逐行读取内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">scanner</span> <span class="o">:=</span> <span class="nx">bufio</span><span class="p">.</span><span class="nf">NewScanner</span><span class="p">(</span><span class="nx">strings</span><span class="p">.</span><span class="nf">NewReader</span><span class="p">(</span><span class="nx">content</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 使用正则表达式匹配行内容，获取指标名和值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">for</span> <span class="nx">scanner</span><span class="p">.</span><span class="nf">Scan</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">parts</span> <span class="o">:=</span> <span class="nx">meminfoReg</span><span class="p">.</span><span class="nf">FindStringSubmatch</span><span class="p">(</span><span class="nx">scanner</span><span class="p">.</span><span class="nf">Text</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">// 如果匹配不成功，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>			<span class="k">continue</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 指标名
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">key</span> <span class="o">:=</span> <span class="nx">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 解析指标值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">value</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">ParseFloat</span><span class="p">(</span><span class="nx">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">64</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="k">continue</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">// 如果解析失败，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">value</span> <span class="o">*=</span> <span class="mi">1024</span> <span class="c1">// 将值从kB转换为B
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">		<span class="kd">var</span> <span class="nx">desc</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span>
+</span></span><span class="line"><span class="cl">		<span class="kd">var</span> <span class="nx">ok</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 根据指标名，获取或创建对应的Desc对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="k">switch</span> <span class="nx">key</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">case</span> <span class="s">&#34;MemTotal&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemTotal&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_total_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Total memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemTotal&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">case</span> <span class="s">&#34;MemFree&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemFree&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_free_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Free memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemFree&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">case</span> <span class="s">&#34;Buffers&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Buffers&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_buffers_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Buffers memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Buffers&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">case</span> <span class="s">&#34;Cached&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Cached&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">			<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_cached_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Cached memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">				<span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Cached&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">default</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">			<span class="k">continue</span> <span class="c1">// 如果不是我们关心的指标，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 向通道发送指标
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">MustNewConstMetric</span><span class="p">(</span><span class="nx">desc</span><span class="p">,</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">GaugeValue</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// NewMemoryCollector 创建一个新的memoryCollector实例
+</span></span></span><span class="line"><span class="cl"><span class="c1">// @param sc SSH客户端
+</span></span></span><span class="line"><span class="cl"><span class="c1">// @return 返回memoryCollector实例的指针
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">NewMemoryCollector</span><span class="p">(</span><span class="nx">sc</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">)</span> <span class="o">*</span><span class="nx">memoryCollector</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">memoryCollector</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">sc</span><span class="p">:</span>      <span class="nx">sc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">metrics</span><span class="p">:</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span><span class="p">{},</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="8调用-newmemorycollector-的原理">8、调用 NewMemoryCollector 的原理</h2>
+<p><code>NewMemoryCollector</code> 函数用于创建一个新的 <code>memoryCollector</code> 实例。这个实例负责从 Padavan 设备中收集内存相关的指标信息。调用 <code>NewMemoryCollector</code> 的过程和原理如下：</p>
+<h3 id="1newmemorycollector-函数的定义">1、<code>NewMemoryCollector</code> 函数的定义</h3>
+<p><code>NewMemoryCollector</code> 函数接收一个 <code>*ssh.Client</code> 作为参数并返回一个 <code>*memoryCollector</code> 实例。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">NewMemoryCollector</span><span class="p">(</span><span class="nx">sc</span> <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span><span class="p">)</span> <span class="o">*</span><span class="nx">memoryCollector</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">memoryCollector</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">sc</span><span class="p">:</span>      <span class="nx">sc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">metrics</span><span class="p">:</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span><span class="p">{},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2memorycollector-的定义">2、<code>memoryCollector</code> 的定义</h3>
+<p><code>memoryCollector</code> 结构体包含两个字段：</p>
+<ul>
+<li><code>metrics</code>：一个 <code>map[string]*prometheus.Desc</code>，用于存储指标的描述信息。</li>
+<li><code>sc</code>：一个 <code>*ssh.Client</code>，用于通过 SSH 连接到 Padavan 设备以收集监控数据。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">memoryCollector</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">metrics</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span> <span class="c1">// 存储指标描述信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">sc</span>      <span class="o">*</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">Client</span>                 <span class="c1">// SSH客户端，用于远程收集指标信息
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3在-main-函数中调用-newmemorycollector">3、在 <code>main</code> 函数中调用 <code>NewMemoryCollector</code></h3>
+<p>在 <code>main</code> 函数中，首先初始化 Prometheus 注册表和 SSH 客户端，然后调用 <code>NewMemoryCollector</code> 函数创建一个 <code>memoryCollector</code> 实例，并将其注册到 Prometheus 注册表中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"> <span class="nx">reg</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">collector</span><span class="p">.</span><span class="nf">NewMemoryCollector</span><span class="p">(</span><span class="nx">sc</span><span class="p">))</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="4memorycollector-的工作原理">4、<code>memoryCollector</code> 的工作原理</h3>
+<ol>
+<li><strong>初始化 SSH 客户端</strong>： <code>initSshClient</code> 函数创建一个 SSH 客户端，用于连接到 Padavan 设备。</li>
+<li><strong>创建 <code>memoryCollector</code> 实例</strong>： 调用 <code>NewMemoryCollector(sc)</code>，传入 SSH 客户端，返回一个 <code>memoryCollector</code> 实例。</li>
+<li><strong>注册收集器</strong>： 使用 <code>reg.MustRegister(collector.NewMemoryCollector(sc))</code> 将 <code>memoryCollector</code> 注册到 Prometheus 注册表中。这样 Prometheus 就可以通过 <code>/metrics</code> 接口调用 <code>memoryCollector</code> 的 <code>Collect</code> 方法收集内存指标数据。</li>
+<li><strong>收集指标数据</strong>： <code>memoryCollector</code> 的 <code>Collect</code> 方法通过 SSH 客户端连接到 Padavan 设备，读取 <code>/proc/meminfo</code> 文件，解析文件内容并生成 Prometheus 指标，然后将指标发送到通道中供 Prometheus 收集。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">memoryCollector</span><span class="p">)</span> <span class="nf">Collect</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">Metric</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 通过SSH客户端获取远程机器的/proc/meminfo文件内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">content</span> <span class="o">:=</span> <span class="nf">mustGetContent</span><span class="p">(</span><span class="nx">m</span><span class="p">.</span><span class="nx">sc</span><span class="p">,</span> <span class="s">&#34;/proc/meminfo&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 创建Scanner用于逐行读取内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">scanner</span> <span class="o">:=</span> <span class="nx">bufio</span><span class="p">.</span><span class="nf">NewScanner</span><span class="p">(</span><span class="nx">strings</span><span class="p">.</span><span class="nf">NewReader</span><span class="p">(</span><span class="nx">content</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 使用正则表达式匹配行内容，获取指标名和值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="nx">scanner</span><span class="p">.</span><span class="nf">Scan</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">parts</span> <span class="o">:=</span> <span class="nx">meminfoReg</span><span class="p">.</span><span class="nf">FindStringSubmatch</span><span class="p">(</span><span class="nx">scanner</span><span class="p">.</span><span class="nf">Text</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// 如果匹配不成功，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 指标名
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">key</span> <span class="o">:=</span> <span class="nx">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 解析指标值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">value</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nf">ParseFloat</span><span class="p">(</span><span class="nx">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">64</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// 如果解析失败，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">value</span> <span class="o">*=</span> <span class="mi">1024</span> <span class="c1">// 将值从kB转换为B
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="kd">var</span> <span class="nx">desc</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span>
+</span></span><span class="line"><span class="cl">        <span class="kd">var</span> <span class="nx">ok</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 根据指标名，获取或创建对应的Desc对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">switch</span> <span class="nx">key</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;MemTotal&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemTotal&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_total_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Total memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemTotal&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;MemFree&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemFree&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(!</span><span class="nx">ok</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_free_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Free memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;MemFree&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;Buffers&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Buffers&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(!</span><span class="nx">ok</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_buffers_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Buffers memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Buffers&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="s">&#34;Cached&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">desc</span><span class="p">,</span> <span class="nx">ok</span> <span class="p">=</span> <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Cached&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(!</span><span class="nx">ok</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">desc</span> <span class="p">=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span><span class="s">&#34;node_memory_cached_bytes&#34;</span><span class="p">,</span> <span class="s">&#34;Cached memory in bytes.&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">m</span><span class="p">.</span><span class="nx">metrics</span><span class="p">[</span><span class="s">&#34;Cached&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">desc</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">default</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span> <span class="c1">// 如果不是我们关心的指标，则跳过当前行
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// 向通道发送指标
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">MustNewConstMetric</span><span class="p">(</span><span class="nx">desc</span><span class="p">,</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">GaugeValue</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/d278ebda91ac470ebd45e7b074f418c0.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/prometheus/">prometheus</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202405291810/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/57.jpg" loading="lazy" data-key="202405291810" data-hash="/../../title_pic/57.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Go开发Prometheus客户端实战步骤</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202403041144/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/51.jpg" loading="lazy" data-key="202403041144" data-hash="/../../title_pic/51.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 监控Istio</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202311281517/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/14.jpg" loading="lazy" data-key="202311281517" data-hash="/../../title_pic/14.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">使用Prometheus监控Synology（群辉）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202310160904/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/77.jpg" loading="lazy" data-key="202310160904" data-hash="/../../title_pic/77.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Prometheus的Pushgateway快速部署及使用</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202209221206/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/50.jpg" loading="lazy" data-key="202209221206" data-hash="/../../title_pic/50.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Prometheus监控Linux主机（node-exporter）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

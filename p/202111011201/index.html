@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='在工作中，我们经常会使用的主从，来去报数据的安全性。首先目前主流的备份工作和，都可以实现数据库的备份。关于那个用来备份数据，来做主从，毫无疑问就是了。首先做主从时，需要使用到日志和号，关键就是这个。如。。。。。。。'>
+<title>Xtrabackup工具进行在线主从搭建</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202111011201/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='Xtrabackup工具进行在线主从搭建'>
+<meta property='og:description' content='在工作中，我们经常会使用的主从，来去报数据的安全性。首先目前主流的备份工作和，都可以实现数据库的备份。关于那个用来备份数据，来做主从，毫无疑问就是了。首先做主从时，需要使用到日志和号，关键就是这个。如。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202111011201/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='mysql' /><meta property='article:tag' content='数据库' /><meta property='article:tag' content='database' /><meta property='article:published_time' content='2021-11-01T12:01:06&#43;00:00'/><meta property='article:modified_time' content='2021-11-01T12:01:06&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/38.jpg' />
+<meta name="twitter:title" content="Xtrabackup工具进行在线主从搭建">
+<meta name="twitter:description" content="在工作中，我们经常会使用的主从，来去报数据的安全性。首先目前主流的备份工作和，都可以实现数据库的备份。关于那个用来备份数据，来做主从，毫无疑问就是了。首先做主从时，需要使用到日志和号，关键就是这个。如。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/38.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#mysql日志选择">Mysql日志选择</a>
+      <ol>
+        <li><a href="#1mysql的binlog日志格式">（1）mysql的binlog日志格式</a></li>
+        <li><a href="#2binlog-的不同模式有什么区别呢">（2）binlog 的不同模式有什么区别呢？ </a></li>
+        <li><a href="#3binlog基本配制与格式设定">（3）Binlog基本配制与格式设定</a></li>
+      </ol>
+    </li>
+    <li><a href="#2主备库均安装xtrabackup开源工具在线热备份搭建备库">2、主备库均安装Xtrabackup开源工具在线热备份搭建备库</a></li>
+    <li><a href="#3主库在线备份不影响业务">3、主库在线备份(不影响业务)</a></li>
+    <li><a href="#4检查全备的pos">4、检查全备的POS</a></li>
+    <li><a href="#5将备份文件压缩传输到备机上">5、将备份文件压缩传输到备机上</a></li>
+    <li><a href="#6停止备库将原来的备库datadir的路径重命名并创建新的数据data目录">6、停止备库,将原来的备库datadir的路径重命名并创建新的数据data目录</a></li>
+    <li><a href="#7解压缩备份文件并恢复数据到新的data目录">7、解压缩备份文件并恢复数据到新的data目录</a></li>
+    <li><a href="#8重启备机228的mysql">8、重启备机228的mysql</a></li>
+    <li><a href="#9配置主从同步">9、配置主从同步</a></li>
+    <li><a href="#10为解决msyql主从延迟问题进行的相关调优">10、为解决msyql主从延迟问题进行的相关调优：</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202111011201/">
+                
+                    <img src="/../../title_pic/38.jpg" loading="lazy" alt="Featured image of post Xtrabackup工具进行在线主从搭建" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/mysql/" >
+                MySQL
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202111011201/">Xtrabackup工具进行在线主从搭建</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            在工作中，我们经常会使用的主从，来去报数据的安全性。首先目前主流的备份工作和，都可以实现数据库的备份。关于那个用来备份数据，来做主从，毫无疑问就是了。首先做主从时，需要使用到日志和号，关键就是这个。如。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Nov 01, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>在工作中，我们经常会使用mysql的主从，来去报数据的安全性。</p>
+<p>首先目前主流的备份工作mysqldump和Xtrabackup，都可以实现数据库的备份。</p>
+<p>关于那个用来备份数据，来做mysql主从，毫无疑问就是 Xtrabackup了。</p>
+<p>首先MySQL做主从时，需要使用到binlog日志 和 pos号，关键就是这个pos。</p>
+<p>如果是mysqldump来备份，需要进行锁表才行，如果是Xtrabackup 完全可以在任务运行中，进行备份，完全不需要锁表，更不会影响业务。所以我们首选就是Xtrabackup</p>
+<p>相关原理，可以进行谷歌。</p>
+<p>在这个只暂时先关步骤</p>
+<h2 id="mysql日志选择">Mysql日志选择</h2>
+<h3 id="1mysql的binlog日志格式">（1）mysql的binlog日志格式</h3>
+<p>mysql的binlog有3种日志格式。</p>
+<p><a class="link" href="http://lib.csdn.net/base/mysql"  title="mysql"
+     target="_blank" rel="noopener"
+    >mysql</a> binlog日志有三种格式，分别为Statement,MiXED,以及ROW！</p>
+<p>查看binlog的格式的脚本：</p>
+<p><img src="/../../image/90d66f3df1f0a7fa84354614dfdad784.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="2binlog-的不同模式有什么区别呢">（2）binlog 的不同模式有什么区别呢？ </h3>
+<p>1.Statement：每一条会修改数据的sql都会记录在binlog中。</p>
+<p>优点：不需要记录每一行的变化，减少了binlog日志量，节约了IO，提高性能。(相比row能节约多少性能与日志量，这个取决于应用的SQL情况，正常同一条记录修改或者插入row格式所产生的日志量还小于Statement产生的日志量，但是考虑到如果带条件的update操作，以及整表删除，alter表等操作，ROW格式会产生大量日志，因此在考虑是否使用ROW格式日志时应该跟据应用的实际情况，其所产生的日志量会增加多少，以及带来的IO性能问题。)</p>
+<p>缺点：由于记录的只是执行语句，为了这些语句能在slave上正确运行，因此还必须记录每条语句在执行的时候的一些相关信息，以保证所有语句能在slave得到和在master端执行时候相同的结果。另外mysql 的复制,像一些特定函数功能，slave可与master上要保持一致会有很多相关问题(如sleep()函数， last_insert_id()，以及user-defined functions(udf)会出现问题).<br>
+ </p>
+<p>2.Row:不记录sql语句上下文相关信息，仅保存哪条记录被修改。</p>
+<p>优点： binlog中可以不记录执行的sql语句的上下文相关的信息，仅需要记录那一条记录被修改成什么了。所以rowlevel的日志内容会非常清楚的记录下每一行数据修改的细节。而且不会出现某些特定情况下的存储过程，或function，以及trigger的调用和触发无法被正确复制的问题</p>
+<p>缺点:所有的执行的语句当记录到日志中的时候，都将以每行记录的修改来记录，这样可能会产生大量的日志内容,比如一条update语句，修改多条记录，则binlog中每一条修改都会有记录，这样造成binlog日志量会很大，特别是当执行alter table之类的语句的时候，由于表结构修改，每条记录都发生改变，那么该表每一条记录都会记录到日志中。</p>
+<p>3.Mixedlevel: 是以上两种level的混合使用，一般的语句修改使用statment格式保存binlog，如一些函数，statement无法完成主从复制的操作，则采用row格式保存binlog,MySQL会根据执行的每一条具体的sql语句来区分对待记录的日志形式，也就是在Statement和Row之间选择一种.新版本的MySQL中队row level模式也被做了优化，并不是所有的修改都会以row level来记录，像遇到表结构变更的时候就会以statement模式来记录。至于update或者delete等修改数据的语句，还是会记录所有行的变更。</p>
+<h3 id="3binlog基本配制与格式设定">（3）Binlog基本配制与格式设定</h3>
+<p>1.基本配制</p>
+<p>Mysql BInlog日志格式可以通过mysql的my.cnf文件的属性binlog_format指定。如以下：</p>
+<p>binlog_format           = MIXED                 //binlog日志格式</p>
+<p>log_bin                     =目录/mysql-bin.log    //binlog日志名</p>
+<p>expire_logs_days     = 7                //binlog过期清理时间</p>
+<p>max_binlog_size      100m                    //binlog每个日志文件大小</p>
+<p>2.Binlog日志格式选择</p>
+<p>Mysql默认是使用Statement日志格式，推荐使用MIXED.</p>
+<p>由于一些特殊使用，可以考虑使用ROWED，如自己通过binlog日志来同步数据的修改，这样会节省很多相关操作。对于binlog数据处理会变得非常轻松,相对mixed，解析也会很轻松(当然前提是增加的日志量所带来的IO开销在容忍的范围内即可)。 </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">1.先修改从库的binlog格式
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">binlog_format</span><span class="o">=</span>MIXED<span class="p">;</span>
+</span></span><span class="line"><span class="cl">2.再修改主库的binlog格式
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">binlog_format</span><span class="o">=</span>MIXED<span class="p">;</span>
+</span></span><span class="line"><span class="cl">3.修改主库的my.cnf<span class="o">(</span>避免重启失效<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">binlog_format</span><span class="o">=</span>MIXED
+</span></span><span class="line"><span class="cl">4.重启stop slave，start slave
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2主备库均安装xtrabackup开源工具在线热备份搭建备库">2、主备库均安装Xtrabackup开源工具在线热备份搭建备库</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#下载工具包percona-xtrabackup-2.4.14-Linux-x86_64.libgcrypt183.tar.gz</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">tar -xf percona-xtrabackup-2.4.14-Linux-x86_64.libgcrypt183.tar.gz
+</span></span><span class="line"><span class="cl">mv percona-xtrabackup-2.4.14-Linux-x86_64 xtrabackup
+</span></span><span class="line"><span class="cl">mv xtrabackup/ /usr/local/
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;export PATH=</span><span class="nv">$PATH</span><span class="s2">:/usr/local/xtrabackup/bin&#34;</span> &gt;&gt; /etc/profile
+</span></span><span class="line"><span class="cl"><span class="nb">source</span> /etc/profile
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3主库在线备份不影响业务">3、主库在线备份(不影响业务)</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">innobackupex --user<span class="o">=</span><span class="s1">&#39;root&#39;</span> --password<span class="o">=</span><span class="s1">&#39;xxxxxx&#39;</span> --slave-info /data1/backup/20210927 --no-timestamp --socket<span class="o">=</span>/tmp/mysql.sock
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#以下是输出结果:</span>
+</span></span><span class="line"><span class="cl">xtrabackup: recognized server arguments: --server-id<span class="o">=</span><span class="m">1</span> --log_bin<span class="o">=</span>binlog --datadir<span class="o">=</span>/data1/mysql/data/ --tmpdir<span class="o">=</span>/tmp 
+</span></span><span class="line"><span class="cl">xtrabackup: recognized client arguments: --server-id<span class="o">=</span><span class="m">1</span> --log_bin<span class="o">=</span>binlog --datadir<span class="o">=</span>/data1/mysql/data/ --tmpdir<span class="o">=</span>/tmp 
+</span></span><span class="line"><span class="cl"><span class="m">200615</span> 16:26:27 innobackupex: Starting the backup operation
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">IMPORTANT: Please check that the backup run completes successfully.
+</span></span><span class="line"><span class="cl">           At the end of a successful backup run innobackupex
+</span></span><span class="line"><span class="cl">           prints <span class="s2">&#34;completed OK!&#34;</span>.
+</span></span><span class="line"><span class="cl">         ..........
+</span></span><span class="line"><span class="cl">xtrabackup: Transaction log of lsn <span class="o">(</span>5055292518<span class="o">)</span> to <span class="o">(</span>5055292527<span class="o">)</span> was copied.
+</span></span><span class="line"><span class="cl"><span class="m">200615</span> 16:26:30 completed OK!
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4检查全备的pos">4、检查全备的POS</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat /data/backup/20200615/xtrabackup_binlog_info
+</span></span><span class="line"><span class="cl">binlog.000002   <span class="m">184668420</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5将备份文件压缩传输到备机上">5、将备份文件压缩传输到备机上</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">cd</span> /data1/backup/
+</span></span><span class="line"><span class="cl">tar -zcf 20210927.tar.gz  <span class="m">20210927</span>
+</span></span><span class="line"><span class="cl">scp 20210927.tar.gz  dam@dam02:/home/dam/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="6停止备库将原来的备库datadir的路径重命名并创建新的数据data目录">6、停止备库,将原来的备库datadir的路径重命名并创建新的数据data目录</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">/etc/init.d/mysqld stop
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span>  /data1/mysql
+</span></span><span class="line"><span class="cl">mv data  data3
+</span></span><span class="line"><span class="cl">mkdir data
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="7解压缩备份文件并恢复数据到新的data目录">7、解压缩备份文件并恢复数据到新的data目录</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">tar -xf  20210927.tar.gz  -C /data1/mysql/
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#数据一致性恢复</span>
+</span></span><span class="line"><span class="cl">innobackupex --apply-log /data1/mysql/20210927
+</span></span><span class="line"><span class="cl"><span class="c1">#数据copy到dir目录</span>
+</span></span><span class="line"><span class="cl">innobackupex --copy-back /data1/mysql/20210927
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">chown -R mysql.mysql /data1/mysql/data
+</span></span><span class="line"><span class="cl">chmod -R <span class="m">775</span> /data1/mysql/data
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="8重启备机228的mysql">8、重启备机228的mysql</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">/etc/init.d/mysqld stop
+</span></span><span class="line"><span class="cl">/etc/init.d/mysqld start
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="9配置主从同步">9、配置主从同步</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#227主机创建同步用户:</span>
+</span></span><span class="line"><span class="cl">create  USER <span class="s1">&#39;xxxx&#39;</span>@<span class="s1">&#39;172.17.8.%&#39;</span> IDENTIFIED WITH mysql_native_password BY <span class="s1">&#39;xxxxxx&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">grant replication slave on *.* to <span class="s1">&#39;syncuser&#39;</span>@<span class="s1">&#39;172.17.8.%&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">flush privileges<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#228配置备机：</span>
+</span></span><span class="line"><span class="cl">reset slave all<span class="p">;</span> 
+</span></span><span class="line"><span class="cl">stop slave<span class="p">;</span>
+</span></span><span class="line"><span class="cl">change master to <span class="nv">master_host</span><span class="o">=</span><span class="s1">&#39;172.17.8.227&#39;</span>,master_port<span class="o">=</span>3306,master_user<span class="o">=</span><span class="s1">&#39;syncuser&#39;</span>,master_password<span class="o">=</span><span class="s1">&#39;xxxxx&#39;</span>,master_log_file<span class="o">=</span><span class="s1">&#39;binlog.000002&#39;</span>,master_log_pos<span class="o">=</span>184668420<span class="p">;</span>
+</span></span><span class="line"><span class="cl">start slave<span class="p">;</span>
+</span></span><span class="line"><span class="cl">show slave status<span class="se">\G</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">show master status<span class="se">\G</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="10为解决msyql主从延迟问题进行的相关调优">10、为解决msyql主从延迟问题进行的相关调优：</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#主从并行复制参数：</span>
+</span></span><span class="line"><span class="cl">vim my.cnf
+</span></span><span class="line"><span class="cl"><span class="nv">master_info_repository</span><span class="o">=</span>TABLE                   <span class="c1">#master信息放到表里      </span>
+</span></span><span class="line"><span class="cl"><span class="nv">relay_log_info_repository</span><span class="o">=</span>TABLE                <span class="c1">#relay日志信息放到表里      </span>
+</span></span><span class="line"><span class="cl"><span class="nv">slave_parallel_type</span> <span class="o">=</span> LOGICAL_CLOCK            <span class="c1">#基于组提交的并行复制方式</span>
+</span></span><span class="line"><span class="cl"><span class="nv">slave_parallel_workers</span><span class="o">=</span><span class="m">8</span>                       <span class="c1">#sql并行量</span>
+</span></span><span class="line"><span class="cl"><span class="nv">slave_preserve_commit_order</span><span class="o">=</span>ON                  <span class="c1">#relay顺序与master并行顺序保持一致</span>
+</span></span><span class="line"><span class="cl"><span class="nv">relay_log_recovery</span><span class="o">=</span>ON                          <span class="c1">#宕机时重新从master获取日志，保证relay完整性</span>
+</span></span><span class="line"><span class="cl">replicate-wild-ignore-table<span class="o">=</span>scheduler.tb_qa%   <span class="c1">#不同步scheduler.tb_qa开头的表</span>
+</span></span><span class="line"><span class="cl">replicate-wild-ignore-table<span class="o">=</span>scheduler.tb_qc%   <span class="c1">#不同步scheduler.tb_qc开头的表										   </span>
+</span></span><span class="line"><span class="cl">stop slave<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">master_info_repository</span><span class="o">=</span><span class="s1">&#39;table&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">relay_log_info_repository</span><span class="o">=</span><span class="s1">&#39;table&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">slave_parallel_type</span><span class="o">=</span><span class="s1">&#39;logical_clock&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">slave_parallel_workers</span><span class="o">=</span>8<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">slave_preserve_commit_order</span><span class="o">=</span><span class="s1">&#39;on&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> global <span class="nv">relay_log_recovery</span><span class="o">=</span><span class="s1">&#39;on&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">start slave<span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/50e66a7d6f4d45aea6a78b1f17d3e9a6.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/mysql/">mysql</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+            <a href="/tags/database/">database</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202205131140/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/02.jpg" loading="lazy" data-key="202205131140" data-hash="/../../title_pic/02.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Mysql主从同步复制（快速构建，基于CP数据备份 恢复）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202306011053/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/20.jpg" loading="lazy" data-key="202306011053" data-hash="/../../title_pic/20.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">“实时数据同步：构建高效的 MySQL 数据同步方案“</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202101181952/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202101181952" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL容器部署及数据持久化（主从复制）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202006091735/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/24.jpg" loading="lazy" data-key="202006091735" data-hash="/../../title_pic/24.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">什么，你还不会Mysql主从复制？？？快来看</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202006091628/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/02.jpg" loading="lazy" data-key="202006091628" data-hash="/../../title_pic/02.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL二进制安装（版本：5.7.26）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

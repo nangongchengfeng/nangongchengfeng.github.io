@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>调度器 on 南宫乘风</title>
+        <link>https://www.ownit.top/tags/%E8%B0%83%E5%BA%A6%E5%99%A8/</link>
+        <description>Recent content in 调度器 on 南宫乘风</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Tue, 11 Feb 2020 14:45:11 +0000</lastBuildDate><atom:link href="https://www.ownit.top/tags/%E8%B0%83%E5%BA%A6%E5%99%A8/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Kubernetes（k8s）的调度器详细介绍</title>
+        <link>https://www.ownit.top/p/202002111445/</link>
+        <pubDate>Tue, 11 Feb 2020 14:45:11 +0000</pubDate>
+        
+        <guid>https://www.ownit.top/p/202002111445/</guid>
+        <description>&lt;img src="https://www.ownit.top/title_pic/01.jpg" alt="Featured image of post Kubernetes（k8s）的调度器详细介绍" /&gt;&lt;h1 id=&#34;简介&#34;&gt;简介 &lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;Scheduler 是 kubernetes 的调度器，主要的任务是把定义的 pod 分配到集群的节点上。听起来非常简单，但有 很多要考虑的问题：&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;公平：如何保证每个节点都能被分配资源&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;资源高效利用：集群所有资源最大化被使用&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;效率：调度的性能要好，能够尽快地对大批量的 pod 完成调度工作&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;灵活：允许用户根据自己的需求控制调度的逻辑&lt;/strong&gt;&lt;br&gt;
+ &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Sheduler 是作为单独的程序运行的，启动之后会一直坚挺 API Server，获取 PodSpec.NodeName 为空的 pod， 对每个 pod 都会创建一个 binding，表明该 pod 应该放到哪个节点上 &lt;/p&gt;
+&lt;h1 id=&#34;调度过程&#34;&gt;调度过程 &lt;/h1&gt;
+&lt;p&gt;调度分为几个部分：首先是过滤掉不满足条件的节点，这个过程称为  predicate ；然后对通过的节点按照优先级 排序，这个是  priority ；最后从中选择优先级最高的节点。如果中间任何一步骤有错误，就直接返回错误 &lt;/p&gt;
+&lt;p&gt;**Predicate 有一系列的算法可以使用： **&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;PodFitsResources ：节点上剩余的资源是否大于 pod 请求的资源&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;PodFitsHost ：如果 pod 指定了 NodeName，检查节点名称是否和 NodeName 匹配&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;PodFitsHostPorts ：节点上已经使用的 port 是否和 pod 申请的 port 冲突&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;PodSelectorMatches ：过滤掉和 pod 指定的 label 不匹配的节点&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;NoDiskConflict ：已经 mount 的 volume 和 pod 指定的 volume 不冲突，除非它们都是只读&lt;/strong&gt;&lt;br&gt;
+ &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;如果在 predicate 过程中没有合适的节点，pod 会一直在  pending  状态，不断重试调度，直到有节点满足条件。 经过这个步骤，如果有多个节点满足条件，就继续 priorities 过程： 按照优先级大小对节点排序&lt;br&gt;
+&lt;strong&gt;优先级由一系列键值对组成，键是该优先级项的名称，值是它的权重（该项的重要性）。这些优先级选项包括：&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;LeastRequestedPriority ：通过计算 CPU 和 Memory 的使用率来决定权重，使用率越低权重越高。换句话****说，这个优先级指标倾向于资源使用比例更低的节点&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;BalancedResourceAllocation ：节点上 CPU 和 Memory 使用率越接近，权重越高。这个应该和上面的一起****使用，不应该单独使用&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;ImageLocalityPriority  ：倾向于已经有要使用镜像的节点，镜像总大小值越大，权重越高&lt;/strong&gt;&lt;br&gt;
+ &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;通过算法对所有的优先级项目和权重进行计算，得出最终的结果&lt;/strong&gt;&lt;/p&gt;
+&lt;h1 id=&#34;自定义调度器&#34;&gt;自定义调度器 &lt;/h1&gt;
+&lt;p&gt;&lt;strong&gt;除了 kubernetes 自带的调度器，你也可以编写自己的调度器。通过 spec:schedulername 参数指定调度器的名 字，可以为 pod 选择某个调度器进行调度。比如下面的 pod 选择 my-scheduler 进行调度，而不是默认的 default-scheduler ：&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;apiVersion: v1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kind: Pod
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  name: annotation-second-scheduler
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  labels:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    name: multischeduler-example
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;spec:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  schedulername: my-scheduler
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  containers:
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  - name: pod-with-second-annotation-container
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    image: wangyanglinux/myapp:v1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;</description>
+        </item>
+        
+    </channel>
+</rss>

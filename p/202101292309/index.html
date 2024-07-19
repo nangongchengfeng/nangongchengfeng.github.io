@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='是什么是一款开源的，快速的、多功能的、可实现全量及增量的本地或远程数据同步备份的优秀工具同步备份的优秀工具的特性如下：支持拷贝特殊文件如链接文件，设备等可以有排除指定文件或目录同步的功能，相当于打包命。。。。。。。'>
+<title>sersync&#43;rsync原理及部署</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202101292309/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='sersync&#43;rsync原理及部署'>
+<meta property='og:description' content='是什么是一款开源的，快速的、多功能的、可实现全量及增量的本地或远程数据同步备份的优秀工具同步备份的优秀工具的特性如下：支持拷贝特殊文件如链接文件，设备等可以有排除指定文件或目录同步的功能，相当于打包命。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202101292309/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='linux' /><meta property='article:tag' content='ssh' /><meta property='article:tag' content='centos' /><meta property='article:tag' content='服务器' /><meta property='article:published_time' content='2021-01-29T23:09:59&#43;00:00'/><meta property='article:modified_time' content='2021-01-29T23:09:59&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/51.jpg' />
+<meta name="twitter:title" content="sersync&#43;rsync原理及部署">
+<meta name="twitter:description" content="是什么是一款开源的，快速的、多功能的、可实现全量及增量的本地或远程数据同步备份的优秀工具同步备份的优秀工具的特性如下：支持拷贝特殊文件如链接文件，设备等可以有排除指定文件或目录同步的功能，相当于打包命。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/51.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#rsync">rsync</a></li>
+    <li><a href="#rsyncinotify-tools与rsyncsersync这两种架构有什么区别">Rsync+Inotify-tools与Rsync+sersync这两种架构有什么区别</a>
+      <ol>
+        <li><a href="#1rsyncinotify-tools"><strong>1．Rsync+Inotify-tools</strong></a></li>
+        <li><a href="#2rsyncsersync"><strong>2．Rsync+sersync</strong></a></li>
+        <li><a href="#同步过程"><strong>同步过程：</strong></a></li>
+        <li><a href="#同步过程和原理"> 同步过程和原理：</a></li>
+      </ol>
+    </li>
+    <li><a href="#三配置操作">三、配置操作</a>
+      <ol>
+        <li><a href="#1使用rsync备份数据-系统用户"><strong>（1）、使用rsync备份数据 系统用户</strong></a></li>
+        <li><a href="#2使用sersync实时监控推送"><strong>（2）、使用sersync实时监控推送</strong></a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202101292309/">
+                
+                    <img src="/../../title_pic/51.jpg" loading="lazy" alt="Featured image of post sersync&#43;rsync原理及部署" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/linux%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8/" >
+                Linux服务应用
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202101292309/">sersync&#43;rsync原理及部署</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            是什么是一款开源的，快速的、多功能的、可实现全量及增量的本地或远程数据同步备份的优秀工具同步备份的优秀工具的特性如下：支持拷贝特殊文件如链接文件，设备等可以有排除指定文件或目录同步的功能，相当于打包命。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jan 29, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 8 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="rsync">rsync</h2>
+<p><strong>1.1 rsync是什么</strong><br>
+rsync是一款开源的，快速的、多功能的、可实现全量及增量的本地或远程数据同步备份的优秀工具同步备份的优秀工具</p>
+<p><strong>1.2 rsync的特性如下：</strong></p>
+<ol>
+<li>支持拷贝特殊文件如链接文件，设备等</li>
+<li>可以有排除指定文件或目录同步的功能，相当于打包命令tar的排除功能。</li>
+<li>可以做到保持原文件或目录等权限，时间，软硬链接，属主，属组等所有属性均不改变 –p</li>
+<li>可实现增量同步，即只同步发生变化的数据，因此数据传输效率很高</li>
+<li>可以使用rcp,rsh,ssh等方式来配置传输文件（rsync本身不对数据加密）</li>
+<li>可以通过socket（守护进程方式）传输文件和数据（服务端和客户端）</li>
+<li>支持匿名或认证（无需系统用户）的进程模式传输，可实现方便安全的进行数据备份及镜像</li>
+<li>rsync也相当于ls命令</li>
+</ol>
+<p><strong>1.3 rsync的企业工作场景说明</strong></p>
+<ol>
+<li>两台服务器之间数据同步（定时任务+rsync）</li>
+<li>实时同步（解决存储服务器的单点问题）</li>
+</ol>
+<h2 id="rsyncinotify-tools与rsyncsersync这两种架构有什么区别">Rsync+Inotify-tools与Rsync+sersync这两种架构有什么区别</h2>
+<h3 id="1rsyncinotify-tools"><strong>1．Rsync+Inotify-tools</strong></h3>
+<p>（1）：Inotify-tools只能记录下被监听的目录发生了变化（包括增加、删除、修改），并没有把具体是哪个文件或者哪个目录发生了变化记录下来；<br>
+（2）：rsync在同步的时候，并不知道具体是哪个文件或者哪个目录发生了变化，每次都是对整个目录进行同步，当数据量很大时，整个目录同步非常耗时（rsync要对整个目录遍历查找对比文件），因此，效率很低。</p>
+<h3 id="2rsyncsersync"><strong>2．Rsync+sersync</strong></h3>
+<p>（1）sersync可以记录下被监听目录中发生变化的（包括增加、删除、修改）具体某一个文件或某一个目录的名字；<br>
+（2）rsync在同步的时候，只同步发生变化的这个文件或者这个目录（每次发生变化的数据相对整个同步目录数据来说是很小的，rsync在遍历查找比对文件时，速度很快），因此，效率很高。</p>
+<p> </p>
+<h3 id="同步过程"><strong>同步过程：</strong></h3>
+<p>1.  在同步服务器上开启sersync服务，sersync负责监控配置路径中的文件系统事件变化；</p>
+<p>2.  调用rsync命令把更新的文件同步到目标服务器；</p>
+<p>3.  需要在主服务器配置sersync，在同步目标服务器配置rsync server（注意：是rsync服务）</p>
+<h3 id="同步过程和原理"> 同步过程和原理：</h3>
+<p>1.  用户实时的往sersync服务器上写入更新文件数据；</p>
+<p>2.  此时需要在同步主服务器上配置sersync服务；</p>
+<p>3.  在另一台服务器开启rsync守护进程服务，以同步拉取来自sersync服务器上的数据；</p>
+<p>通过rsync的守护进程服务后可以发现，实际上sersync就是监控本地的数据写入或更新事件；然后，在调用rsync客户端的命令，将写入或更新事件对应的文件通过rsync推送到目标服务器</p>
+<p><strong>小结：当同步的目录数据量不大时，建议使用Rsync+Inotify-tools；当数据量很大（几百G甚至1T以上）、文件很多时，建议使用Rsync+sersync。</strong></p>
+<h2 id="三配置操作">三、配置操作</h2>
+<p> </p>
+<p>**一台装rsync服务  **192.168.0.10</p>
+<p>**一台装sersync     **192.168.0.20</p>
+<p><strong>对20网站根目录的/backup目录备份到10的/backup</strong></p>
+<p>**Rsync服务器（备份端磁盘大专门用来存储数据 ,目标机器）：**192.168.0.10</p>
+<p>**Sersync服务器（数据源【部署的项目，代码等】,源机器 ）： **192.168.0.20<br>
+ </p>
+<h3 id="1使用rsync备份数据-系统用户"><strong>（1）、使用rsync备份数据 系统用户</strong></h3>
+<p><strong>两台服务器都需要安装rsync</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">yum -y install xinetd rsync
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>20需要安装sersync</strong></p>
+<p><strong>原理：10 上 使用系统配置文件   vim /etc/rsyncd.conf   来备份数据，创建备份账户，最后把rsync以deamon方式运行</strong></p>
+<p>** vim /etc/rsyncd.conf      rsyncd.conf配置文件**</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nv">uid</span> <span class="o">=</span> root
+</span></span><span class="line"><span class="cl"><span class="nv">gid</span> <span class="o">=</span> root
+</span></span><span class="line"><span class="cl">use <span class="nv">chroot</span> <span class="o">=</span> no
+</span></span><span class="line"><span class="cl"><span class="nv">disable</span> <span class="o">=</span> no
+</span></span><span class="line"><span class="cl">fake <span class="nv">super</span> <span class="o">=</span> yes 
+</span></span><span class="line"><span class="cl">max <span class="nv">connections</span> <span class="o">=</span> <span class="m">200</span>
+</span></span><span class="line"><span class="cl"><span class="nv">timeout</span> <span class="o">=</span> <span class="m">300</span>
+</span></span><span class="line"><span class="cl">pid <span class="nv">file</span><span class="o">=</span>/var/run/rsyncd.pid
+</span></span><span class="line"><span class="cl">lock <span class="nv">file</span><span class="o">=</span>/var/run/rsync.lock
+</span></span><span class="line"><span class="cl">log <span class="nv">file</span> <span class="o">=</span> /var/log/rsyncd.log
+</span></span><span class="line"><span class="cl"><span class="o">[</span>backup<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">path</span> <span class="o">=</span> /backup
+</span></span><span class="line"><span class="cl">ignore errors
+</span></span><span class="line"><span class="cl"><span class="nb">read</span> <span class="nv">only</span> <span class="o">=</span> <span class="nb">false</span>
+</span></span><span class="line"><span class="cl"><span class="nv">list</span> <span class="o">=</span> <span class="nb">false</span>
+</span></span><span class="line"><span class="cl">hosts <span class="nv">allow</span> <span class="o">=</span> 192.168.0.0/24  
+</span></span><span class="line"><span class="cl">host <span class="nv">deny</span> <span class="o">=</span> 0.0.0.0/0 
+</span></span><span class="line"><span class="cl">auth <span class="nv">users</span> <span class="o">=</span> rsync_backup
+</span></span><span class="line"><span class="cl">secrets <span class="nv">file</span> <span class="o">=</span> /etc/rsync.password
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># useradd -M -s /sbin/nologin rsync   #可以使用rsync，我使用的是root</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@backup backup<span class="o">]</span><span class="c1"># mkdir /backup/    创建备份的目录</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>创建密码文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># echo &#39;rsync_backup:123456&#39; &gt;/etc/rsync.password</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># cat /etc/rsync.password</span>
+</span></span><span class="line"><span class="cl">rsync_backup:123456
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>修改权限</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># chmod 600 /etc/rsync.password</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># ll /etc/rsync.password</span>
+</span></span><span class="line"><span class="cl">-rw-------. <span class="m">1</span> root root <span class="m">20</span> Jul <span class="m">24</span> 04:27 /etc/rsync.password
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>启动rsync服务</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># rsync -–daemon</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>加入开机自启动</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># vim /etc/rc.local</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># rsync server progress</span>
+</span></span><span class="line"><span class="cl">/usr/bin/rsync --daemon
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">1.5.7 第六个里程碑-检查  rsync的端口号为873
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@backup ~<span class="o">]</span><span class="c1"># ss -tlunp|grep rsync</span>
+</span></span><span class="line"><span class="cl">tcp    LISTEN     <span class="m">0</span>      <span class="m">5</span>                     :::873                  :::*      users:<span class="o">((</span><span class="s2">&#34;rsync&#34;</span>,2452,5<span class="o">))</span>
+</span></span><span class="line"><span class="cl">tcp    LISTEN     <span class="m">0</span>      <span class="m">5</span>                      *:873                   *:*      users:<span class="o">((</span><span class="s2">&#34;rsync&#34;</span>,2452,4<span class="o">))</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>重启rsync</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@rsync-client-sersync ~<span class="o">]</span><span class="c1"># ps -ef | grep rsync</span>
+</span></span><span class="line"><span class="cl">root       <span class="m">1287</span>      <span class="m">1</span>  <span class="m">0</span> 22:52 ?        00:00:00 rsync --daemon
+</span></span><span class="line"><span class="cl">root       <span class="m">1294</span>   <span class="m">1248</span>  <span class="m">0</span> 22:52 pts/0    00:00:00 grep --color<span class="o">=</span>auto rsync
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@rsync-client-sersync ~<span class="o">]</span><span class="c1"># kill -9 1287</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@rsync-client-sersync ~<span class="o">]</span><span class="c1"># ps -ef | grep rsync</span>
+</span></span><span class="line"><span class="cl">root       <span class="m">1298</span>   <span class="m">1248</span>  <span class="m">0</span> 22:53 pts/0    00:00:00 grep --color<span class="o">=</span>auto rsync
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@rsync-client-sersync ~<span class="o">]</span><span class="c1"># rsync --daemon</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@rsync-client-sersync ~<span class="o">]</span><span class="c1"># ps -ef | grep rsync</span>
+</span></span><span class="line"><span class="cl">root       <span class="m">1300</span>      <span class="m">1</span>  <span class="m">0</span> 22:53 ?        00:00:00 rsync --daemon
+</span></span><span class="line"><span class="cl">root       <span class="m">1302</span>   <span class="m">1248</span>  <span class="m">0</span> 22:53 pts/0    00:00:00 grep --color<span class="o">=</span>auto rsync
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">重启，就是杀掉rsync的进程，重新rsync --daemon
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在客户端进行测试（20）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@rsync-client-sersync ~<span class="o">]</span><span class="c1"># rsync -avz /etc/hosts rsync_backup@192.168.0.10::backup</span>
+</span></span><span class="line"><span class="cl">Password: 
+</span></span><span class="line"><span class="cl">sending incremental file list
+</span></span><span class="line"><span class="cl">hosts
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sent <span class="m">140</span> bytes  received <span class="m">43</span> bytes  33.27 bytes/sec
+</span></span><span class="line"><span class="cl">total size is <span class="m">158</span>  speedup is 0.86
+</span></span><span class="line"><span class="cl">成功的将hosts文件推向服务器端的/backup目录中
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>客户端添加密码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@nfs01 tmp<span class="o">]</span><span class="c1"># echo &#39;123456&#39; &gt;/etc/rsync.password   将密码重定向到/etc/rsync.password文件</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@nfs01 tmp<span class="o">]</span><span class="c1"># cat /etc/rsync.password   查看</span>
+</span></span><span class="line"><span class="cl"><span class="m">123456</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@nfs01 tmp<span class="o">]</span><span class="c1"># chmod 600 /etc/rsync.password   给/etc/rsync.password文件600的权限</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rsync -avz /etc/hosts rsync_backup@172.16.1.41::backup --password-file<span class="o">=</span>/etc/rsync.password    指定密码文件
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>实例：排除文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@backup tmp]# rsync -a –-exclude=/etc/hosts /etc/services 172.16.1.31:/tmp/
+</span></span><span class="line"><span class="cl">–-exclude=/etc/hosts  排除/etc/services中的/etc/hosts文件
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--bwlimit=RATE  limt socket I/O bandwidth  传输的时候限速
+</span></span><span class="line"><span class="cl">--delete  让源目录和目标目录一模一样（即：我有什么你就有什么，我没什么你就没有什么）
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>实例：无差异同步</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[root@backup tmp]# rsync -a --delete /tmp/ 172.16.1.31:/tmp/
+</span></span><span class="line"><span class="cl">root@172.16.1.31&#39;s password:
+</span></span><span class="line"><span class="cl">--delete  本地有什么，远端就有什么 本地没有什么，远端就没有什么 本地有远端没有，就会删除远
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2使用sersync实时监控推送"><strong>（2）、使用sersync实时监控推送</strong></h3>
+<p><strong>1</strong>**、下载sersync**</p>
+<p> 在google code下载sersync的可执行文件版本，里面有配置文件与可执行文件，这用</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir -p /applition/tools
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> /applition/tools
+</span></span><span class="line"><span class="cl">wgethttps://sersync.googlecode.com/files/sersync2.5.4_64bit_binary_stable_final.tar.gz
+</span></span><span class="line"><span class="cl">【有时下载失败，所有要本地留存才行】
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@web ~<span class="o">]</span><span class="c1"># tar fxzsersync2.5.4_64bit_binary_stable_final.tar.gz -C /usr/local/</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@web ~<span class="o">]</span><span class="c1"># cd /usr/local/</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@cache local<span class="o">]</span><span class="c1"># mv GNU-Linux-x86 sersync</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@cache local<span class="o">]</span><span class="c1"># treesersync/</span>
+</span></span><span class="line"><span class="cl">sersync/
+</span></span><span class="line"><span class="cl">├── confxml.xml      <span class="c1">#   配置文件</span>
+</span></span><span class="line"><span class="cl">└── sersync2         <span class="c1">#   二进制文件【启动sersync使用】</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="m">0</span> directories, <span class="m">2</span> files
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>2</strong>**、配置sersync**</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@cache local<span class="o">]</span><span class="c1"># cp sersync/confxml.xmlsersync/confxml.xml.$(date +%F)</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@cache local<span class="o">]</span><span class="c1"># ll sersync/confxml.xml</span>
+</span></span><span class="line"><span class="cl">-rwxr-xr-x. <span class="m">1</span> root root 2214Oct <span class="m">26</span>  <span class="m">2011</span> sersync/confxml.xml
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@cache local<span class="o">]</span><span class="c1"># llsersync/confxml.xml*</span>
+</span></span><span class="line"><span class="cl">-rwxr-xr-x. <span class="m">1</span> root root 2214Oct <span class="m">26</span>  <span class="m">2011</span> sersync/confxml.xml
+</span></span><span class="line"><span class="cl">-rwxr-xr-x. <span class="m">1</span> root root 2214Jun  <span class="m">5</span> 06:38sersync/confxml.xml.2015-06-05
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>更改优化sersync配置文件：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">     &lt;<span class="nv">localpathwatch</span><span class="o">=</span><span class="s2">&#34;/opt/tongbu&#34;</span>&gt;     <span class="c1"># 定义本地要同步的目录</span>
+</span></span><span class="line"><span class="cl">         &lt;remote <span class="nv">ip</span><span class="o">=</span><span class="s2">&#34;127.0.0.1&#34;</span><span class="nv">name</span><span class="o">=</span><span class="s2">&#34;tongbu1&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">         &lt;!--&lt;<span class="nv">remoteip</span><span class="o">=</span><span class="s2">&#34;192.168.8.39&#34;</span> <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;tongbu&#34;</span>/&gt;--&gt;        <span class="c1"># 同步到哪台机器上 tongbu模块rsync端模块名字</span>
+</span></span><span class="line"><span class="cl">         &lt;!--&lt;<span class="nv">remoteip</span><span class="o">=</span><span class="s2">&#34;192.168.8.40&#34;</span> <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;tongbu&#34;</span>/&gt;--&gt;        <span class="c1"># 同步到哪台机器上 tongbu模块</span>
+</span></span><span class="line"><span class="cl">     &lt;/localpath&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>b</strong>**）修改31&ndash;34行，认证部分【rsync密码认证】**</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">  &lt;rsync&gt;
+</span></span><span class="line"><span class="cl">            &lt;commonParamsparams=&#34;-artuz&#34;/&gt;
+</span></span><span class="line"><span class="cl">            &lt;auth start=&#34;false&#34;users=&#34;root&#34; passwordfile=&#34;/etc/rsync.pas&#34;/&gt;
+</span></span><span class="line"><span class="cl">             &lt;userDefinedPortstart=&#34;false&#34; port=&#34;874&#34;/&gt;&lt;!-- port=874 --&gt;
+</span></span><span class="line"><span class="cl">             &lt;timeoutstart=&#34;false&#34; time=&#34;100&#34;/&gt;&lt;!-- timeout=100 --&gt;
+</span></span><span class="line"><span class="cl">             &lt;sshstart=&#34;false&#34;/&gt;
+</span></span><span class="line"><span class="cl">         &lt;/rsync&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"># ***修改内容为 rsync的密码文件以及 同步所使用的账号类似：
+</span></span><span class="line"><span class="cl">rsync -avzP /data/www/rsync_backup@172.16.1.25::www/ --password-file=/etc/rsync.password
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">        &lt;failLog path=&#34;/usr/local/sersync/logs/rsync_fail_log.sh&#34;timeToExecute=&#34;60&#34;/&gt;&lt;!--default every 60mins execute once--&gt;
+</span></span><span class="line"><span class="cl"># 当同步失败后，日志记录到/usr/local/sersync/logs/rsync_fail_log.sh文件中，并且每60分钟对失败的log进行重新同步
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>修改后的完整配置文件为：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">&lt;?xml <span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.0&#34;</span> <span class="nv">encoding</span><span class="o">=</span><span class="s2">&#34;ISO-8859-1&#34;</span>?&gt;
+</span></span><span class="line"><span class="cl">&lt;head <span class="nv">version</span><span class="o">=</span><span class="s2">&#34;2.5&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">    &lt;host <span class="nv">hostip</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span> <span class="nv">port</span><span class="o">=</span><span class="s2">&#34;8008&#34;</span>&gt;&lt;/host&gt;
+</span></span><span class="line"><span class="cl">    &lt;debug <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">    &lt;fileSystem <span class="nv">xfs</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">    &lt;filter <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	&lt;exclude <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;(.*)\.svn&#34;</span>&gt;&lt;/exclude&gt;
+</span></span><span class="line"><span class="cl">	&lt;exclude <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;(.*)\.gz&#34;</span>&gt;&lt;/exclude&gt;
+</span></span><span class="line"><span class="cl">	&lt;exclude <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;^info/*&#34;</span>&gt;&lt;/exclude&gt;
+</span></span><span class="line"><span class="cl">	&lt;exclude <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;^static/*&#34;</span>&gt;&lt;/exclude&gt;
+</span></span><span class="line"><span class="cl">    &lt;/filter&gt;
+</span></span><span class="line"><span class="cl">    &lt;inotify&gt;
+</span></span><span class="line"><span class="cl">	&lt;delete <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;createFolder <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;createFile <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;closeWrite <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;moveFrom <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;moveTo <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;attrib <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;modify <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">    &lt;/inotify&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;sersync&gt;
+</span></span><span class="line"><span class="cl">	&lt;localpath <span class="nv">watch</span><span class="o">=</span><span class="s2">&#34;/etc/openvpn&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	    &lt;remote <span class="nv">ip</span><span class="o">=</span><span class="s2">&#34;192.168.0.10&#34;</span> <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;openvpn&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	    &lt;!--&lt;remote <span class="nv">ip</span><span class="o">=</span><span class="s2">&#34;192.168.8.39&#34;</span> <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;tongbu&#34;</span>/&gt;--&gt;
+</span></span><span class="line"><span class="cl">	    &lt;!--&lt;remote <span class="nv">ip</span><span class="o">=</span><span class="s2">&#34;192.168.8.40&#34;</span> <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;tongbu&#34;</span>/&gt;--&gt;
+</span></span><span class="line"><span class="cl">	&lt;/localpath&gt;
+</span></span><span class="line"><span class="cl">	&lt;rsync&gt;
+</span></span><span class="line"><span class="cl">	    &lt;commonParams <span class="nv">params</span><span class="o">=</span><span class="s2">&#34;-artuz&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	    &lt;auth <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;true&#34;</span> <span class="nv">users</span><span class="o">=</span><span class="s2">&#34;rsync_backup&#34;</span> <span class="nv">passwordfile</span><span class="o">=</span><span class="s2">&#34;/etc/rsync.password&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	    &lt;userDefinedPort <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span> <span class="nv">port</span><span class="o">=</span><span class="s2">&#34;874&#34;</span>/&gt;&lt;!-- <span class="nv">port</span><span class="o">=</span><span class="m">874</span> --&gt;
+</span></span><span class="line"><span class="cl">	    &lt;timeout <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;start&#34;</span> <span class="nv">time</span><span class="o">=</span><span class="s2">&#34;100&#34;</span>/&gt;&lt;!-- <span class="nv">timeout</span><span class="o">=</span><span class="m">100</span> --&gt;
+</span></span><span class="line"><span class="cl">	    &lt;ssh <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;/rsync&gt;
+</span></span><span class="line"><span class="cl">	&lt;failLog <span class="nv">path</span><span class="o">=</span><span class="s2">&#34;/tmp/rsync_fail_log.sh&#34;</span> <span class="nv">timeToExecute</span><span class="o">=</span><span class="s2">&#34;60&#34;</span>/&gt;&lt;!--default every 60mins execute once--&gt;
+</span></span><span class="line"><span class="cl">	&lt;crontab <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span> <span class="nv">schedule</span><span class="o">=</span><span class="s2">&#34;600&#34;</span>&gt;&lt;!--600mins--&gt;
+</span></span><span class="line"><span class="cl">	    &lt;crontabfilter <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">		&lt;exclude <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;*.php&#34;</span>&gt;&lt;/exclude&gt;
+</span></span><span class="line"><span class="cl">		&lt;exclude <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;info/*&#34;</span>&gt;&lt;/exclude&gt;
+</span></span><span class="line"><span class="cl">	    &lt;/crontabfilter&gt;
+</span></span><span class="line"><span class="cl">	&lt;/crontab&gt;
+</span></span><span class="line"><span class="cl">	&lt;plugin <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span> <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;command&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">    &lt;/sersync&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;plugin <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;command&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	&lt;param <span class="nv">prefix</span><span class="o">=</span><span class="s2">&#34;/bin/sh&#34;</span> <span class="nv">suffix</span><span class="o">=</span><span class="s2">&#34;&#34;</span> <span class="nv">ignoreError</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>/&gt;	&lt;!--prefix /opt/tongbu/mmm.sh suffix--&gt;
+</span></span><span class="line"><span class="cl">	&lt;filter <span class="nv">start</span><span class="o">=</span><span class="s2">&#34;false&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	    &lt;include <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;(.*)\.php&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	    &lt;include <span class="nv">expression</span><span class="o">=</span><span class="s2">&#34;(.*)\.sh&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;/filter&gt;
+</span></span><span class="line"><span class="cl">    &lt;/plugin&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    &lt;plugin <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;socket&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	&lt;localpath <span class="nv">watch</span><span class="o">=</span><span class="s2">&#34;/opt/tongbu&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	    &lt;deshost <span class="nv">ip</span><span class="o">=</span><span class="s2">&#34;192.168.138.20&#34;</span> <span class="nv">port</span><span class="o">=</span><span class="s2">&#34;8009&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;/localpath&gt;
+</span></span><span class="line"><span class="cl">    &lt;/plugin&gt;
+</span></span><span class="line"><span class="cl">    &lt;plugin <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;refreshCDN&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	&lt;localpath <span class="nv">watch</span><span class="o">=</span><span class="s2">&#34;/data0/htdocs/cms.xoyo.com/site/&#34;</span>&gt;
+</span></span><span class="line"><span class="cl">	    &lt;cdninfo <span class="nv">domainname</span><span class="o">=</span><span class="s2">&#34;ccms.chinacache.com&#34;</span> <span class="nv">port</span><span class="o">=</span><span class="s2">&#34;80&#34;</span> <span class="nv">username</span><span class="o">=</span><span class="s2">&#34;xxxx&#34;</span> <span class="nv">passwd</span><span class="o">=</span><span class="s2">&#34;xxxx&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	    &lt;sendurl <span class="nv">base</span><span class="o">=</span><span class="s2">&#34;http://pic.xoyo.com/cms&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	    &lt;regexurl <span class="nv">regex</span><span class="o">=</span><span class="s2">&#34;false&#34;</span> <span class="nv">match</span><span class="o">=</span><span class="s2">&#34;cms.xoyo.com/site([/a-zA-Z0-9]*).xoyo.com/images&#34;</span>/&gt;
+</span></span><span class="line"><span class="cl">	&lt;/localpath&gt;
+</span></span><span class="line"><span class="cl">    &lt;/plugin&gt;
+</span></span><span class="line"><span class="cl">&lt;/head&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>3</strong>**、开启sersync守护进程同步数据**</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@web ~<span class="o">]</span><span class="c1"># /usr/local/sersync/sersync2  -d -r -o /usr/local/sersync/confxml.xml</span>
+</span></span><span class="line"><span class="cl">配置sersync环境变量
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@web ~<span class="o">]</span><span class="c1"># echo&#34;PATH=$PATH:/usr/local/sersync/&#34;&gt;&gt;/etc/profile</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@web ~<span class="o">]</span><span class="c1"># source /etc/profile</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@web ~<span class="o">]</span><span class="c1"># sersync2</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>启动命令后返回结果如下为正常：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">set</span> the system param
+</span></span><span class="line"><span class="cl">execute：echo50000000 &gt; /proc/sys/fs/inotify/max_user_watches
+</span></span><span class="line"><span class="cl">execute：echo 327679&gt; /proc/sys/fs/inotify/max_queued_events
+</span></span><span class="line"><span class="cl">parse the <span class="nb">command</span> param
+</span></span><span class="line"><span class="cl">option: -d      run as a daemon
+</span></span><span class="line"><span class="cl">option: -r      rsync all the <span class="nb">local</span> files to the remoteservers before the sersync work
+</span></span><span class="line"><span class="cl">option: -o      config xml name：  /usr/local/sersync/confxml.xml
+</span></span><span class="line"><span class="cl">daemon thread num: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">parse xml config file
+</span></span><span class="line"><span class="cl">host ip : localhost     host port: <span class="m">8008</span>
+</span></span><span class="line"><span class="cl">daemon start，sersync runbehind the console 
+</span></span><span class="line"><span class="cl">use rsync password-file :
+</span></span><span class="line"><span class="cl">user is rsync_backup
+</span></span><span class="line"><span class="cl">passwordfile is         /etc/rsync.password
+</span></span><span class="line"><span class="cl">config xml parse success
+</span></span><span class="line"><span class="cl">please <span class="nb">set</span> /etc/rsyncd.confmax <span class="nv">connections</span><span class="o">=</span><span class="m">0</span> Manually
+</span></span><span class="line"><span class="cl">sersync working thread <span class="nv">12</span>  <span class="o">=</span> 1<span class="o">(</span>primary thread<span class="o">)</span> + 1<span class="o">(</span>fail retry thread<span class="o">)</span> + 10<span class="o">(</span>daemon sub threads<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Max threads numbers is: <span class="nv">32</span> <span class="o">=</span> 12<span class="o">(</span>Thread pool nums<span class="o">)</span> +20<span class="o">(</span>Sub threads<span class="o">)</span>
+</span></span><span class="line"><span class="cl">please according your cpu ，use -n paramto adjust the cpu rate
+</span></span><span class="line"><span class="cl">chmod: cannot access<span class="sb">`</span>/usr/local/sersync/logs/rsync_fail_log.sh<span class="err">&#39;</span>: No such file or directory
+</span></span><span class="line"><span class="cl">------------------------------------------
+</span></span><span class="line"><span class="cl">rsync the directory recursivlyto the remote servers once
+</span></span><span class="line"><span class="cl">working please wait...
+</span></span><span class="line"><span class="cl">execute command: <span class="nb">cd</span> /backup<span class="o">&amp;&amp;</span> rsync -artuz -R --delete ./ --timeout<span class="o">=</span><span class="m">100</span> rsync_backup@192.168.0.10::www--password-file<span class="o">=</span>/etc/rsync.password &gt;/dev/null 2&gt;<span class="p">&amp;</span><span class="m">1</span> 
+</span></span><span class="line"><span class="cl">run the sersync: 
+</span></span><span class="line"><span class="cl">watch path is: /data/www
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果你上面的配置和验证都没问题，可以下面的配置了。设置开机自启动</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#vi /etc/rc.d/rc.local</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">/usr/local/sersync/sersync2 -d -r -o  /usr/local/sersync/confxml.xml ＃设置开机自动运行脚本
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># chmod +x /etc/rc.d/rc.local</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>添加脚本监控sersync是否正常</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">cd</span> /root
+</span></span><span class="line"><span class="cl">touch check_sersync.sh
+</span></span><span class="line"><span class="cl">chmod <span class="m">755</span> check.sersync.sh
+</span></span><span class="line"><span class="cl">vim check_sersync.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#!/bin/sh</span>
+</span></span><span class="line"><span class="cl"><span class="nv">sersync</span><span class="o">=</span><span class="s2">&#34;/usr/local/sersync/sersync2&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">confxml</span><span class="o">=</span><span class="s2">&#34;/usr/local/sersync/confxml.xml&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">status</span><span class="o">=</span><span class="k">$(</span>ps aux <span class="p">|</span>grep <span class="s1">&#39;sersync2&#39;</span><span class="p">|</span>grep -v <span class="s1">&#39;grep&#39;</span><span class="p">|</span>wc -l<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">[</span> <span class="nv">$status</span> -eq <span class="m">0</span> <span class="o">]</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">then</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$sersync</span> -d -r -o <span class="nv">$confxml</span> <span class="p">&amp;</span>
+</span></span><span class="line"><span class="cl"><span class="k">else</span>
+</span></span><span class="line"><span class="cl"><span class="nb">exit</span> 0<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">fi</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">check_sersync.sh
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">#vi /etc/crontab
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">*/5 * * * * root /root/check_sersync.sh &gt;/dev/null 2&gt;&amp;1  #每隔5分钟执行一次脚本
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意：</p>
+<p>　　1、手动执行check_sersync.sh检测sersync是否运行正常。</p>
+<p>　　2、如果着急测试，不用等重启服务器后执行，先执行　</p>
+<table border="0" cellpadding="0" cellspacing="0"><tbody><tr><td><p>1</p></td><td><p><code>/</code><code>usr</code><code>/</code><code>local</code><code>/</code><code>sersync</code><code>/</code><code>sersync2&nbsp;</code><code>-</code><code>d&nbsp;</code><code>-</code><code>r&nbsp;</code><code>-</code><code>o&nbsp;&nbsp;</code><code>/</code><code>usr</code><code>/</code><code>local</code><code>/</code><code>sersync</code><code>/</code><code>confxml.xml</code></p></td></tr></tbody></table>
+<p>　　3、在源服务器指定目录下对文件文件夹做出更改，查看目标服务器同步目录下是否同步成功。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="m">1</span> -v, --verbose 详细模式输出
+</span></span><span class="line"><span class="cl">  <span class="m">2</span> 
+</span></span><span class="line"><span class="cl">  <span class="m">3</span> -q, --quiet 精简输出模式
+</span></span><span class="line"><span class="cl">  <span class="m">4</span> 
+</span></span><span class="line"><span class="cl">  <span class="m">5</span> -c, --checksum 打开校验开关，强制对文件传输进行校验
+</span></span><span class="line"><span class="cl">  <span class="m">6</span> 
+</span></span><span class="line"><span class="cl">  <span class="m">7</span> -a, --archive 归档模式，表示以递归方式传输文件，并保持所有文件属性，等于-rlptgoD
+</span></span><span class="line"><span class="cl">  <span class="m">8</span> 
+</span></span><span class="line"><span class="cl">  <span class="m">9</span> -r, --recursive 对子目录以递归模式处理
+</span></span><span class="line"><span class="cl"> <span class="m">10</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">11</span> -R, --relative 使用相对路径信息
+</span></span><span class="line"><span class="cl"> <span class="m">12</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">13</span> -b, --backup 创建备份，也就是对于目的已经存在有同样的文件名时，将老的文件重新命名为~filename。可以使用--suffix选项来指定不同的备份文件前缀。
+</span></span><span class="line"><span class="cl"> <span class="m">14</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">15</span> --backup-dir 将备份文件<span class="o">(</span>如~filename<span class="o">)</span>存放在在目录下。
+</span></span><span class="line"><span class="cl"> <span class="m">16</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">17</span> -suffix<span class="o">=</span>SUFFIX 定义备份文件前缀
+</span></span><span class="line"><span class="cl"> <span class="m">18</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">19</span> -u, --update 仅仅进行更新，也就是跳过所有已经存在于DST，并且文件时间晚于要备份的文件。<span class="o">(</span>不覆盖更新的文件<span class="o">)</span>
+</span></span><span class="line"><span class="cl"> <span class="m">20</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">21</span> -l, --links 保留软链结
+</span></span><span class="line"><span class="cl"> <span class="m">22</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">23</span> -L, --copy-links 想对待常规文件一样处理软链结
+</span></span><span class="line"><span class="cl"> <span class="m">24</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">25</span> --copy-unsafe-links 仅仅拷贝指向SRC路径目录树以外的链结
+</span></span><span class="line"><span class="cl"> <span class="m">26</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">27</span> --safe-links 忽略指向SRC路径目录树以外的链结
+</span></span><span class="line"><span class="cl"> <span class="m">28</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">29</span> -H, --hard-links 保留硬链结
+</span></span><span class="line"><span class="cl"> <span class="m">30</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">31</span> -p, --perms 保持文件权限
+</span></span><span class="line"><span class="cl"> <span class="m">32</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">33</span> -o, --owner 保持文件属主信息
+</span></span><span class="line"><span class="cl"> <span class="m">34</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">35</span> -g, --group 保持文件属组信息
+</span></span><span class="line"><span class="cl"> <span class="m">36</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">37</span> -D, --devices 保持设备文件信息
+</span></span><span class="line"><span class="cl"> <span class="m">38</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">39</span> -t, --times 保持文件时间信息
+</span></span><span class="line"><span class="cl"> <span class="m">40</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">41</span> -S, --sparse 对稀疏文件进行特殊处理以节省DST的空间
+</span></span><span class="line"><span class="cl"> <span class="m">42</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">43</span> -n, --dry-run现实哪些文件将被传输
+</span></span><span class="line"><span class="cl"> <span class="m">44</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">45</span> -W, --whole-file 拷贝文件，不进行增量检测
+</span></span><span class="line"><span class="cl"> <span class="m">46</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">47</span> -x, --one-file-system 不要跨越文件系统边界
+</span></span><span class="line"><span class="cl"> <span class="m">48</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">49</span> -B, --block-size<span class="o">=</span>SIZE 检验算法使用的块尺寸，默认是700字节
+</span></span><span class="line"><span class="cl"> <span class="m">50</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">51</span> -e, --rsh<span class="o">=</span>COMMAND 指定使用rsh、ssh方式进行数据同步
+</span></span><span class="line"><span class="cl"> <span class="m">52</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">53</span> --rsync-path<span class="o">=</span>PATH 指定远程服务器上的rsync命令所在路径信息
+</span></span><span class="line"><span class="cl"> <span class="m">54</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">55</span> -C, --cvs-exclude 使用和CVS一样的方法自动忽略文件，用来排除那些不希望传输的文件
+</span></span><span class="line"><span class="cl"> <span class="m">56</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">57</span> --existing 仅仅更新那些已经存在于DST的文件，而不备份那些新创建的文件
+</span></span><span class="line"><span class="cl"> <span class="m">58</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">59</span> --delete 删除那些DST中SRC没有的文件
+</span></span><span class="line"><span class="cl"> <span class="m">60</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">61</span> --delete-excluded 同样删除接收端那些被该选项指定排除的文件
+</span></span><span class="line"><span class="cl"> <span class="m">62</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">63</span> --delete-after 传输结束以后再删除
+</span></span><span class="line"><span class="cl"> <span class="m">64</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">65</span> --ignore-errors 及时出现IO错误也进行删除
+</span></span><span class="line"><span class="cl"> <span class="m">66</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">67</span> --max-delete<span class="o">=</span>NUM 最多删除NUM个文件
+</span></span><span class="line"><span class="cl"> <span class="m">68</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">69</span> --partial 保留那些因故没有完全传输的文件，以是加快随后的再次传输
+</span></span><span class="line"><span class="cl"> <span class="m">70</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">71</span> --force 强制删除目录，即使不为空
+</span></span><span class="line"><span class="cl"> <span class="m">72</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">73</span> --numeric-ids 不将数字的用户和组ID匹配为用户名和组名
+</span></span><span class="line"><span class="cl"> <span class="m">74</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">75</span> --timeout<span class="o">=</span>TIME IP超时时间，单位为秒
+</span></span><span class="line"><span class="cl"> <span class="m">76</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">77</span> -I, --ignore-times 不跳过那些有同样的时间和长度的文件
+</span></span><span class="line"><span class="cl"> <span class="m">78</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">79</span> --size-only 当决定是否要备份文件时，仅仅察看文件大小而不考虑文件时间
+</span></span><span class="line"><span class="cl"> <span class="m">80</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">81</span> --modify-window<span class="o">=</span>NUM 决定文件是否时间相同时使用的时间戳窗口，默认为0
+</span></span><span class="line"><span class="cl"> <span class="m">82</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">83</span> -T --temp-dir<span class="o">=</span>DIR 在DIR中创建临时文件
+</span></span><span class="line"><span class="cl"> <span class="m">84</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">85</span> --compare-dest<span class="o">=</span>DIR 同样比较DIR中的文件来决定是否需要备份
+</span></span><span class="line"><span class="cl"> <span class="m">86</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">87</span> -P 等同于 --partial
+</span></span><span class="line"><span class="cl"> <span class="m">88</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">89</span> --progress 显示备份过程
+</span></span><span class="line"><span class="cl"> <span class="m">90</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">91</span> -z, --compress 对备份的文件在传输时进行压缩处理
+</span></span><span class="line"><span class="cl"> <span class="m">92</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">93</span> --exclude<span class="o">=</span>PATTERN 指定排除不需要传输的文件模式
+</span></span><span class="line"><span class="cl"> <span class="m">94</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">95</span> --include<span class="o">=</span>PATTERN 指定不排除而需要传输的文件模式
+</span></span><span class="line"><span class="cl"> <span class="m">96</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">97</span> --exclude-from<span class="o">=</span>FILE 排除FILE中指定模式的文件
+</span></span><span class="line"><span class="cl"> <span class="m">98</span> 
+</span></span><span class="line"><span class="cl"> <span class="m">99</span> --include-from<span class="o">=</span>FILE 不排除FILE指定模式匹配的文件
+</span></span><span class="line"><span class="cl"><span class="m">100</span> 
+</span></span><span class="line"><span class="cl"><span class="m">101</span> --version 打印版本信息
+</span></span><span class="line"><span class="cl"><span class="m">102</span> 
+</span></span><span class="line"><span class="cl"><span class="m">103</span> --address 绑定到特定的地址
+</span></span><span class="line"><span class="cl"><span class="m">104</span> 
+</span></span><span class="line"><span class="cl"><span class="m">105</span> --config<span class="o">=</span>FILE 指定其他的配置文件，不使用默认的rsyncd.conf文件
+</span></span><span class="line"><span class="cl"><span class="m">106</span> 
+</span></span><span class="line"><span class="cl"><span class="m">107</span> --port<span class="o">=</span>PORT 指定其他的rsync服务端口
+</span></span><span class="line"><span class="cl"><span class="m">108</span> 
+</span></span><span class="line"><span class="cl"><span class="m">109</span> --blocking-io 对远程shell使用阻塞IO
+</span></span><span class="line"><span class="cl"><span class="m">110</span> 
+</span></span><span class="line"><span class="cl"><span class="m">111</span> -stats 给出某些文件的传输状态
+</span></span><span class="line"><span class="cl"><span class="m">112</span> 
+</span></span><span class="line"><span class="cl"><span class="m">113</span> --progress 在传输时现实传输过程
+</span></span><span class="line"><span class="cl"><span class="m">114</span> 
+</span></span><span class="line"><span class="cl"><span class="m">115</span> --log-format<span class="o">=</span>formAT 指定日志文件格式
+</span></span><span class="line"><span class="cl"><span class="m">116</span> 
+</span></span><span class="line"><span class="cl"><span class="m">117</span> --password-file<span class="o">=</span>FILE 从FILE中得到密码
+</span></span><span class="line"><span class="cl"><span class="m">118</span> 
+</span></span><span class="line"><span class="cl"><span class="m">119</span> --bwlimit<span class="o">=</span>KBPS 限制I/O带宽，KBytes per second
+</span></span><span class="line"><span class="cl"><span class="m">120</span> 
+</span></span><span class="line"><span class="cl"><span class="m">121</span> -h, --help 显示帮助信息
+</span></span><span class="line"><span class="cl">rsync详细参数
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>参考地址：</p>
+<p><a class="link" href="https://blog.51cto.com/liubao0312/1677586"  target="_blank" rel="noopener"
+    >https://blog.51cto.com/liubao0312/1677586</a></p>
+<p><a class="link" href="https://blog.csdn.net/ljx1528/article/details/105348259"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/ljx1528/article/details/105348259</a></p>
+<p><a class="link" href="https://www.cnblogs.com/lei0213/p/8598072.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/lei0213/p/8598072.html</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/linux/">linux</a>
+        
+            <a href="/tags/ssh/">ssh</a>
+        
+            <a href="/tags/centos/">centos</a>
+        
+            <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8/">服务器</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202105050007/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/56.jpg" loading="lazy" data-key="202105050007" data-hash="/../../title_pic/56.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Ansible小实例</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202007251759/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/39.jpg" loading="lazy" data-key="202007251759" data-hash="/../../title_pic/39.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">大规模集群全网数据备份解决方案</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202004221842/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/60.jpg" loading="lazy" data-key="202004221842" data-hash="/../../title_pic/60.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">手误【删库】 ==  跑路，不存在的  ——删瓦辛格</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202004101047/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/22.jpg" loading="lazy" data-key="202004101047" data-hash="/../../title_pic/22.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7升级Python3.7.3版本</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/201903121930/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/59.jpg" loading="lazy" data-key="201903121930" data-hash="/../../title_pic/59.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Linux的httpd服务搭建</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='监控是一个在上运行的堆栈，它提供了一种方便的方式来监控你的集群。在本文中，我们将介绍如何使用来监控。、前提条件在开始之前，你需要确保你已经在你的集群上安装了以下组件：例如集群如果没有，这可以参考下方博。。。。。。。'>
+<title>Kube-Prometheus 监控Ingress实战</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202401191019/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='Kube-Prometheus 监控Ingress实战'>
+<meta property='og:description' content='监控是一个在上运行的堆栈，它提供了一种方便的方式来监控你的集群。在本文中，我们将介绍如何使用来监控。、前提条件在开始之前，你需要确保你已经在你的集群上安装了以下组件：例如集群如果没有，这可以参考下方博。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202401191019/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Prometheus' /><meta property='article:tag' content='Kubernetes' /><meta property='article:published_time' content='2024-01-19T10:19:00&#43;00:00'/><meta property='article:modified_time' content='2024-01-19T10:19:00&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/49.jpg' />
+<meta name="twitter:title" content="Kube-Prometheus 监控Ingress实战">
+<meta name="twitter:description" content="监控是一个在上运行的堆栈，它提供了一种方便的方式来监控你的集群。在本文中，我们将介绍如何使用来监控。、前提条件在开始之前，你需要确保你已经在你的集群上安装了以下组件：例如集群如果没有，这可以参考下方博。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/49.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1前提条件">1、前提条件</a></li>
+    <li><a href="#2ingress介绍">2、Ingress介绍</a></li>
+    <li><a href="#3ingress配置">3、Ingress配置</a>
+      <ol>
+        <li><a href="#1修改ingress-deployment内容">1、修改Ingress deployment内容</a></li>
+        <li><a href="#2修改ingress-service内容">2、修改Ingress Service内容</a></li>
+        <li><a href="#3测试一下修改是否正常">3、测试一下修改是否正常</a></li>
+      </ol>
+    </li>
+    <li><a href="#4servicemonitor">4、ServiceMonitor</a></li>
+    <li><a href="#5添加报警规则">5、添加报警规则</a></li>
+    <li><a href="#6监控指标">6、监控指标</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202401191019/">
+                
+                    <img src="/../../title_pic/49.jpg" loading="lazy" alt="Featured image of post Kube-Prometheus 监控Ingress实战" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus%E7%9B%91%E6%8E%A7/" >
+                Prometheus监控
+            </a>
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202401191019/">Kube-Prometheus 监控Ingress实战</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            监控是一个在上运行的堆栈，它提供了一种方便的方式来监控你的集群。在本文中，我们将介绍如何使用来监控。、前提条件在开始之前，你需要确保你已经在你的集群上安装了以下组件：例如集群如果没有，这可以参考下方博。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jan 19, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 7 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="kube-prometheus-监控ingress">Kube-Prometheus 监控Ingress</h1>
+<p>Kube-Prometheus 是一个在 Kubernetes 上运行的 Prometheus 堆栈，它提供了一种方便的方式来监控你的 Kubernetes 集群。在本文中，我们将介绍如何使用 Kube-Prometheus 来监控 Kubernetes Ingress。</p>
+<h2 id="1前提条件">1、前提条件</h2>
+<p>在开始之前，你需要确保你已经在你的 Kubernetes 集群上安装了以下组件：</p>
+<ul>
+<li>Kube-Prometheus</li>
+<li>Ingress Controller（例如 NGINX Ingress Controller）</li>
+<li>Kubernetes v1.23.0集群</li>
+</ul>
+<p>‍</p>
+<p><span style="font-weight: bold;" data-type="strong">如果没有，这可以参考下方博客进行部署构建</span></p>
+<p><a class="link" href="https://blog.csdn.net/heian_99/article/details/135665365"  target="_blank" rel="noopener"
+    >Kube-Prometheus 手动部署</a></p>
+<p><a class="link" href="https://blog.csdn.net/heian_99/article/details/134776164"  target="_blank" rel="noopener"
+    >Kubernetes安装ingress-nginx</a></p>
+<p><a class="link" href="https://blog.csdn.net/heian_99/article/details/134920875"  target="_blank" rel="noopener"
+    >使用kubeadm部署一套Kubernetes v1.23.0集群</a></p>
+<p>‍</p>
+<h2 id="2ingress介绍">2、Ingress介绍</h2>
+<p>在 Kubernetes 集群中，我们通常使用 “Nginx Ingress” 实现集群南北向流量的代理转发，Nginx Ingress 基于集群内 Ingress 资源配置生成具体的路由规则。Ingress 资源负责对外公开服务的管理，一般这类服务通过 HTTP 协议进行访问。通过 Nginx Ingress + Ingress 资源可以实现以下场景：</p>
+<p>‍</p>
+<p>一、通过 Nginx Ingress 将来自客户端的全部流量转发给单一 Service。</p>
+<p>​<img src="/../../image/f41ba3ddccc94ef8b07424b704d62f8b.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>二、通过 Nginx Ingress 实现更复杂的路由转发规则，将来自单一绑定 IP 地址的所有流量根据 URL 请求路径前缀转发给不同的 Service。</p>
+<p>​<img src="/../../image/ecc94ba4c9f545fcbd96b5d81340af9f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>三、根据 HTTP 请求头部携带的 Host 字段——通常由访问的域名决定，将来自单一绑定 IP 地址的流量分发给不同后端 Service，实现基于名称的虚拟主机（Name-based Virtual Hosting）能力。</p>
+<p>​<img src="/../../image/c3e8d7e6ffcd4b9689836034647d6748.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>通常，围绕 Nginx Ingress 网关监控场景，我们通常会关注两类核心指标数据：</p>
+<ol>
+<li><span style="font-weight: bold;" data-type="strong">工作负载资源</span></li>
+</ol>
+<p>即 Nginx Ingress Controller Pod 的负载情况，当 CPU 、内存等资源水位处于饱和或过载，会导致集群对外服务不稳定。针对“工作负载监控”，一般建议关注 “USE” 指标，即：使用率（Utilization）、饱和度（Saturation）、错误率（Errors）。对此，阿里云 Prometheus 监控提供了预置性能监控大盘，可参考 <span style="font-weight: bold;" data-type="strong">《工作负载性能监控组件接入》  </span>[1]<span style="font-weight: bold;" data-type="strong">  </span>完成数据采集与大盘创建。</p>
+<ol start="2">
+<li><span style="font-weight: bold;" data-type="strong">入口请求流量</span></li>
+</ol>
+<p>包括集群范围全局的流量、某个 Ingress 规则转发的流量、某个 Service 的流量，以及对应的成功率/错误率、延迟，乃至请求来源的地址、设备等信息的分析与统计。针对“入口请求流量监控”，一般建议关注 “RED” 指标，即：请求速率（Rate）、请求失败数（Errors）、请求延迟（Duration）。可通过本文最佳实践实现接入。</p>
+<h2 id="3ingress配置">3、Ingress配置</h2>
+<blockquote>
+<p>Ingress的监控端口：10254</p>
+</blockquote>
+<p>​<img src="/../../image/9a5da59d32544a9e97996876fbc9ba05.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>‍</p>
+<p>查看SVC，POD</p>
+<p>​<img src="/../../image/8b1de6ad55464632b3d481745ecaa9ce.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<h3 id="1修改ingress-deployment内容">1、修改Ingress deployment内容</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Deployment
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  annotations:
+</span></span><span class="line"><span class="cl">    prometheus.io/scrape: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">    prometheus.io/port: <span class="s2">&#34;10254&#34;</span>
+</span></span><span class="line"><span class="cl">..
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">    - name: prometheus
+</span></span><span class="line"><span class="cl">      containerPort: <span class="m">10254</span>
+</span></span><span class="line"><span class="cl">      ..
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">重新apply一下yaml文件让修改的配置生效
+</span></span><span class="line"><span class="cl">kubectl apply -f ingress-deploy.yml 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><span style="font-weight: bold;" data-type="strong">或者</span></p>
+<p>因为已经部署可以直接编辑</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl edit deployments.apps -n ingress-nginx ingress-nginx-controller
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        ports:
+</span></span><span class="line"><span class="cl">        - containerPort: <span class="m">10254</span>
+</span></span><span class="line"><span class="cl">          hostPort: <span class="m">10254</span>
+</span></span><span class="line"><span class="cl">          name: prometheus
+</span></span><span class="line"><span class="cl">          protocol: TCP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>​<img src="/../../image/920bba7c35e3468e99440961610a526f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>之后保存退出</p>
+<blockquote>
+<p>注意：这边有个坑，因为我的Ingress是使用的hostnetwork 固定node01 上，</p>
+<p>所以保存重启 会失败，因为80 和 443 端口已经被占用。</p>
+<p>解决问题：备份原本Ingress的yaml文件，删除Ingress的deployment，在使用yaml文件重建 即可</p>
+<p>‍</p>
+<p>hostNetwork: true<br>
+nodeName: node01<br>
+nodeSelector:<br>
+kubernetes.io/os: linux</p>
+</blockquote>
+<h3 id="2修改ingress-service内容">2、修改Ingress Service内容</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl"> annotations:
+</span></span><span class="line"><span class="cl">   prometheus.io/scrape: <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">   prometheus.io/port: <span class="s2">&#34;10254&#34;</span>
+</span></span><span class="line"><span class="cl">..
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">  - name: prometheus
+</span></span><span class="line"><span class="cl">    port: <span class="m">10254</span>
+</span></span><span class="line"><span class="cl">    targetPort: <span class="m">10254</span>
+</span></span><span class="line"><span class="cl">..
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  annotations: <span class="c1">#svc 这一块必须要加，不然不会监控到</span>
+</span></span><span class="line"><span class="cl">    prometheus.io/port: <span class="s1">&#39;10254&#39;</span>
+</span></span><span class="line"><span class="cl">    prometheus.io/scrape: <span class="s1">&#39;true&#39;</span>
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/component: controller
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/instance: ingress-nginx
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/managed-by: Helm
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/name: ingress-nginx
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/version: 1.0.0
+</span></span><span class="line"><span class="cl">    helm.sh/chart: ingress-nginx-4.0.1
+</span></span><span class="line"><span class="cl">  name: ingress-nginx-controller
+</span></span><span class="line"><span class="cl">  namespace: ingress-nginx
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">    - appProtocol: http
+</span></span><span class="line"><span class="cl">      name: http
+</span></span><span class="line"><span class="cl">      port: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">      protocol: TCP
+</span></span><span class="line"><span class="cl">      targetPort: http
+</span></span><span class="line"><span class="cl">    - appProtocol: https
+</span></span><span class="line"><span class="cl">      name: https
+</span></span><span class="line"><span class="cl">      port: <span class="m">443</span>
+</span></span><span class="line"><span class="cl">      protocol: TCP
+</span></span><span class="line"><span class="cl">      targetPort: https
+</span></span><span class="line"><span class="cl">    - name: prometheus
+</span></span><span class="line"><span class="cl">      port: <span class="m">10254</span>
+</span></span><span class="line"><span class="cl">      protocol: TCP
+</span></span><span class="line"><span class="cl">      targetPort: prometheus
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/component: controller
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/instance: ingress-nginx
+</span></span><span class="line"><span class="cl">    app.kubernetes.io/name: ingress-nginx
+</span></span><span class="line"><span class="cl">  sessionAffinity: None
+</span></span><span class="line"><span class="cl">  type: ClusterIP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3测试一下修改是否正常">3、测试一下修改是否正常</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@bt app<span class="o">]</span><span class="c1"># kubectl get po,svc -n ingress-nginx</span>
+</span></span><span class="line"><span class="cl">NAME                                           READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">pod/ingress-nginx-controller-d494d449b-k7z5q   1/1     Running   <span class="m">0</span>          59m
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                                         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>                    AGE
+</span></span><span class="line"><span class="cl">service/ingress-nginx-controller             ClusterIP   172.21.20.203   &lt;none&gt;        80/TCP,443/TCP,10254/TCP   448d
+</span></span><span class="line"><span class="cl">service/ingress-nginx-controller-admission   ClusterIP   172.21.18.217   &lt;none&gt;        443/TCP                    448d
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt app<span class="o">]</span><span class="c1"># </span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt app<span class="o">]</span><span class="c1"># curl 172.21.20.203:10254/metrics</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># TYPE go_gc_duration_seconds summary</span>
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds<span class="o">{</span><span class="nv">quantile</span><span class="o">=</span><span class="s2">&#34;0&#34;</span><span class="o">}</span> 4.1684e-05
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds<span class="o">{</span><span class="nv">quantile</span><span class="o">=</span><span class="s2">&#34;0.25&#34;</span><span class="o">}</span> 0.000148229
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds<span class="o">{</span><span class="nv">quantile</span><span class="o">=</span><span class="s2">&#34;0.5&#34;</span><span class="o">}</span> 0.000936162
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds<span class="o">{</span><span class="nv">quantile</span><span class="o">=</span><span class="s2">&#34;0.75&#34;</span><span class="o">}</span> 0.001216288
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds<span class="o">{</span><span class="nv">quantile</span><span class="o">=</span><span class="s2">&#34;1&#34;</span><span class="o">}</span> 0.002295067
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds_sum 0.039017271
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds_count <span class="m">46</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># HELP go_goroutines Number of goroutines that currently exist.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>​<img src="/../../image/3fe8caa352e34cd3a88f424e8e709f30.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<h2 id="4servicemonitor">4、ServiceMonitor</h2>
+<p><span style="font-weight: bold;" data-type="strong">新增Ingress ServiceMonitor</span></p>
+<p>查询标签</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@bt app<span class="o">]</span><span class="c1"># kubectl get svc -n ingress-nginx  --show-labels  </span>
+</span></span><span class="line"><span class="cl">NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>                    AGE    LABELS
+</span></span><span class="line"><span class="cl">ingress-nginx-controller             ClusterIP   172.21.20.203   &lt;none&gt;        80/TCP,443/TCP,10254/TCP   448d   app.kubernetes.io/component<span class="o">=</span>controller,app.kubernetes.io/instance<span class="o">=</span>ingress-nginx,app.kubernetes.io/managed-by<span class="o">=</span>Helm,app.kubernetes.io/name<span class="o">=</span>ingress-nginx,app.kubernetes.io/version<span class="o">=</span>1.0.0,helm.sh/chart<span class="o">=</span>ingress-nginx-4.0.1
+</span></span><span class="line"><span class="cl">ingress-nginx-controller-admission   ClusterIP   172.21.18.217   &lt;none&gt;        443/TCP                    448d   app.kubernetes.io/component<span class="o">=</span>controller,app.kubernetes.io/instance<span class="o">=</span>ingress-nginx,app.kubernetes.io/managed-by<span class="o">=</span>Helm,app.kubernetes.io/name<span class="o">=</span>ingress-nginx,app.kubernetes.io/version<span class="o">=</span>1.0.0,helm.sh/chart<span class="o">=</span>ingress-nginx-4.0.1
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>根据此处的标签来填写下面的selector 匹配标签</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: monitoring.coreos.com/v1
+</span></span><span class="line"><span class="cl">kind: ServiceMonitor
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">    name: ingress-nginx
+</span></span><span class="line"><span class="cl">    namespace: monitoring
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  endpoints:
+</span></span><span class="line"><span class="cl">  - interval: 15s
+</span></span><span class="line"><span class="cl">    port: prometheus
+</span></span><span class="line"><span class="cl">  namespaceSelector:
+</span></span><span class="line"><span class="cl">    matchNames:
+</span></span><span class="line"><span class="cl">    - ingress-nginx
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels: <span class="c1">#此处不是乱写的，要根据自己实际情况，查标签</span>
+</span></span><span class="line"><span class="cl">      app.kubernetes.io/component: controller
+</span></span><span class="line"><span class="cl">      app.kubernetes.io/instance: ingress-nginx
+</span></span><span class="line"><span class="cl">      app.kubernetes.io/name: ingress-nginx
+</span></span><span class="line"><span class="cl">      app.kubernetes.io/version: 1.0.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl"><span class="c1"># 在对应的ns中创建角色</span>
+</span></span><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: Role
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: prometheus-k8s
+</span></span><span class="line"><span class="cl">  namespace: ingress-nginx
+</span></span><span class="line"><span class="cl">rules:
+</span></span><span class="line"><span class="cl">- apiGroups:
+</span></span><span class="line"><span class="cl">  - <span class="s2">&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">  resources:
+</span></span><span class="line"><span class="cl">  - services
+</span></span><span class="line"><span class="cl">  - endpoints
+</span></span><span class="line"><span class="cl">  - pods
+</span></span><span class="line"><span class="cl">  verbs:
+</span></span><span class="line"><span class="cl">  - get
+</span></span><span class="line"><span class="cl">  - list
+</span></span><span class="line"><span class="cl">  - watch
+</span></span><span class="line"><span class="cl">---
+</span></span><span class="line"><span class="cl"><span class="c1"># 绑定角色 prometheus-k8s 角色到 Role</span>
+</span></span><span class="line"><span class="cl">apiVersion: rbac.authorization.k8s.io/v1
+</span></span><span class="line"><span class="cl">kind: RoleBinding
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: prometheus-k8s
+</span></span><span class="line"><span class="cl">  namespace: ingress-nginx
+</span></span><span class="line"><span class="cl">roleRef:
+</span></span><span class="line"><span class="cl">  apiGroup: rbac.authorization.k8s.io
+</span></span><span class="line"><span class="cl">  kind: Role
+</span></span><span class="line"><span class="cl">  name: prometheus-k8s
+</span></span><span class="line"><span class="cl">subjects:
+</span></span><span class="line"><span class="cl">- kind: ServiceAccount
+</span></span><span class="line"><span class="cl">  name: prometheus-k8s <span class="c1"># Prometheus 容器使用的 serviceAccount，kube-prometheus默认使用prometheus-k8s这个用户</span>
+</span></span><span class="line"><span class="cl">  namespace: monitoring
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5添加报警规则">5、添加报警规则</h2>
+<p>‍</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: monitoring.coreos.com/v1
+</span></span><span class="line"><span class="cl">kind: PrometheusRule
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    prometheus: k8s
+</span></span><span class="line"><span class="cl">    role: alert-rules
+</span></span><span class="line"><span class="cl">  name: nginx-ingress-rules
+</span></span><span class="line"><span class="cl">  namespace: monitoring
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  groups:
+</span></span><span class="line"><span class="cl">  - name: nginx-ingress-rules
+</span></span><span class="line"><span class="cl">    rules:
+</span></span><span class="line"><span class="cl">    - alert: NginxFailedtoLoadConfiguration
+</span></span><span class="line"><span class="cl">      expr: <span class="nv">nginx_ingress_controller_config_last_reload_successful</span> <span class="o">==</span> <span class="m">0</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: critical
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        summary: <span class="s2">&#34;Nginx Ingress Controller配置文件加载失败&#34;</span>
+</span></span><span class="line"><span class="cl">        description: <span class="s2">&#34;Nginx Ingress Controller的配置文件加载失败，请检查配置文件是否正确。&#34;</span>
+</span></span><span class="line"><span class="cl">    - alert: NginxHighHttp4xxErrorRate
+</span></span><span class="line"><span class="cl">      expr: rate<span class="o">(</span>nginx_ingress_controller_requests<span class="o">{</span><span class="nv">status</span><span class="o">=</span>~<span class="s2">&#34;^404&#34;</span><span class="o">}[</span>5m<span class="o">])</span> * <span class="m">100</span> &gt; <span class="m">1</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: warining
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        description: Nginx high HTTP 4xx error rate <span class="o">(</span> namespaces <span class="o">{{</span> <span class="nv">$labels</span>.exported_namespace <span class="o">}}</span> host <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="o">}}</span> <span class="o">)</span>
+</span></span><span class="line"><span class="cl">        summary: <span class="s2">&#34;Too many HTTP requests with status 404 (&gt; 1%)&#34;</span>
+</span></span><span class="line"><span class="cl">    - alert: NginxHighHttp5xxErrorRate
+</span></span><span class="line"><span class="cl">      expr: rate<span class="o">(</span>nginx_ingress_controller_requests<span class="o">{</span><span class="nv">status</span><span class="o">=</span>~<span class="s2">&#34;^5..&#34;</span><span class="o">}[</span>5m<span class="o">])</span> * <span class="m">100</span> &gt; <span class="m">1</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: warining
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        description: Nginx high HTTP 5xx error rate <span class="o">(</span> namespaces <span class="o">{{</span> <span class="nv">$labels</span>.exported_namespace <span class="o">}}</span> host <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="o">}}</span> <span class="o">)</span>
+</span></span><span class="line"><span class="cl">        summary: <span class="s2">&#34;Too many HTTP requests with status 5xx (&gt; 1%)&#34;</span>
+</span></span><span class="line"><span class="cl">    - alert: NginxLatencyHigh
+</span></span><span class="line"><span class="cl">      expr: histogram_quantile<span class="o">(</span>0.99, sum<span class="o">(</span>rate<span class="o">(</span>nginx_ingress_controller_request_duration_seconds_bucket<span class="o">[</span>2m<span class="o">]))</span> by <span class="o">(</span>host, node<span class="o">))</span> &gt; <span class="m">3</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 2m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: warining
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">       description: Nginx latency high <span class="o">(</span> namespaces <span class="o">{{</span> <span class="nv">$labels</span>.exported_namespace <span class="o">}}</span> host <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="o">}}</span> <span class="o">)</span>
+</span></span><span class="line"><span class="cl">       summary: <span class="s2">&#34;Nginx p99 latency is higher than 3 seconds&#34;</span>
+</span></span><span class="line"><span class="cl">    - alert: NginxHighRequestRate
+</span></span><span class="line"><span class="cl">      expr: rate<span class="o">(</span>nginx_ingress_controller_nginx_process_requests_total<span class="o">[</span>5m<span class="o">])</span> * <span class="m">100</span> &gt; <span class="m">1000</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: warning
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        description: Nginx ingress controller high request rate <span class="o">(</span> instance <span class="o">{{</span> <span class="nv">$labels</span>.instance <span class="o">}}</span> namespaces <span class="o">{{</span> <span class="nv">$labels</span>.namespaces <span class="o">}}</span> pod <span class="o">{{</span><span class="nv">$labels</span>.pod<span class="o">}})</span>
+</span></span><span class="line"><span class="cl">        summary: <span class="s2">&#34;Nginx ingress controller high request rate (&gt; 1000 requests per second)&#34;</span>
+</span></span><span class="line"><span class="cl">    - alert: SSLCertificateExpiration15day
+</span></span><span class="line"><span class="cl">      expr: nginx_ingress_controller_ssl_expire_time_seconds &lt; <span class="m">1296000</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 30m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: warning
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        summary: SSL/TLS certificate <span class="k">for</span> <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="nv">$labels</span>.secret_name <span class="o">}}</span> is about to expire
+</span></span><span class="line"><span class="cl">        description: The SSL/TLS certificate <span class="k">for</span> <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="nv">$labels</span>.secret_name <span class="o">}}</span> will expire in less than <span class="m">15</span> days.
+</span></span><span class="line"><span class="cl">    - alert: SSLCertificateExpiration7day
+</span></span><span class="line"><span class="cl">      expr: nginx_ingress_controller_ssl_expire_time_seconds &lt; <span class="m">604800</span>
+</span></span><span class="line"><span class="cl">      <span class="k">for</span>: 30m
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        severity: critical
+</span></span><span class="line"><span class="cl">      annotations:
+</span></span><span class="line"><span class="cl">        summary: SSL/TLS certificate <span class="k">for</span> <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="nv">$labels</span>.secret_name <span class="o">}}</span> is about to expire
+</span></span><span class="line"><span class="cl">        description: The SSL/TLS certificate <span class="k">for</span> <span class="o">{{</span> <span class="nv">$labels</span>.host <span class="nv">$labels</span>.secret_name <span class="o">}}</span> will expire in less than <span class="m">7</span> days.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><span style="font-weight: bold;" data-type="strong">执行查询</span></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@bt app<span class="o">]</span><span class="c1"># kubectl apply -f  ingress_rule_yaml</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt app<span class="o">]</span><span class="c1"># kubectl get prometheusrules.monitoring.coreos.com  -n monitoring </span>
+</span></span><span class="line"><span class="cl">NAME                              AGE
+</span></span><span class="line"><span class="cl">alertmanager-main-rules           24h
+</span></span><span class="line"><span class="cl">etcd-rules                        21h
+</span></span><span class="line"><span class="cl">kube-prometheus-rules             24h
+</span></span><span class="line"><span class="cl">kube-state-metrics-rules          24h
+</span></span><span class="line"><span class="cl">kubernetes-monitoring-rules       24h
+</span></span><span class="line"><span class="cl">nginx-ingress-rules               11s
+</span></span><span class="line"><span class="cl">node-exporter-rules               24h
+</span></span><span class="line"><span class="cl">prometheus-k8s-prometheus-rules   24h
+</span></span><span class="line"><span class="cl">prometheus-operator-rules         24h
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>​<img src="/../../image/02fc4badcf1d4ad18022b6265efa6a48.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>6、Grafan导入模版</p>
+<p>Ingress-nginx模板ID：9614、14314</p>
+<p>​<img src="/../../image/b31a0c278cc240d280766d73a93aa37c.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>​<img src="/../../image/229c1d3cd0254ce9bb866de70eff1409.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="image"
+	
+	
+>​</p>
+<p>‍</p>
+<h2 id="6监控指标">6、监控指标</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl http://172.21.20.203:10254/metrics
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>访问上面的接口，会返回监控指标，这写数据Prometheus会定时拉去。</p>
+<p>接下来让我们看看这些数据的含义</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl http://172.21.20.203:10254/metrics <span class="p">|</span> grep -Ev <span class="s1">&#39;^#&#39;</span> <span class="p">|</span>awk -F <span class="s1">&#39;{&#39;</span> <span class="s1">&#39;{print $1}&#39;</span> <span class="p">|</span> sort <span class="p">|</span> uniq <span class="p">|</span> awk <span class="s1">&#39;{print $1}&#39;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>‍</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@bt ~<span class="o">]</span><span class="c1"># curl http://172.21.20.203:10254/metrics | grep -Ev &#39;^#&#39; |awk -F &#39;{&#39; &#39;{print $1}&#39; | sort | uniq | awk &#39;{print $1}&#39;</span>
+</span></span><span class="line"><span class="cl">  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+</span></span><span class="line"><span class="cl">                                 Dload  Upload   Total   Spent    Left  Speed
+</span></span><span class="line"><span class="cl"><span class="m">100</span>  291k    <span class="m">0</span>  291k    <span class="m">0</span>     <span class="m">0</span>  6654k      <span class="m">0</span> --:--:-- --:--:-- --:--:-- 6781k
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds_count
+</span></span><span class="line"><span class="cl">go_gc_duration_seconds_sum
+</span></span><span class="line"><span class="cl">go_goroutines
+</span></span><span class="line"><span class="cl">go_info
+</span></span><span class="line"><span class="cl">go_memstats_alloc_bytes
+</span></span><span class="line"><span class="cl">go_memstats_alloc_bytes_total
+</span></span><span class="line"><span class="cl">go_memstats_buck_hash_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_frees_total
+</span></span><span class="line"><span class="cl">go_memstats_gc_cpu_fraction
+</span></span><span class="line"><span class="cl">go_memstats_gc_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_heap_alloc_bytes
+</span></span><span class="line"><span class="cl">go_memstats_heap_idle_bytes
+</span></span><span class="line"><span class="cl">go_memstats_heap_inuse_bytes
+</span></span><span class="line"><span class="cl">go_memstats_heap_objects
+</span></span><span class="line"><span class="cl">go_memstats_heap_released_bytes
+</span></span><span class="line"><span class="cl">go_memstats_heap_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_last_gc_time_seconds
+</span></span><span class="line"><span class="cl">go_memstats_lookups_total
+</span></span><span class="line"><span class="cl">go_memstats_mallocs_total
+</span></span><span class="line"><span class="cl">go_memstats_mcache_inuse_bytes
+</span></span><span class="line"><span class="cl">go_memstats_mcache_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_mspan_inuse_bytes
+</span></span><span class="line"><span class="cl">go_memstats_mspan_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_next_gc_bytes
+</span></span><span class="line"><span class="cl">go_memstats_other_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_stack_inuse_bytes
+</span></span><span class="line"><span class="cl">go_memstats_stack_sys_bytes
+</span></span><span class="line"><span class="cl">go_memstats_sys_bytes
+</span></span><span class="line"><span class="cl">go_threads
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_bytes_sent_bucket
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_bytes_sent_count
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_bytes_sent_sum
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_config_hash
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_config_last_reload_successful
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_config_last_reload_successful_timestamp_seconds
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ingress_upstream_latency_seconds
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ingress_upstream_latency_seconds_count
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ingress_upstream_latency_seconds_sum
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_leader_election_status
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_connections
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_connections_total
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_cpu_seconds_total
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_num_procs
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_oldest_start_time_seconds
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_read_bytes_total
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_requests_total
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_resident_memory_bytes
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_virtual_memory_bytes
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_write_bytes_total
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_duration_seconds_bucket
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_duration_seconds_count
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_duration_seconds_sum
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_requests
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_size_bucket
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_size_count
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_size_sum
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_duration_seconds_bucket
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_duration_seconds_count
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_duration_seconds_sum
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_size_bucket
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_size_count
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_size_sum
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ssl_expire_time_seconds
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_success
+</span></span><span class="line"><span class="cl">process_cpu_seconds_total
+</span></span><span class="line"><span class="cl">process_max_fds
+</span></span><span class="line"><span class="cl">process_open_fds
+</span></span><span class="line"><span class="cl">process_resident_memory_bytes
+</span></span><span class="line"><span class="cl">process_start_time_seconds
+</span></span><span class="line"><span class="cl">process_virtual_memory_bytes
+</span></span><span class="line"><span class="cl">process_virtual_memory_max_bytes
+</span></span><span class="line"><span class="cl">promhttp_metric_handler_requests_in_flight
+</span></span><span class="line"><span class="cl">promhttp_metric_handler_requests_total
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt ~<span class="o">]</span><span class="c1"># </span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>参考文档：</p>
+<p><a class="link" href="https://help.aliyun.com/zh/arms/prometheus-monitoring/basic-metrics"  target="_blank" rel="noopener"
+    >https://help.aliyun.com/zh/arms/prometheus-monitoring/basic-metrics</a></p>
+<p><a class="link" href="https://www.volcengine.com/docs/6731/802251"  target="_blank" rel="noopener"
+    >https://www.volcengine.com/docs/6731/802251</a></p>
+<p>‍</p>
+<p>上面go开头的不用管，这是监控软件自带监控本身数据指标的，我们重点关注下方的的指标数据</p>
+<p>此处根据自己的整理，以及参考ChatGPT进行汇总，仅供参考</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">这些指标通过 Prometheus 暴露，并可以用于监控和告警：
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_bytes_sent_bucket: 请求发送字节大小的分布情况（通常为直方图的一部分，用于计算请求字节量的分位数）。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_bytes_sent_count: 发送的总请求数量，每个请求发送的字节累加的总和。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_bytes_sent_sum: 发送的总字节量，累计所有请求发送的字节。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_config_hash: 当前Nginx配置的哈希值，可用来检测配置是否有变化。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_config_last_reload_successful: 标识最后一次重新加载Nginx配置是否成功（1表示成功，0表示失败）。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_config_last_reload_successful_timestamp_seconds: 最后一次成功重新加载Nginx配置的时间戳。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ingress_upstream_latency_seconds: 记录从ingress到上游服务的延迟。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ingress_upstream_latency_seconds_count: 上游服务延迟计数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ingress_upstream_latency_seconds_sum: 上游服务延迟总和。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_leader_election_status: 标识当前实例是否是领导者（leader election用于决定哪个Ingress controller实例是主控）。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_connections: Nginx进程当前的活跃连接数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_connections_total: Nginx进程处理的总连接数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_cpu_seconds_total: Nginx进程消耗的CPU时间总量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_num_procs: Nginx进程数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_oldest_start_time_seconds: 最老的Nginx进程启动时间。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_read_bytes_total: Nginx进程读操作的总字节数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_requests_total: Nginx进程处理的总请求数量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_resident_memory_bytes: Nginx进程的常驻内存大小。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_virtual_memory_bytes: Nginx进程的虚拟内存大小。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_nginx_process_write_bytes_total: Nginx进程写操作的总字节数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_duration_seconds_bucket: 处理请求的持续时间的分布情况。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_duration_seconds_count: 请求持续时间的计数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_duration_seconds_sum: 请求持续时间的总和。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_requests: 处理的总请求量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_size_bucket: 请求大小的分布情况。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_size_count: 请求大小的计数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_request_size_sum: 请求大小的总和。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_duration_seconds_bucket: 响应时间的分布情况。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_duration_seconds_count: 响应时间的计数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_duration_seconds_sum: 响应时间的总和。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_size_bucket: 响应大小的分布情况。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_size_count: 响应大小的计数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_response_size_sum: 响应大小的总和。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_ssl_expire_time_seconds: SSL证书到期时间。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">nginx_ingress_controller_success: 成功处理的请求计数。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_cpu_seconds_total: 进程消耗的CPU时间总量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_max_fds: 进程可以打开的最大文件描述符数量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_open_fds: 进程当前打开的文件描述符数量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_resident_memory_bytes: 进程的常驻内存大小。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_start_time_seconds: 进程启动的开始时间。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_virtual_memory_bytes: 进程的虚拟内存大小。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">process_virtual_memory_max_bytes: 进程可以使用的最大虚拟内存大小。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">promhttp_metric_handler_requests_in_flight: 当前正在处理的promhttp指标处理器的请求数量。
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">promhttp_metric_handler_requests_total: promhttp指标处理器处理的总请求数量。
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>‍</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/prometheus/">prometheus</a>
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202305112139/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/06.jpg" loading="lazy" data-key="202305112139" data-hash="/../../title_pic/06.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Calico的BGP打通Kubernetes网络和局域网</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404111830/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/73.jpg" loading="lazy" data-key="202404111830" data-hash="/../../title_pic/73.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Ingress配置优化和追踪</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404021613/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202404021613" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx在Kubernetes集群中的进阶应用</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202308311841/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/43.jpg" loading="lazy" data-key="202308311841" data-hash="/../../title_pic/43.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">掌握Kubernetes API：释放容器编排的潜力</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202401180912/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/13.jpg" loading="lazy" data-key="202401180912" data-hash="/../../title_pic/13.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 手动部署</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

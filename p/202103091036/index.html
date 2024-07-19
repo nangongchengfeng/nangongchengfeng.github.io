@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='集群中，我们时常要部署中间件，，等等首先，这些中间件要容器化，才可以部署到集群中。一般我们到官方，寻找镜像我们可以自己定制，，公司需要的镜像部署单个首先下载的镜像版本：编写因为需要指定命名空间编写单个。。。。。。。'>
+<title>Kubernetes部署单Redis</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202103091036/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='Kubernetes部署单Redis'>
+<meta property='og:description' content='集群中，我们时常要部署中间件，，等等首先，这些中间件要容器化，才可以部署到集群中。一般我们到官方，寻找镜像我们可以自己定制，，公司需要的镜像部署单个首先下载的镜像版本：编写因为需要指定命名空间编写单个。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202103091036/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Kubernetes应用' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='中间件' /><meta property='article:tag' content='redis' /><meta property='article:published_time' content='2021-03-09T10:36:44&#43;00:00'/><meta property='article:modified_time' content='2021-03-09T10:36:44&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/07.jpg' />
+<meta name="twitter:title" content="Kubernetes部署单Redis">
+<meta name="twitter:description" content="集群中，我们时常要部署中间件，，等等首先，这些中间件要容器化，才可以部署到集群中。一般我们到官方，寻找镜像我们可以自己定制，，公司需要的镜像部署单个首先下载的镜像版本：编写因为需要指定命名空间编写单个。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/07.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#1首先下载redis的镜像版本">（1）首先下载redis的镜像（版本：）</a></li>
+        <li><a href="#2编写configmap">（2）编写configmap</a></li>
+        <li><a href="#3编写单个redis的yaml文件">(3)编写单个redis的yaml文件</a></li>
+        <li><a href="#4暴露端口service">(4)暴露端口，service</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202103091036/">
+                
+                    <img src="/../../title_pic/07.jpg" loading="lazy" alt="Featured image of post Kubernetes部署单Redis" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes/" >
+                Kubernetes
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202103091036/">Kubernetes部署单Redis</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            集群中，我们时常要部署中间件，，等等首先，这些中间件要容器化，才可以部署到集群中。一般我们到官方，寻找镜像我们可以自己定制，，公司需要的镜像部署单个首先下载的镜像版本：编写因为需要指定命名空间编写单个。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 09, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>Kubernetes集群中，我们时常要部署中间件，nginx，redis等等</p>
+<p>首先，这些中间件要容器化，才可以部署到Kubernetes集群中。</p>
+<p>（1）一般我们到dockerhub官方，寻找镜像  <a class="link" href="https://hub.docker.com/search?q=redis&amp;type=image"  target="_blank" rel="noopener"
+    >https://hub.docker.com/search?q=redis&type=image</a></p>
+<p>（2）我们可以自己定制，，公司需要的docker 镜像</p>
+<p>部署单个Redis</p>
+<h3 id="1首先下载redis的镜像版本">（1）首先下载redis的镜像（版本：）</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker pull redis:5.0.4-alpine
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2编写configmap">（2）编写configmap</h3>
+<p>因为需要指定命名空间 redis-node</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl create cm redis-node
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">data:
+</span></span><span class="line"><span class="cl">  redis.conf: <span class="p">|</span>-
+</span></span><span class="line"><span class="cl">    <span class="c1">#heian</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">bind</span> 0.0.0.0
+</span></span><span class="line"><span class="cl">    protected-mode yes
+</span></span><span class="line"><span class="cl">    port <span class="m">6379</span>
+</span></span><span class="line"><span class="cl">    tcp-backlog <span class="m">511</span>
+</span></span><span class="line"><span class="cl">    timeout <span class="m">0</span>
+</span></span><span class="line"><span class="cl">    tcp-keepalive <span class="m">300</span>
+</span></span><span class="line"><span class="cl">    daemonize no
+</span></span><span class="line"><span class="cl">    supervised no
+</span></span><span class="line"><span class="cl">    pidfile /var/run/redis_6379.pid
+</span></span><span class="line"><span class="cl">    loglevel notice
+</span></span><span class="line"><span class="cl">    logfile /var/log/redis.log
+</span></span><span class="line"><span class="cl">    databases <span class="m">16</span>
+</span></span><span class="line"><span class="cl">    save <span class="m">900</span> <span class="m">1</span>
+</span></span><span class="line"><span class="cl">    save <span class="m">300</span> <span class="m">10</span>
+</span></span><span class="line"><span class="cl">    save <span class="m">60</span> <span class="m">10000</span>
+</span></span><span class="line"><span class="cl">    stop-writes-on-bgsave-error yes
+</span></span><span class="line"><span class="cl">    rdbcompression yes
+</span></span><span class="line"><span class="cl">    rdbchecksum yes
+</span></span><span class="line"><span class="cl">    dbfilename dump.rdb
+</span></span><span class="line"><span class="cl">    dir /data
+</span></span><span class="line"><span class="cl">    slave-serve-stale-data yes
+</span></span><span class="line"><span class="cl">    slave-read-only yes
+</span></span><span class="line"><span class="cl">    repl-diskless-sync no
+</span></span><span class="line"><span class="cl">    repl-diskless-sync-delay <span class="m">5</span>
+</span></span><span class="line"><span class="cl">    repl-disable-tcp-nodelay no
+</span></span><span class="line"><span class="cl">    slave-priority <span class="m">100</span>
+</span></span><span class="line"><span class="cl">    appendonly no
+</span></span><span class="line"><span class="cl">    appendfilename <span class="s2">&#34;appendonly.aof&#34;</span>
+</span></span><span class="line"><span class="cl">    appendfsync everysec
+</span></span><span class="line"><span class="cl">    no-appendfsync-on-rewrite no
+</span></span><span class="line"><span class="cl">    auto-aof-rewrite-percentage <span class="m">100</span>
+</span></span><span class="line"><span class="cl">    auto-aof-rewrite-min-size 64mb
+</span></span><span class="line"><span class="cl">    aof-load-truncated yes
+</span></span><span class="line"><span class="cl">    lua-time-limit <span class="m">5000</span>
+</span></span><span class="line"><span class="cl">    slowlog-log-slower-than <span class="m">10000</span>
+</span></span><span class="line"><span class="cl">    slowlog-max-len <span class="m">128</span>
+</span></span><span class="line"><span class="cl">    latency-monitor-threshold <span class="m">0</span>
+</span></span><span class="line"><span class="cl">    notify-keyspace-events <span class="s2">&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    hash-max-ziplist-entries <span class="m">512</span>
+</span></span><span class="line"><span class="cl">    hash-max-ziplist-value <span class="m">64</span>
+</span></span><span class="line"><span class="cl">    list-max-ziplist-size -2
+</span></span><span class="line"><span class="cl">    list-compress-depth <span class="m">0</span>
+</span></span><span class="line"><span class="cl">    set-max-intset-entries <span class="m">512</span>
+</span></span><span class="line"><span class="cl">    zset-max-ziplist-entries <span class="m">128</span>
+</span></span><span class="line"><span class="cl">    zset-max-ziplist-value <span class="m">64</span>
+</span></span><span class="line"><span class="cl">    hll-sparse-max-bytes <span class="m">3000</span>
+</span></span><span class="line"><span class="cl">    activerehashing yes
+</span></span><span class="line"><span class="cl">    client-output-buffer-limit normal <span class="m">0</span> <span class="m">0</span> <span class="m">0</span>
+</span></span><span class="line"><span class="cl">    client-output-buffer-limit slave 256mb 64mb <span class="m">60</span>
+</span></span><span class="line"><span class="cl">    client-output-buffer-limit pubsub 32mb 8mb <span class="m">60</span>
+</span></span><span class="line"><span class="cl">    hz <span class="m">10</span>
+</span></span><span class="line"><span class="cl">    aof-rewrite-incremental-fsync yes
+</span></span><span class="line"><span class="cl">kind: ConfigMap
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: redis-conf
+</span></span><span class="line"><span class="cl">  namespace: redis-node
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3编写单个redis的yaml文件">(3)编写单个redis的yaml文件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">kind: Deployment
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: redis-single-node
+</span></span><span class="line"><span class="cl">  name: redis-single-node
+</span></span><span class="line"><span class="cl">  namespace: redis-node
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  progressDeadlineSeconds: <span class="m">600</span>
+</span></span><span class="line"><span class="cl">  replicas: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  revisionHistoryLimit: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    matchLabels:
+</span></span><span class="line"><span class="cl">      app: redis-single-node
+</span></span><span class="line"><span class="cl">  strategy:
+</span></span><span class="line"><span class="cl">    rollingUpdate:
+</span></span><span class="line"><span class="cl">      maxSurge: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">      maxUnavailable: <span class="m">0</span>
+</span></span><span class="line"><span class="cl">    type: RollingUpdate
+</span></span><span class="line"><span class="cl">  template:
+</span></span><span class="line"><span class="cl">    metadata:
+</span></span><span class="line"><span class="cl">      labels:
+</span></span><span class="line"><span class="cl">        app: redis-single-node
+</span></span><span class="line"><span class="cl">    spec:
+</span></span><span class="line"><span class="cl">      containers:
+</span></span><span class="line"><span class="cl">      - command:
+</span></span><span class="line"><span class="cl">        - sh
+</span></span><span class="line"><span class="cl">        - -c
+</span></span><span class="line"><span class="cl">        - redis-server <span class="s2">&#34;/mnt/redis.conf&#34;</span>
+</span></span><span class="line"><span class="cl">        env:
+</span></span><span class="line"><span class="cl">        - name: TZ
+</span></span><span class="line"><span class="cl">          value: Asia/Shanghai
+</span></span><span class="line"><span class="cl">        - name: LANG
+</span></span><span class="line"><span class="cl">          value: C.UTF-8
+</span></span><span class="line"><span class="cl">        image: redis:5.0.4-alpine
+</span></span><span class="line"><span class="cl">        imagePullPolicy: IfNotPresent
+</span></span><span class="line"><span class="cl">        lifecycle: <span class="o">{}</span>
+</span></span><span class="line"><span class="cl">        livenessProbe:
+</span></span><span class="line"><span class="cl">          failureThreshold: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">          initialDelaySeconds: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">          periodSeconds: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">          successThreshold: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">          tcpSocket:
+</span></span><span class="line"><span class="cl">            port: <span class="m">6379</span>
+</span></span><span class="line"><span class="cl">          timeoutSeconds: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">        name: redis-single-node
+</span></span><span class="line"><span class="cl">        ports:
+</span></span><span class="line"><span class="cl">        - containerPort: <span class="m">6379</span>
+</span></span><span class="line"><span class="cl">          name: web
+</span></span><span class="line"><span class="cl">          protocol: TCP
+</span></span><span class="line"><span class="cl">        readinessProbe:
+</span></span><span class="line"><span class="cl">          failureThreshold: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">          initialDelaySeconds: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">          periodSeconds: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">          successThreshold: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">          tcpSocket:
+</span></span><span class="line"><span class="cl">            port: <span class="m">6379</span>
+</span></span><span class="line"><span class="cl">          timeoutSeconds: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">        resources:
+</span></span><span class="line"><span class="cl">          limits:
+</span></span><span class="line"><span class="cl">            cpu: 100m
+</span></span><span class="line"><span class="cl">            memory: 339Mi
+</span></span><span class="line"><span class="cl">          requests:
+</span></span><span class="line"><span class="cl">            cpu: 10m
+</span></span><span class="line"><span class="cl">            memory: 10Mi
+</span></span><span class="line"><span class="cl">        securityContext:
+</span></span><span class="line"><span class="cl">          privileged: <span class="nb">false</span>
+</span></span><span class="line"><span class="cl">          runAsNonRoot: <span class="nb">false</span>
+</span></span><span class="line"><span class="cl">        terminationMessagePath: /dev/termination-log
+</span></span><span class="line"><span class="cl">        terminationMessagePolicy: File
+</span></span><span class="line"><span class="cl">        volumeMounts:
+</span></span><span class="line"><span class="cl">        - mountPath: /usr/share/zoneinfo/Asia/Shanghai
+</span></span><span class="line"><span class="cl">          name: tz-config
+</span></span><span class="line"><span class="cl">        - mountPath: /etc/localtime
+</span></span><span class="line"><span class="cl">          name: tz-config
+</span></span><span class="line"><span class="cl">        - mountPath: /etc/timezone
+</span></span><span class="line"><span class="cl">          name: timezone
+</span></span><span class="line"><span class="cl">        - mountPath: /mnt
+</span></span><span class="line"><span class="cl">          name: redis-conf
+</span></span><span class="line"><span class="cl">          readOnly: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">      dnsPolicy: ClusterFirst
+</span></span><span class="line"><span class="cl">      restartPolicy: Always
+</span></span><span class="line"><span class="cl">      schedulerName: default-scheduler
+</span></span><span class="line"><span class="cl">      securityContext: <span class="o">{}</span>
+</span></span><span class="line"><span class="cl">      terminationGracePeriodSeconds: <span class="m">30</span>
+</span></span><span class="line"><span class="cl">      tolerations:
+</span></span><span class="line"><span class="cl">      - effect: NoExecute
+</span></span><span class="line"><span class="cl">        key: node.kubernetes.io/unreachable
+</span></span><span class="line"><span class="cl">        operator: Exists
+</span></span><span class="line"><span class="cl">        tolerationSeconds: <span class="m">30</span>
+</span></span><span class="line"><span class="cl">      - effect: NoExecute
+</span></span><span class="line"><span class="cl">        key: node.kubernetes.io/not-ready
+</span></span><span class="line"><span class="cl">        operator: Exists
+</span></span><span class="line"><span class="cl">        tolerationSeconds: <span class="m">30</span>
+</span></span><span class="line"><span class="cl">      volumes:
+</span></span><span class="line"><span class="cl">      - hostPath:
+</span></span><span class="line"><span class="cl">          path: /usr/share/zoneinfo/Asia/Shanghai
+</span></span><span class="line"><span class="cl">          type: <span class="s2">&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">        name: tz-config
+</span></span><span class="line"><span class="cl">      - hostPath:
+</span></span><span class="line"><span class="cl">          path: /etc/timezone
+</span></span><span class="line"><span class="cl">          type: <span class="s2">&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">        name: timezone
+</span></span><span class="line"><span class="cl">      - configMap:
+</span></span><span class="line"><span class="cl">          defaultMode: <span class="m">420</span>
+</span></span><span class="line"><span class="cl">          name: redis-conf
+</span></span><span class="line"><span class="cl">        name: redis-conf
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为修改configmap，不会自动更新，需要删除容器才会重新加载。我这边尝试挂载configmap为文件，指定启动配置文件</p>
+<p><img src="/../../image/2021030910361041.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="4暴露端口service">(4)暴露端口，service</h3>
+<p>这边我做了service暴露。用的ClusterIP，接下来可以通过ingress包这个ip通过域名映射出去</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: redis-single-node
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">  - name: redis-port
+</span></span><span class="line"><span class="cl">    port: <span class="m">6379</span>
+</span></span><span class="line"><span class="cl">    protocol: TCP
+</span></span><span class="line"><span class="cl">    targetPort: <span class="m">6379</span>
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: redis-single-node
+</span></span><span class="line"><span class="cl">  sessionAffinity: None
+</span></span><span class="line"><span class="cl">  type: ClusterIP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/20210309105037391.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes%E5%BA%94%E7%94%A8/">Kubernetes应用</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a>
+        
+            <a href="/tags/redis/">redis</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202103111058/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/67.jpg" loading="lazy" data-key="202103111058" data-hash="/../../title_pic/67.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes通过插件，自动发现注册Rabbitmq集群</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202203101502/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/67.jpg" loading="lazy" data-key="202203101502" data-hash="/../../title_pic/67.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes的ETCD集群备份、恢复</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103181801/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/45.jpg" loading="lazy" data-key="202103181801" data-hash="/../../title_pic/45.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">prometheus黑盒测试</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103092143/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/32.jpg" loading="lazy" data-key="202103092143" data-hash="/../../title_pic/32.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes使用operator安装Redis集群</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103082205/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/65.jpg" loading="lazy" data-key="202103082205" data-hash="/../../title_pic/65.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes搭建RooK&#43;Ceph</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

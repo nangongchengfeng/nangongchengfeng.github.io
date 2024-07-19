@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='原理在现代的容器化环境中，节点资源的管理是一个重要的任务。特别是对于内存资源的管理，它直接影响着容器应用的性能和可用性。在中，我们可以利用自动调度和控制的机制来实现对节点内存的有效管理。本文将介绍一种。。。。。。。'>
+<title>当节点内存管理遇上 Kubernetes：自动调度与控制</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202305311413/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='当节点内存管理遇上 Kubernetes：自动调度与控制'>
+<meta property='og:description' content='原理在现代的容器化环境中，节点资源的管理是一个重要的任务。特别是对于内存资源的管理，它直接影响着容器应用的性能和可用性。在中，我们可以利用自动调度和控制的机制来实现对节点内存的有效管理。本文将介绍一种。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202305311413/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='容器' /><meta property='article:published_time' content='2023-05-31T14:13:57&#43;00:00'/><meta property='article:modified_time' content='2023-05-31T14:13:57&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/17.jpg' />
+<meta name="twitter:title" content="当节点内存管理遇上 Kubernetes：自动调度与控制">
+<meta name="twitter:description" content="原理在现代的容器化环境中，节点资源的管理是一个重要的任务。特别是对于内存资源的管理，它直接影响着容器应用的性能和可用性。在中，我们可以利用自动调度和控制的机制来实现对节点内存的有效管理。本文将介绍一种。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/17.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#原理">原理</a></li>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#方案">方案</a></li>
+    <li><a href="#脚本">脚本</a></li>
+    <li><a href="#升级版动态">升级版(动态)</a></li>
+    <li><a href="#原理-1">原理</a></li>
+    <li><a href="#优势">优势</a></li>
+    <li><a href="#缺点">缺点</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202305311413/">
+                
+                    <img src="/../../title_pic/17.jpg" loading="lazy" alt="Featured image of post 当节点内存管理遇上 Kubernetes：自动调度与控制" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202305311413/">当节点内存管理遇上 Kubernetes：自动调度与控制</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            原理在现代的容器化环境中，节点资源的管理是一个重要的任务。特别是对于内存资源的管理，它直接影响着容器应用的性能和可用性。在中，我们可以利用自动调度和控制的机制来实现对节点内存的有效管理。本文将介绍一种。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">May 31, 2023</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="原理">原理</h2>
+<p>在现代的容器化环境中，节点资源的管理是一个重要的任务。特别是对于内存资源的管理，它直接影响着容器应用的性能和可用性。在 Kubernetes 中，我们可以利用自动调度和控制的机制来实现对节点内存的有效管理。本文将介绍一种基于 Bash 脚本的节点内存管理方案，并探讨其原理、优势、缺点以及部署和应用趋势。</p>
+<h2 id="背景">背景</h2>
+<p>注意到一个节点的内存使用率非常高，一些 Pods 在这个节点上无法正常运行并不断重启。经过仔细研究，发现是因为这个节点的内存资源不足，导致一些高内存需求的 Pods 无法正常运行。您决定实施一种解决方案，以确保这些高内存需求的 Pods 不会被调度到这个节点上，直到您能够通过扩容或升级硬件等方式来解决这个问题。
+<img src="/../../image/a7bd959cd55144b5a7405929759ff709.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+><img src="/../../image/94066dc9b42e423ea4bd5f8d4a3b92b8.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="方案">方案</h2>
+<p>为了实现这个解决方案，您决定使用 Kubernetes 中的污点（Taint）和容忍度（Toleration）机制。您将首先添加一个污点到这个节点，以标识它当前无法容纳高内存需求的 Pods。然后，您将在这些 Pods 的 YAML 文件中添加容忍度字段，以允许它们在具有更充足内存资源的其他节点上运行。最后，您将设置 SchedulingDisabled 标志，以确保后续的 Pods 不会被调度到这个节点上，直到您解决了该节点的内存问题。</p>
+<h2 id="脚本">脚本</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 功能：控制节点内存</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 如果节点内存占用率超过 90%，则禁止在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 如果节点内存占用率低于平均值且平均值小于 90%，则允许在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 kubectl top 命令获取节点的内存占用率，并忽略掉一些特定的节点</span>
+</span></span><span class="line"><span class="cl"><span class="nv">data</span><span class="o">=</span><span class="k">$(</span>kubectl top node <span class="p">|</span> grep -v <span class="s2">&#34;MEMORY&#34;</span> <span class="p">|</span> grep -v <span class="s2">&#34;cn-shenzhen&#34;</span> <span class="p">|</span> sed <span class="s2">&#34;s/%//g&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 计算所有节点的内存占用率的平均值</span>
+</span></span><span class="line"><span class="cl"><span class="nv">avg</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$data</span><span class="s2">&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{ sum += $NF } END { print sum / NR }&#39;</span> <span class="p">|</span> awk -F. <span class="s1">&#39;{ print $1 }&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 逐行读取每个节点的信息（节点名称和内存占用率）</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$data</span><span class="s2">&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $1, $NF }&#39;</span> <span class="p">|</span> <span class="k">while</span> <span class="nb">read</span> line
+</span></span><span class="line"><span class="cl"><span class="k">do</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 获取节点名称和内存占用率</span>
+</span></span><span class="line"><span class="cl">  <span class="nv">n</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $1 }&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">  <span class="nv">m</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $2 }&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 如果内存占用率超过 90%，并且该节点没有被设置为不可调度状态，则禁止在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$m</span><span class="s2">&#34;</span> -ge <span class="s2">&#34;90&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> kubectl get node <span class="p">|</span> grep <span class="nv">$n</span> <span class="p">|</span> grep -q <span class="s2">&#34;SchedulingDisabled&#34;</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">      <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">      kubectl cordon <span class="nv">$n</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 如果内存占用率低于平均值且平均值小于 90%，并且该节点已被设置为不可调度状态，则允许在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl">  <span class="k">elif</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$m</span><span class="s2">&#34;</span> -lt <span class="s2">&#34;</span><span class="nv">$avg</span><span class="s2">&#34;</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$avg</span><span class="s2">&#34;</span> -lt <span class="s2">&#34;90&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> kubectl get node <span class="p">|</span> grep <span class="nv">$n</span> <span class="p">|</span> grep -q <span class="s2">&#34;SchedulingDisabled&#34;</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">      kubectl uncordon <span class="nv">$n</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">  <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/5bcdd0b8e7a349f39dc4866302380bbf.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/0b169f11732e485a8b0e1d7c33ceb585.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="升级版动态">升级版(动态)</h2>
+<p>它实现了以下功能：</p>
+<p>使用 kubectl top 命令获取节点的内存占用率，并忽略掉特定节点（例如 &ldquo;MEMORY&rdquo; 和 &ldquo;cn-shenzhen&rdquo;）的数据。
+计算所有节点的内存占用率的平均值。
+遍历每个节点的内存占用率，并根据阈值动态调整节点的调度状态。
+如果某个节点的内存占用率超过 90%，并且该节点没有被设置为不可调度状态，则禁止在该节点上调度 Pod（使用 kubectl cordon 命令）。
+如果某个节点的内存占用率低于下限阈值，并且该节点已被设置为不可调度状态，则允许在该节点上调度 Pod（使用 kubectl uncordon 命令）。
+这样，脚本会根据节点的内存占用率动态调整节点的调度状态，以确保每台机器资源使用率基本一样，并在内存占用率达到 90% 时禁止调度 Pod。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#/**********************************************************</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># * Author        : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># * Email         : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># * Last modified : 2023-07-31 16:21</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># * Filename      : k8s_auto_mem.sh</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># * Description   : 根据节点的内存占用率动态调整节点的调度状态，以确保每台机器资源使用率基本一样，并在内存占用率达到 90% 时禁止调度 Pod。</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># * *******************************************************/</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#/bin/bash</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 日志函数，接收时间、日志级别和日志内容作为参数</span>
+</span></span><span class="line"><span class="cl">log<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nb">local</span> <span class="nv">timestamp</span><span class="o">=</span><span class="k">$(</span>date +<span class="s2">&#34;%Y-%m-%d %H:%M:%S&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">  <span class="nb">local</span> <span class="nv">level</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">  <span class="nb">local</span> <span class="nv">message</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">  <span class="nb">echo</span> <span class="s2">&#34;[</span><span class="nv">$timestamp</span><span class="s2">] [</span><span class="nv">$level</span><span class="s2">] </span><span class="nv">$message</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;开始执行脚本&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 kubectl top 命令获取节点的内存占用率，并忽略掉一些特定的节点</span>
+</span></span><span class="line"><span class="cl"><span class="nv">data</span><span class="o">=</span><span class="k">$(</span>kubectl top node <span class="p">|</span> grep -v <span class="s2">&#34;MEMORY&#34;</span> <span class="p">|</span> grep -v <span class="s2">&#34;cn-shenzhen&#34;</span> <span class="p">|</span> sed <span class="s2">&#34;s/%//g&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 计算所有节点的内存占用率的平均值</span>
+</span></span><span class="line"><span class="cl"><span class="nv">avg</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$data</span><span class="s2">&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{ sum += $NF } END { print sum / NR }&#39;</span> <span class="p">|</span> awk -F. <span class="s1">&#39;{ print $1 }&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 逐行读取每个节点的信息（节点名称和内存占用率）</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$data</span><span class="s2">&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $1, $NF }&#39;</span> <span class="p">|</span> <span class="k">while</span> <span class="nb">read</span> line
+</span></span><span class="line"><span class="cl"><span class="k">do</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 获取节点名称和内存占用率</span>
+</span></span><span class="line"><span class="cl">  <span class="nv">n</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $1 }&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">  <span class="nv">m</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$line</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $2 }&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1"># 输出节点名称和内存占用率日志</span>
+</span></span><span class="line"><span class="cl">  log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;节点 </span><span class="nv">$n</span><span class="s2"> 的内存占用率为 </span><span class="nv">$m</span><span class="s2">%&#34;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="c1"># 如果内存占用率超过90%，并且该节点没有被设置为不可调度状态，则禁止在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$m</span><span class="s2">&#34;</span> -ge <span class="m">90</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> kubectl get node <span class="nv">$n</span> <span class="p">|</span> grep -q <span class="s2">&#34;SchedulingDisabled&#34;</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">      log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;节点 </span><span class="nv">$n</span><span class="s2"> 内存占用率超过90%，已经禁止调度 Pod&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">      log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;节点 </span><span class="nv">$n</span><span class="s2"> 内存占用率超过90%，禁止调度 Pod&#34;</span>
+</span></span><span class="line"><span class="cl">      kubectl cordon <span class="nv">$n</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">  <span class="k">else</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 根据平均阈值动态调整阈值范围（比如将平均阈值的上限和下限设置为平均值的上下10%）</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">threshold</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$avg</span><span class="s2"> * 0.1&#34;</span> <span class="p">|</span> bc<span class="k">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">upper_threshold</span><span class="o">=</span><span class="k">$(</span><span class="nb">printf</span> <span class="s2">&#34;%.0f&#34;</span> <span class="k">$(</span><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$avg</span><span class="s2"> + </span><span class="nv">$threshold</span><span class="s2">&#34;</span> <span class="p">|</span> bc<span class="k">))</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">lower_threshold</span><span class="o">=</span><span class="k">$(</span><span class="nb">printf</span> <span class="s2">&#34;%.0f&#34;</span> <span class="k">$(</span><span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$avg</span><span class="s2"> - </span><span class="nv">$threshold</span><span class="s2">&#34;</span> <span class="p">|</span> bc<span class="k">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 如果内存占用率超过上限阈值，并且该节点没有被设置为不可调度状态，则禁止在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$m</span><span class="s2">&#34;</span> -ge <span class="s2">&#34;</span><span class="nv">$upper_threshold</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> kubectl get node <span class="nv">$n</span> <span class="p">|</span> grep -q <span class="s2">&#34;SchedulingDisabled&#34;</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">        log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;节点 </span><span class="nv">$n</span><span class="s2"> 内存占用率过高，已经禁止调度 Pod&#34;</span>
+</span></span><span class="line"><span class="cl">      <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;节点 </span><span class="nv">$n</span><span class="s2"> 内存占用率过高，禁止调度 Pod&#34;</span>
+</span></span><span class="line"><span class="cl">        kubectl cordon <span class="nv">$n</span>
+</span></span><span class="line"><span class="cl">      <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 如果内存占用率低于下限阈值，并且该节点已被设置为不可调度状态，则允许在该节点上调度 Pod</span>
+</span></span><span class="line"><span class="cl">    <span class="k">elif</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$m</span><span class="s2">&#34;</span> -lt <span class="s2">&#34;</span><span class="nv">$lower_threshold</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> kubectl get node <span class="nv">$n</span> <span class="p">|</span> grep -q <span class="s2">&#34;SchedulingDisabled&#34;</span><span class="p">;</span><span class="k">then</span>
+</span></span><span class="line"><span class="cl">        log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;节点 </span><span class="nv">$n</span><span class="s2"> 内存占用率较低，允许调度 Pod&#34;</span>
+</span></span><span class="line"><span class="cl">        kubectl uncordon <span class="nv">$n</span>
+</span></span><span class="line"><span class="cl">      <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">  <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">log <span class="s2">&#34;info&#34;</span> <span class="s2">&#34;脚本执行完成&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="原理-1">原理</h2>
+<p>该脚本的原理是通过获取节点的内存占用率，并根据预设的阈值进行判断和操作。具体流程如下：</p>
+<ol>
+<li>使用 kubectl top 命令获取节点的内存占用率，并忽略掉特定的节点。</li>
+<li>计算所有节点的内存占用率的平均值。</li>
+<li>逐行读取每个节点的信息，包括节点名称和内存占用率。</li>
+<li>如果节点内存占用率超过设定的阈值（例如 90%），并且该节点没有被设置为不可调度状态，则禁止在该节点上调度 Pod。</li>
+<li>如果节点内存占用率低于平均值且平均值小于阈值，并且该节点已被设置为不可调度状态，则允许在该节点上调度 Pod。</li>
+</ol>
+<p>通过这样的原理，我们可以在集群中实现对节点内存的动态管理，确保节点资源的合理利用和容器应用的稳定运行。</p>
+<h2 id="优势">优势</h2>
+<p><strong>自动化管理：</strong> 该脚本实现了自动化的节点内存管理，无需手动干预，减轻了运维人员的负担。
+<strong>实时监测</strong>：通过定期执行脚本，可以实时监测节点的内存占用情况，及时做出调整，提高了容器应用的性能和可用性。
+<strong>智能决策</strong>：根据设定的阈值和平均值，脚本能够智能地决策是否禁止或允许在节点上调度 Pod，确保资源的合理分配。</p>
+<h2 id="缺点">缺点</h2>
+<p><strong>依赖性：</strong> 该脚本依赖于 Kubernetes 命令行工具 kubectl 和集群的配置，因此需要保证环境的正确配置和可用性。
+<strong>单一维度：</strong> 该脚本仅基于节点的内存占用率进行管理，没有考虑其他资源（如 CPU、存储）的情况，因此在综合资源管理方面还有待完善。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/%E5%AE%B9%E5%99%A8/">容器</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202203121940/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/29.jpg" loading="lazy" data-key="202203121940" data-hash="/../../title_pic/29.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes高效收集生产日志</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202312280932/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/68.jpg" loading="lazy" data-key="202312280932" data-hash="/../../title_pic/68.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MetalLB：本地Kubernetes集群的LoadBalancer负载均衡利器</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202308311841/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/43.jpg" loading="lazy" data-key="202308311841" data-hash="/../../title_pic/43.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">掌握Kubernetes API：释放容器编排的潜力</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202212291003/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/21.jpg" loading="lazy" data-key="202212291003" data-hash="/../../title_pic/21.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">K8S部署Apollo配置中心</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202104071117/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/46.jpg" loading="lazy" data-key="202104071117" data-hash="/../../title_pic/46.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟五（wordpress的HPA自动扩缩容）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

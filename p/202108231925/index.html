@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='前文链接：需求：监控多台主机时，基于自动发现模块，主机安装采集器注册到那台，识别到。获取地址上的监控主机列表，实现多台主机自动发现。思路：机器安装采集器注册为系统服务使用注册到机器中监控到后，配置地址。。。。。。。'>
+<title>Ansible批量部署客户端并注册consul自动发现</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202108231925/'>
+
+<link rel="stylesheet" href="/scss/style.min.e1fdf36bb1177c018972ef7e22c6b53c7c5dd0fe53eb6ffb0152c5aabb2f6017.css"><meta property='og:title' content='Ansible批量部署客户端并注册consul自动发现'>
+<meta property='og:description' content='前文链接：需求：监控多台主机时，基于自动发现模块，主机安装采集器注册到那台，识别到。获取地址上的监控主机列表，实现多台主机自动发现。思路：机器安装采集器注册为系统服务使用注册到机器中监控到后，配置地址。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202108231925/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Ansible' /><meta property='article:tag' content='prometheus' /><meta property='article:tag' content='ansible' /><meta property='article:published_time' content='2021-08-23T19:25:59&#43;00:00'/><meta property='article:modified_time' content='2021-08-23T19:25:59&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/65.jpg' />
+<meta name="twitter:title" content="Ansible批量部署客户端并注册consul自动发现">
+<meta name="twitter:description" content="前文链接：需求：监控多台主机时，基于自动发现模块，主机安装采集器注册到那台，识别到。获取地址上的监控主机列表，实现多台主机自动发现。思路：机器安装采集器注册为系统服务使用注册到机器中监控到后，配置地址。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/65.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#consul-registersh">consul-register.sh</a></li>
+        <li><a href="#node_exporterservice">node_exporter.service</a></li>
+        <li><a href="#ansible-playbook">ansible-playbook</a></li>
+        <li><a href="#prometheus自动发现">prometheus自动发现</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202108231925/">
+                
+                    <img src="/../../title_pic/65.jpg" loading="lazy" alt="Featured image of post Ansible批量部署客户端并注册consul自动发现" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus%E7%9B%91%E6%8E%A7/" >
+                Prometheus监控
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202108231925/">Ansible批量部署客户端并注册consul自动发现</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            前文链接：需求：监控多台主机时，基于自动发现模块，主机安装采集器注册到那台，识别到。获取地址上的监控主机列表，实现多台主机自动发现。思路：机器安装采集器注册为系统服务使用注册到机器中监控到后，配置地址。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Aug 23, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>前文链接：<a class="link" href="https://blog.csdn.net/heian_99/article/details/119874180"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/heian_99/article/details/119874180</a></p>
+<p>需求：prometheus监控多台主机时，基于自动发现consul模块，主机安装采集器注册到那台consul，consul识别到。promethues获取consul地址上的监控主机列表，实现多台主机自动发现。</p>
+<p>思路：</p>
+<ol>
+<li>web机器安装node_exporter采集器<br>
+2.注册node_exporter为系统服务<br>
+3.使用curl -x PUT &hellip; 注册到consul机器中<br>
+4.consul监控到后，prometheus配置consul地址。<br>
+1-3步都可用ansible批量完成。</li>
+</ol>
+<p>node_exoporter软件包 ，system服务配置文件，注册脚本，注册接口</p>
+<p>如果有密码验证还需要一个config.yml</p>
+<h3 id="consul-registersh">consul-register.sh</h3>
+<p>注册脚本(传参方式注册)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nv">service_name</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl"><span class="nv">instance_id</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ip</span><span class="o">=</span><span class="nv">$3</span>
+</span></span><span class="line"><span class="cl"><span class="nv">port</span><span class="o">=</span><span class="nv">$4</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">curl -X PUT -d <span class="s1">&#39;{&#34;id&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$instance_id</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;name&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$service_name</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;address&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$ip</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;port&#34;: &#39;</span><span class="s2">&#34;</span><span class="nv">$port</span><span class="s2">&#34;</span><span class="s1">&#39;,&#34;tags&#34;: [&#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$service_name</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;],&#34;checks&#34;: [{&#34;http&#34;: &#34;http://&#39;</span><span class="s2">&#34;</span><span class="nv">$ip</span><span class="s2">&#34;</span><span class="s1">&#39;:&#39;</span><span class="s2">&#34;</span><span class="nv">$port</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;interval&#34;: &#34;5s&#34;}]}&#39;</span> http://10.10.10.27:8500/v1/agent/service/register
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="node_exporterservice">node_exporter.service</h3>
+<p>node_exporter系统服务配置文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>heian@zabbix ~<span class="o">]</span>$ cat node_exporter.service 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Unit<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">Description</span><span class="o">=</span>node_exporter
+</span></span><span class="line"><span class="cl"><span class="nv">After</span><span class="o">=</span>network.target 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Service<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/node_exporter/node_exporter<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --web.listen-address<span class="o">=</span>:9100<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.systemd<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.systemd.unit-whitelist<span class="o">=(</span>sshd<span class="p">|</span>nginx<span class="o">)</span>.service<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.processes<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.tcpstat<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.supervisord
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Install<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">WantedBy</span><span class="o">=</span>multi-user.target
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--collector.systemd --collector.systemd.unit-include<span class="o">=(</span>docker<span class="p">|</span>portal<span class="p">|</span>sshd<span class="o">)</span>.service 配置的意思是只收集docker,portal,sshd服务的数据
+</span></span><span class="line"><span class="cl">--web.config<span class="o">=</span>/usr/local/jiankong/node_exporter/config.yml 如果有密码验证接口需要指定这个config.yml，里面保存的用户名和密码。需要把这条配在启动execstart行的node_proter后。
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="ansible-playbook">ansible-playbook</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">cat hosts
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">[blog]
+</span></span><span class="line"><span class="cl">10.10.10.15  name=nginx
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat playbook.yml
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">- hosts: blog
+</span></span><span class="line"><span class="cl">  remote_user: heian
+</span></span><span class="line"><span class="cl">  become: yes
+</span></span><span class="line"><span class="cl">  become_user: root
+</span></span><span class="line"><span class="cl">  become_method: sudo
+</span></span><span class="line"><span class="cl">  gather_facts: no
+</span></span><span class="line"><span class="cl">  tasks:
+</span></span><span class="line"><span class="cl">    - name: 推送采集器安装包
+</span></span><span class="line"><span class="cl">      unarchive: <span class="nv">src</span><span class="o">=</span>node_exporter-1.2.2.linux-amd64.tar.gz <span class="nv">dest</span><span class="o">=</span>/usr/local/
+</span></span><span class="line"><span class="cl">    - name: 重命名
+</span></span><span class="line"><span class="cl">      shell: <span class="p">|</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">cd</span> /usr/local/ 
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="o">[</span> ! -d node_exporter <span class="o">]</span><span class="p">;</span><span class="k">then</span> 
+</span></span><span class="line"><span class="cl">           mv node_exporter-1.2.2.linux-amd64  node_exporter 
+</span></span><span class="line"><span class="cl">        <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    - name: 推送system文件
+</span></span><span class="line"><span class="cl">      copy: <span class="nv">src</span><span class="o">=</span>node_exporter.service <span class="nv">dest</span><span class="o">=</span>/usr/lib/systemd/system
+</span></span><span class="line"><span class="cl">    - name: 启动服务
+</span></span><span class="line"><span class="cl">      systemd: <span class="nv">name</span><span class="o">=</span>node_exporter <span class="nv">state</span><span class="o">=</span>started <span class="nv">enabled</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl">    - name: 推送注册脚本
+</span></span><span class="line"><span class="cl">      copy: <span class="nv">src</span><span class="o">=</span>consul-register.sh <span class="nv">dest</span><span class="o">=</span>/usr/local/node_exporter
+</span></span><span class="line"><span class="cl">    - name: 注册当前节点
+</span></span><span class="line"><span class="cl">      shell: /bin/sh /usr/local/node_exporter/consul-register.sh <span class="o">{{</span> group_names<span class="o">[</span>0<span class="o">]</span> <span class="o">}}</span> <span class="o">{{</span> name <span class="o">}}</span> <span class="o">{{</span> inventory_hostname <span class="o">}}</span> <span class="m">9100</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>{<!-- -->{ group_names[0] }} &ndash;ansible内置变量 代表hosts中自定义组名，数组形式，[0]取第一个<br>
+{<!-- -->{ name }} &ndash; hosts文件中定义主机的名字，如name=web1<br>
+{<!-- -->{ inventory_hostname }} 当前执行主机的ip<br>
+执行：</p>
+<p><img src="/../../image/20210823192310944.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>看一下consul中，服务已经注册进来了 </p>
+<p><img src="/../../image/20210823192329533.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="prometheus自动发现">prometheus自动发现</h3>
+<p><img src="/../../image/20210823192429609.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> <img src="/../../image/20210823192453713.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p><img src="/../../image/20210823192508451.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p>参考文档地址：<a class="link" href="https://www.jianshu.com/p/f243a3aec18e"  target="_blank" rel="noopener"
+    >https://www.jianshu.com/p/f243a3aec18e</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/prometheus/">prometheus</a>
+        
+            <a href="/tags/ansible/">ansible</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202407091024/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/27.jpg" loading="lazy" data-key="202407091024" data-hash="/../../title_pic/27.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">基于Padavan Exporter的Prometheus客户端二次开发实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405291810/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/57.jpg" loading="lazy" data-key="202405291810" data-hash="/../../title_pic/57.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Go开发Prometheus客户端实战步骤</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202403041144/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/51.jpg" loading="lazy" data-key="202403041144" data-hash="/../../title_pic/51.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 监控Istio</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202311281517/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/14.jpg" loading="lazy" data-key="202311281517" data-hash="/../../title_pic/14.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">使用Prometheus监控Synology（群辉）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202310160904/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/77.jpg" loading="lazy" data-key="202310160904" data-hash="/../../title_pic/77.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Prometheus的Pushgateway快速部署及使用</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
