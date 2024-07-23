@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='介绍在传统的业务系统中，应用微服务化后，需要一个统一的入口来将各个服务进行整合，这个入口可以是、、等等。而在中，同样需要一个工具来将应用的各个整合到统一的入口，这个工具就叫控制器，的中文翻译即为入口。。。。。。。。'>
+<title>Ingress配置优化和追踪</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202404111830/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='Ingress配置优化和追踪'>
+<meta property='og:description' content='介绍在传统的业务系统中，应用微服务化后，需要一个统一的入口来将各个服务进行整合，这个入口可以是、、等等。而在中，同样需要一个工具来将应用的各个整合到统一的入口，这个工具就叫控制器，的中文翻译即为入口。。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202404111830/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='云原生' /><meta property='article:tag' content='ingress' /><meta property='article:published_time' content='2024-04-11T18:30:08&#43;00:00'/><meta property='article:modified_time' content='2024-04-11T18:30:08&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/73.jpg' />
+<meta name="twitter:title" content="Ingress配置优化和追踪">
+<meta name="twitter:description" content="介绍在传统的业务系统中，应用微服务化后，需要一个统一的入口来将各个服务进行整合，这个入口可以是、、等等。而在中，同样需要一个工具来将应用的各个整合到统一的入口，这个工具就叫控制器，的中文翻译即为入口。。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/73.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#介绍">介绍</a></li>
+    <li><a href="#kubernetes中ingress-nginx优化配置">Kubernetes中ingress-nginx优化配置</a>
+      <ol>
+        <li><a href="#初始化pod内核参数">初始化Pod内核参数</a></li>
+        <li><a href="#ingree的configmap优化">Ingree的ConfigMap优化</a></li>
+        <li><a href="#tcp和upd">TCP和UPD</a></li>
+      </ol>
+    </li>
+    <li><a href="#ingress日志追踪">Ingress日志追踪</a>
+      <ol>
+        <li><a href="#用户访问流程日志分析">用户访问流程日志分析</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202404111830/">
+                
+                    <img src="/../../title_pic/73.jpg" loading="lazy" alt="Featured image of post Ingress配置优化和追踪" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202404111830/">Ingress配置优化和追踪</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            介绍在传统的业务系统中，应用微服务化后，需要一个统一的入口来将各个服务进行整合，这个入口可以是、、等等。而在中，同样需要一个工具来将应用的各个整合到统一的入口，这个工具就叫控制器，的中文翻译即为入口。。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 11, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 7 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="介绍">介绍</h2>
+<p>在传统的业务系统中，应用微服务化后，需要一个统一的入口来将各个服务进行整合，这个入口可以是Nginx、Apache、HAproxy等等。而在K8s中，同样需要一个工具来将应用的各个service整合到统一的入口，这个工具就叫Ingress控制器，Ingress的中文翻译即为“入口”。</p>
+<p><img src="/../../image/b43e8a796e434a0cbddd30d0a2bac58d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>Ingress-nginx：</strong> 它是由Kubernetes社区基于Nginx Web服务器开发的，并补充了一组用于实现额外功能的Lua插件，作为“官方”默认控制器支持当然最优。</p>
+<p><strong>Github</strong>​<a class="link" href="https://github.com/kubernetes/ingress-nginx"  target="_blank" rel="noopener"
+    >https://github.com/kubernetes/ingress-nginx</a></p>
+<p><strong>说明文档</strong>​<a class="link" href="https://kubernetes.github.io/ingress-nginx/deploy/"  target="_blank" rel="noopener"
+    >https://kubernetes.github.io/ingress-nginx/deploy/</a></p>
+<p><strong>Nginx-ingress</strong> 这是Nginx官方社区开发产品，Nginx ingress具有很高的稳定性，持续的向后兼容性，没有任何第三方模块，并且由于消除了Lua代码而保证了较高的速度。</p>
+<p><strong>Github</strong>​<a class="link" href="https://github.com/nginxinc/kubernetes-ingress"  target="_blank" rel="noopener"
+    >https://github.com/nginxinc/kubernetes-ingress</a></p>
+<p><strong>说明文档</strong>​<a class="link" href="https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/"  target="_blank" rel="noopener"
+    >https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/</a>
+<img src="/../../image/6ec9beed76ee45168dc220ea49ae35a8.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+Nginx Ingress Controller 基于 Nginx 实现了 Kubernetes Ingress API，Nginx 是公认的高性能网关，但如果不对其进行一些参数调优，就不能充分发挥出高性能的优势。Nginx Ingress工作原理：
+<img src="/../../image/887fb5e275cd444ebc2c848b78965945.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="kubernetes中ingress-nginx优化配置">Kubernetes中ingress-nginx优化配置</h2>
+<p>描述: 在K8s集群中部署安装 ingress-nginx 后默认并未进行相应的优化配置，本小结将针对于生产环境的中的 ingress-nginx 控制器进行优化。</p>
+<p>我们可以从 ingress-nginx-controller 资源的 Pod 、ConfigMap 、以及业务的 ingress 规则入手。</p>
+<p>我们当时默认直接安装环境</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="err">kubectl</span> <span class="err">get</span> <span class="err">deployments.apps</span> <span class="err">-n</span> <span class="err">ingress-nginx</span> <span class="err">ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="err">#</span> <span class="err">整体就这个样子，但是没有任何优化，性能肯定欠缺</span>
+</span></span><span class="line"><span class="cl"><span class="err">kubectl</span> <span class="err">get</span> <span class="err">deployments.apps</span> <span class="err">-n</span> <span class="err">ingress-nginx</span> <span class="err">ingress-nginx-controller</span>  <span class="err">-o</span> <span class="err">yaml</span>
+</span></span><span class="line"><span class="cl"><span class="err">apiVersion:</span> <span class="err">apps/v</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl"><span class="err">kind:</span> <span class="err">Deployment</span>
+</span></span><span class="line"><span class="cl"><span class="err">metadata:</span>
+</span></span><span class="line"><span class="cl">  <span class="err">annotations:</span>
+</span></span><span class="line"><span class="cl">    <span class="err">deployment.kubernetes.io/revision:</span> <span class="s2">&#34;1&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="err">#暴露Prometheus</span> <span class="err">端口进行监控</span>
+</span></span><span class="line"><span class="cl">    <span class="err">prometheus.io/port:</span> <span class="s2">&#34;10254&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="err">prometheus.io/scrape:</span> <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">labels:</span>
+</span></span><span class="line"><span class="cl">    <span class="err">app.kubernetes.io/component:</span> <span class="err">controller</span>
+</span></span><span class="line"><span class="cl">    <span class="err">app.kubernetes.io/instance:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">    <span class="err">app.kubernetes.io/managed-by:</span> <span class="err">Helm</span>
+</span></span><span class="line"><span class="cl">    <span class="err">app.kubernetes.io/name:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">    <span class="err">app.kubernetes.io/version:</span> <span class="mf">1.0</span><span class="err">.</span><span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    <span class="err">helm.sh/chart:</span> <span class="err">ingress-nginx</span><span class="mf">-4.0</span><span class="err">.</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl">    <span class="err">k</span><span class="mi">8</span><span class="err">s.kuboard.cn/name:</span> <span class="err">ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">  <span class="err">name:</span> <span class="err">ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">  <span class="err">namespace:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">  <span class="err">resourceVersion:</span> <span class="s2">&#34;91407609&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">uid:</span> <span class="err">a</span><span class="mi">5452</span><span class="err">fcf-f</span><span class="mi">99</span><span class="err">c</span><span class="mi">-4866</span><span class="err">-b</span><span class="mi">0</span><span class="err">a</span><span class="mi">1-93</span><span class="err">fe</span><span class="mf">9e165</span><span class="err">cb</span><span class="mi">6</span>
+</span></span><span class="line"><span class="cl"><span class="err">spec:</span>
+</span></span><span class="line"><span class="cl">  <span class="err">progressDeadlineSeconds:</span> <span class="mi">600</span>
+</span></span><span class="line"><span class="cl">  <span class="err">replicas:</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">  <span class="err">revisionHistoryLimit:</span> <span class="mi">10</span>
+</span></span><span class="line"><span class="cl">  <span class="err">selector:</span>
+</span></span><span class="line"><span class="cl">    <span class="err">matchLabels:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">app.kubernetes.io/component:</span> <span class="err">controller</span>
+</span></span><span class="line"><span class="cl">      <span class="err">app.kubernetes.io/instance:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">      <span class="err">app.kubernetes.io/name:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">  <span class="err">strategy:</span>
+</span></span><span class="line"><span class="cl">    <span class="err">rollingUpdate:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">maxSurge:</span> <span class="mi">25</span><span class="err">%</span>
+</span></span><span class="line"><span class="cl">      <span class="err">maxUnavailable:</span> <span class="mi">25</span><span class="err">%</span>
+</span></span><span class="line"><span class="cl">    <span class="err">type:</span> <span class="err">RollingUpdate</span>
+</span></span><span class="line"><span class="cl">  <span class="err">template:</span>
+</span></span><span class="line"><span class="cl">    <span class="err">metadata:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">labels:</span>
+</span></span><span class="line"><span class="cl">        <span class="err">app.kubernetes.io/component:</span> <span class="err">controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">app.kubernetes.io/instance:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">        <span class="err">app.kubernetes.io/name:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">    <span class="err">spec:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">containers:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">-</span> <span class="err">args:</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">/nginx-ingress-controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--election-id=ingress-controller-leader</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--controller-class=k</span><span class="mi">8</span><span class="err">s.io/ingress-nginx</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--configmap=$(POD_NAMESPACE)/ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook=:</span><span class="mi">8443</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook-certificate=/usr/local/certificates/cert</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook-key=/usr/local/certificates/key</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--watch-ingress-without-class=</span><span class="kc">true</span>
+</span></span><span class="line"><span class="cl">        <span class="err">env:</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">name:</span> <span class="err">POD_NAME</span>
+</span></span><span class="line"><span class="cl">          <span class="err">valueFrom:</span>
+</span></span><span class="line"><span class="cl">            <span class="err">fieldRef:</span>
+</span></span><span class="line"><span class="cl">              <span class="err">apiVersion:</span> <span class="err">v</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl">              <span class="err">fieldPath:</span> <span class="err">metadata.name</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">name:</span> <span class="err">POD_NAMESPACE</span>
+</span></span><span class="line"><span class="cl">          <span class="err">valueFrom:</span>
+</span></span><span class="line"><span class="cl">            <span class="err">fieldRef:</span>
+</span></span><span class="line"><span class="cl">              <span class="err">apiVersion:</span> <span class="err">v</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl">              <span class="err">fieldPath:</span> <span class="err">metadata.namespace</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">name:</span> <span class="err">LD_PRELOAD</span>
+</span></span><span class="line"><span class="cl">          <span class="err">value:</span> <span class="err">/usr/local/lib/libmimalloc.so</span>
+</span></span><span class="line"><span class="cl">        <span class="err">image:</span> <span class="err">willdockerhub/ingress-nginx-controller:v</span><span class="mf">1.0</span><span class="err">.</span><span class="mi">0</span>
+</span></span><span class="line"><span class="cl">        <span class="err">imagePullPolicy:</span> <span class="err">IfNotPresent</span>
+</span></span><span class="line"><span class="cl">        <span class="err">lifecycle:</span>
+</span></span><span class="line"><span class="cl">          <span class="err">preStop:</span>
+</span></span><span class="line"><span class="cl">            <span class="err">exec:</span>
+</span></span><span class="line"><span class="cl">              <span class="err">command:</span>
+</span></span><span class="line"><span class="cl">              <span class="err">-</span> <span class="err">/wait-shutdown</span>
+</span></span><span class="line"><span class="cl"> <span class="err">...........</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="初始化pod内核参数">初始化Pod内核参数</h3>
+<p>温馨提示: 我们需要针对承载 ingress-nginx 的相关 Pod 容器进行内核参数优化。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="err">#</span> <span class="err">在</span> <span class="err">spec.template.spec</span> <span class="err">对象下添加一个初始化</span> <span class="err">initContainers</span> <span class="err">容器</span>
+</span></span><span class="line"><span class="cl">      <span class="err">initContainers:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">-</span> <span class="err">command:</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">/bin/sh</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">-c</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">|</span>
+</span></span><span class="line"><span class="cl">          <span class="err">mount</span> <span class="err">-o</span> <span class="err">remount</span> <span class="err">rw</span> <span class="err">/proc/sys</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">net.core.somaxconn=</span><span class="mi">65535</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">net.ipv</span><span class="mi">4</span><span class="err">.ip_local_port_range=</span><span class="s2">&#34;1024 65535&#34;</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">net.ipv</span><span class="mi">4</span><span class="err">.tcp_tw_reuse=</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">fs.file-max=</span><span class="mi">1048576</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">fs.inotify.max_user_instances=</span><span class="mi">16384</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">fs.inotify.max_user_watches=</span><span class="mi">524288</span>
+</span></span><span class="line"><span class="cl">          <span class="err">sysctl</span> <span class="err">-w</span> <span class="err">fs.inotify.max_queued_events=</span><span class="mi">16384</span>
+</span></span><span class="line"><span class="cl">        <span class="err">image:</span> <span class="err">busybox:</span><span class="mf">1.29</span><span class="err">.</span><span class="mi">3</span>
+</span></span><span class="line"><span class="cl">        <span class="err">imagePullPolicy:</span> <span class="err">IfNotPresent</span>
+</span></span><span class="line"><span class="cl">        <span class="err">name:</span> <span class="err">init-sysctl</span>
+</span></span><span class="line"><span class="cl">        <span class="err">resources:</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">        <span class="err">securityContext:</span>
+</span></span><span class="line"><span class="cl">          <span class="err">capabilities:</span>
+</span></span><span class="line"><span class="cl">            <span class="err">add:</span>
+</span></span><span class="line"><span class="cl">            <span class="err">-</span> <span class="err">SYS_ADMIN</span>
+</span></span><span class="line"><span class="cl">            <span class="err">drop:</span>
+</span></span><span class="line"><span class="cl">            <span class="err">-</span> <span class="err">ALL</span>
+</span></span><span class="line"><span class="cl">        <span class="err">terminationMessagePath:</span> <span class="err">/dev/termination-log</span>
+</span></span><span class="line"><span class="cl">        <span class="err">terminationMessagePolicy:</span> <span class="err">File</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="err">#修改deployment</span>
+</span></span><span class="line"><span class="cl"> <span class="err">kubectl</span> <span class="err">edit</span> <span class="err">deployments.apps</span> <span class="err">-n</span> <span class="err">ingress-nginx</span> <span class="err">ingress-nginx-controller</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/8aceb8bf41054c5d80ec7045e69213de.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>注意：如果按照文档安装，指定机器的跑ingres，会调度失败，因为原先的pod已经占用了80和443端口（唯一方式：先删除pod（先把副本重置为0，修改完毕，在改成1），再修改deployment）</strong></p>
+<p>由此看，定制化有优势，也有劣势。</p>
+<p>因为上面的错误，给无生成大量的</p>
+<p>主要是调度失败引起的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="err">ingress-nginx-controller</span><span class="mi">-5</span><span class="err">d</span><span class="mi">9</span><span class="err">cbf</span><span class="mi">7</span><span class="err">bd</span><span class="mi">7-27</span><span class="err">q</span><span class="mi">74</span> <span class="mi">0</span><span class="err">/</span><span class="mi">1</span> <span class="err">NodePorts</span> <span class="mi">0</span> <span class="mi">74</span><span class="err">s</span>
+</span></span><span class="line"><span class="cl"><span class="err">ingress-nginx-controller</span><span class="mi">-5</span><span class="err">d</span><span class="mi">9</span><span class="err">cbf</span><span class="mi">7</span><span class="err">bd</span><span class="mi">7-5</span><span class="err">lh</span><span class="mi">9</span><span class="err">x</span> <span class="mi">0</span><span class="err">/</span><span class="mi">1</span> <span class="err">NodePorts</span> <span class="mi">0</span> <span class="mi">75</span><span class="err">s</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/862f5a42b34d4d28aaa0233099605db8.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="err">批量清除（清除完成可能一直卡，需要自己看一下数量）</span>
+</span></span><span class="line"><span class="cl"><span class="err">kubectl</span> <span class="err">get</span> <span class="err">pods</span> <span class="err">-n</span> <span class="err">ingress-nginx</span> <span class="err">-o</span> <span class="err">custom-columns=NAME:.metadata.name,STATUS:.status.phase</span> <span class="err">|grep</span> <span class="s2">&#34;Failed&#34;</span> <span class="err">|awk</span> <span class="err">&#39;</span><span class="p">{</span><span class="err">print</span> <span class="err">$1</span><span class="p">}</span><span class="err">&#39;</span> <span class="err">|</span> <span class="err">xargs</span> <span class="err">-r</span> <span class="err">kubectl</span> <span class="err">delete</span> <span class="err">pod</span> <span class="err">-n</span> <span class="err">ingress-nginx</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/d15189768d8741aeab4a11b3c1fe1ce3.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="ingree的configmap优化">Ingree的ConfigMap优化</h3>
+<p>我们需要按照需要将下述K/V配置项插入到 ingress-nginx 的 configMap 里的 data 对象下。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl">    <span class="err">spec:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">containers:</span>
+</span></span><span class="line"><span class="cl">      <span class="err">-</span> <span class="err">args:</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">/nginx-ingress-controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--election-id=ingress-controller-leader</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--controller-class=k</span><span class="mi">8</span><span class="err">s.io/ingress-nginx</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--configmap=$(POD_NAMESPACE)/ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook=:</span><span class="mi">8443</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook-certificate=/usr/local/certificates/cert</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook-key=/usr/local/certificates/key</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--watch-ingress-without-class=</span><span class="kc">true</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>ingress-nginx-controller 这一个就是 Ingree的configmap的配置文件</p>
+<p><strong>ingress-nginx 资源查看</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="err">#</span> <span class="err">查看</span> <span class="err">Ingress-nginx</span> <span class="err">全局配置参数:</span>
+</span></span><span class="line"><span class="cl"><span class="err">kubectl</span> <span class="err">get</span> <span class="err">cm</span> <span class="err">-n</span> <span class="err">ingress-nginx</span>  <span class="err">ingress-nginx-controller</span> <span class="err">-oyaml</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>默认没有任何数据
+<img src="/../../image/cf48c686eed74dce990030608e868b43.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+下面面是data的内容，部分可以再根据实际情况修改</p>
+<p>在Ingress Nginx中，ConfigMap的修改可以实现所谓的&quot;热加载&quot;。这意味着当你更改Ingress Nginx的ConfigMap时，Ingress控制器能够接收这些更改并应用它们，而不需要重启Pods。控制器会监听ConfigMap的变化，并自动更新其配置，从而反映出所做的修改。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">[</span><span class="err">root@bt</span> <span class="err">ingress</span><span class="p">]</span><span class="err">#</span> <span class="err">kubectl</span> <span class="err">apply</span> <span class="err">-f</span>  <span class="err">ingress-nginx-controller.yaml</span> <span class="err">#热加载一下</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">[</span><span class="err">root@bt</span> <span class="err">ingress</span><span class="p">]</span><span class="err">#</span> <span class="err">cat</span> <span class="err">ingress-nginx-controller.yaml</span> 
+</span></span><span class="line"><span class="cl"><span class="err">apiVersion:</span> <span class="err">v</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl"><span class="err">data:</span>
+</span></span><span class="line"><span class="cl">  <span class="err">compute-full-forwarded-for:</span> <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">forwarded-for-header:</span> <span class="err">X-Forwarded-For</span>
+</span></span><span class="line"><span class="cl">  <span class="err">log-format-upstream:</span> <span class="err">&#39;</span><span class="p">{</span><span class="nt">&#34;@timestamp&#34;</span><span class="p">:</span><span class="s2">&#34;$time_iso8601&#34;</span><span class="p">,</span><span class="nt">&#34;time&#34;</span><span class="p">:</span><span class="s2">&#34;$time_local&#34;</span><span class="p">,</span><span class="nt">&#34;remote_addr&#34;</span><span class="p">:</span><span class="s2">&#34;$remote_addr&#34;</span><span class="p">,</span><span class="nt">&#34;http_x_forwarded_for&#34;</span><span class="p">:</span><span class="s2">&#34;$http_x_forwarded_for&#34;</span><span class="p">,</span><span class="nt">&#34;remote_port&#34;</span><span class="p">:</span><span class="s2">&#34;$remote_port&#34;</span><span class="p">,</span><span class="nt">&#34;remote_user&#34;</span><span class="p">:</span><span class="s2">&#34;$remote_user&#34;</span><span class="p">,</span><span class="nt">&#34;host&#34;</span><span class="p">:</span><span class="s2">&#34;$host&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_addr&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_addr&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_status&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_status&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_response_time&#34;</span><span class="p">:</span><span class="err">$upstream_response_time</span><span class="p">,</span><span class="nt">&#34;upstream_cache_status&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_cache_status&#34;</span><span class="p">,</span><span class="nt">&#34;request&#34;</span><span class="p">:</span><span class="s2">&#34;$request&#34;</span><span class="p">,</span><span class="nt">&#34;status&#34;</span><span class="p">:</span><span class="s2">&#34;$status&#34;</span><span class="p">,</span><span class="nt">&#34;request_time&#34;</span><span class="p">:</span><span class="err">$request_time</span><span class="p">,</span><span class="nt">&#34;body_bytes_sent&#34;</span><span class="p">:</span><span class="s2">&#34;$body_bytes_sent&#34;</span><span class="p">,</span><span class="nt">&#34;http_referer&#34;</span><span class="p">:</span><span class="s2">&#34;$http_referer&#34;</span><span class="p">,</span><span class="nt">&#34;http_user_agent&#34;</span><span class="p">:</span><span class="s2">&#34;$http_user_agent&#34;</span><span class="p">}</span><span class="err">&#39;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-body-size:</span> <span class="mi">10</span><span class="err">g</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-buffer-size:</span> <span class="mi">256</span><span class="err">k</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-connect-timeout:</span> <span class="s2">&#34;90&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-read-timeout:</span> <span class="s2">&#34;90&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-send-timeout:</span> <span class="s2">&#34;90&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">use-forwarded-headers:</span> <span class="s2">&#34;true&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">客户端请求头的缓冲区大小</span> 
+</span></span><span class="line"><span class="cl">  <span class="err">client-header-buffer-size:</span> <span class="s2">&#34;512k&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">设置用于读取大型客户端请求标头的最大值number和size缓冲区</span>
+</span></span><span class="line"><span class="cl">  <span class="err">large-client-header-buffers:</span> <span class="s2">&#34;4 512k&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">读取客户端请求body的缓冲区大小</span>
+</span></span><span class="line"><span class="cl">  <span class="err">client-body-buffer-size:</span> <span class="s2">&#34;128k&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">代理缓冲区大小</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-buffer-size:</span> <span class="s2">&#34;256k&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">代理body大小</span>
+</span></span><span class="line"><span class="cl">  <span class="err">proxy-body-size:</span> <span class="s2">&#34;50m&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">服务器名称哈希大小</span>
+</span></span><span class="line"><span class="cl">  <span class="err">server-name-hash-bucket-size:</span> <span class="s2">&#34;128&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">map哈希大小</span>
+</span></span><span class="line"><span class="cl">  <span class="err">map-hash-bucket-size:</span> <span class="s2">&#34;128&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">SSL加密套件</span>
+</span></span><span class="line"><span class="cl">  <span class="err">ssl-ciphers:</span> <span class="s2">&#34;ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="err">#</span> <span class="err">ssl</span> <span class="err">协议</span>
+</span></span><span class="line"><span class="cl">  <span class="err">ssl-protocols:</span> <span class="s2">&#34;TLSv1 TLSv1.1 TLSv1.2&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="err">kind:</span> <span class="err">ConfigMap</span>
+</span></span><span class="line"><span class="cl"><span class="err">metadata:</span>
+</span></span><span class="line"><span class="cl">  <span class="err">labels:</span>
+</span></span><span class="line"><span class="cl">    <span class="err">app:</span> <span class="err">ingress-nginx</span>
+</span></span><span class="line"><span class="cl">  <span class="err">name:</span> <span class="err">ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">  <span class="err">namespace:</span> <span class="err">ingress-nginx</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个Json 更加全面，可以接入ELK展示</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span><span class="nt">&#34;@timestamp&#34;</span><span class="p">:</span><span class="s2">&#34;$time_iso8601&#34;</span><span class="p">,</span><span class="nt">&#34;request_time&#34;</span><span class="p">:</span><span class="s2">&#34;$request_time&#34;</span><span class="p">,</span><span class="nt">&#34;status&#34;</span><span class="p">:</span><span class="s2">&#34;$status&#34;</span><span class="p">,</span><span class="nt">&#34;body_bytes_sent&#34;</span><span class="p">:</span><span class="s2">&#34;$body_bytes_sent&#34;</span><span class="p">,</span><span class="nt">&#34;bytes_sent&#34;</span><span class="p">:</span><span class="s2">&#34;$bytes_sent&#34;</span><span class="p">,</span><span class="nt">&#34;remote_addr&#34;</span><span class="p">:</span><span class="s2">&#34;$remote_addr&#34;</span><span class="p">,</span><span class="nt">&#34;remote_user&#34;</span><span class="p">:</span><span class="s2">&#34;$remote_user&#34;</span><span class="p">,</span><span class="nt">&#34;remote_port&#34;</span><span class="p">:</span><span class="s2">&#34;$remote_port&#34;</span><span class="p">,</span><span class="nt">&#34;request_uri&#34;</span><span class="p">:</span><span class="s2">&#34;$request_uri&#34;</span><span class="p">,</span><span class="nt">&#34;args&#34;</span><span class="p">:</span><span class="s2">&#34;$args&#34;</span><span class="p">,</span><span class="nt">&#34;request_id&#34;</span><span class="p">:</span><span class="s2">&#34;$request_id&#34;</span><span class="p">,</span><span class="nt">&#34;connection&#34;</span><span class="p">:</span><span class="s2">&#34;$connection&#34;</span><span class="p">,</span><span class="nt">&#34;connection_requests&#34;</span><span class="p">:</span><span class="s2">&#34;$connection_requests&#34;</span><span class="p">,</span><span class="nt">&#34;pid&#34;</span><span class="p">:</span><span class="s2">&#34;$pid&#34;</span><span class="p">,</span><span class="nt">&#34;request_length&#34;</span><span class="p">:</span><span class="s2">&#34;$request_length&#34;</span><span class="p">,</span><span class="nt">&#34;time_local&#34;</span><span class="p">:</span><span class="s2">&#34;$time_local&#34;</span><span class="p">,</span><span class="nt">&#34;http_referer&#34;</span><span class="p">:</span><span class="s2">&#34;$http_referer&#34;</span><span class="p">,</span><span class="nt">&#34;http_user_agent&#34;</span><span class="p">:</span><span class="s2">&#34;$http_user_agent&#34;</span><span class="p">,</span><span class="nt">&#34;http_x_forwarded_for&#34;</span><span class="p">:</span><span class="s2">&#34;$http_x_forwarded_for&#34;</span><span class="p">,</span><span class="nt">&#34;http_host&#34;</span><span class="p">:</span><span class="s2">&#34;$http_host&#34;</span><span class="p">,</span><span class="nt">&#34;server_name&#34;</span><span class="p">:</span><span class="s2">&#34;$server_name&#34;</span><span class="p">,</span><span class="nt">&#34;ssl_protocol&#34;</span><span class="p">:</span><span class="s2">&#34;$ssl_protocol&#34;</span><span class="p">,</span><span class="nt">&#34;ssl_cipher&#34;</span><span class="p">:</span><span class="s2">&#34;$ssl_cipher&#34;</span><span class="p">,</span><span class="nt">&#34;scheme&#34;</span><span class="p">:</span><span class="s2">&#34;$scheme&#34;</span><span class="p">,</span><span class="nt">&#34;request_method&#34;</span><span class="p">:</span><span class="s2">&#34;$request_method&#34;</span><span class="p">,</span><span class="nt">&#34;server_protocol&#34;</span><span class="p">:</span><span class="s2">&#34;$server_protocol&#34;</span><span class="p">,</span><span class="nt">&#34;pipe&#34;</span><span class="p">:</span><span class="s2">&#34;$pipe&#34;</span><span class="p">,</span><span class="nt">&#34;gzip_ratio&#34;</span><span class="p">:</span><span class="s2">&#34;$gzip_ratio&#34;</span><span class="p">,</span><span class="nt">&#34;http_cf_ray&#34;</span><span class="p">:</span><span class="s2">&#34;$http_cf_ray&#34;</span><span class="p">,</span><span class="nt">&#34;request_host&#34;</span><span class="p">:</span><span class="s2">&#34;$host&#34;</span><span class="p">,</span><span class="nt">&#34;is_completion&#34;</span><span class="p">:</span><span class="s2">&#34;$request_completion&#34;</span><span class="p">,</span><span class="nt">&#34;upstream&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_addr&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_name&#34;</span><span class="p">:</span><span class="s2">&#34;$proxy_host&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_status&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_status&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_bytes_sent&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_bytes_sent&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_bytes_received&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_bytes_received&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_connect_time&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_connect_time&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_header_time&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_header_time&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_response_time&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_response_time&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_response_length&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_response_length&#34;</span><span class="p">,</span><span class="nt">&#34;upstream_cache_status&#34;</span><span class="p">:</span><span class="s2">&#34;$upstream_cache_status&#34;</span><span class="p">,</span><span class="nt">&#34;nginx_host&#34;</span><span class="p">:</span><span class="s2">&#34;$hostname&#34;</span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/a3b0d497a57543b8b1da8494d45f129c.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="tcp和upd">TCP和UPD</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">/nginx-ingress-controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--election-id=ingress-controller-leader</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--controller-class=k</span><span class="mi">8</span><span class="err">s.io/ingress-nginx</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--configmap=$(POD_NAMESPACE)/ingress-nginx-controller</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook=:</span><span class="mi">8443</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook-certificate=/usr/local/certificates/cert</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--validating-webhook-key=/usr/local/certificates/key</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--watch-ingress-without-class=</span><span class="kc">true</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--tcp-services-configmap=$(POD_NAMESPACE)/tcp-services</span> <span class="err">#增加tcp配置</span>
+</span></span><span class="line"><span class="cl">        <span class="err">-</span> <span class="err">--udp-services-configmap=$(POD_NAMESPACE)/udp-services</span> <span class="err">#增加upd配置</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>除了 HTTP 流量之外，NGINX Ingress Controller 还可以负载 TCP 和 UDP 流量，因此您可以使用它来管理基于以下协议的各种应用和实用程序的流量，它们包括：</p>
+<ul>
+<li><strong>MySQL、LDAP 和 MQTT</strong> —— 许多流行应用使用的基于 TCP 协议的应用</li>
+<li><strong>DNS、syslog 和 RADIUS</strong> —— 边缘设备和非事务性应用使用的基于 UDP 协议的实用程序</li>
+</ul>
+<p><a class="link" href="https://www.niewx.cn/2021/11/09/2021-11-09-Use-Nginx-Ingress-to-expose-TCP-and-udp-services/"  target="_blank" rel="noopener"
+    >https://www.niewx.cn/2021/11/09/2021-11-09-Use-Nginx-Ingress-to-expose-TCP-and-udp-services/</a></p>
+<p><a class="link" href="https://www.nginx-cn.net/blog/load-balancing-tcp-and-udp-traffic-in-kubernetes-with-nginx/"  target="_blank" rel="noopener"
+    >https://www.nginx-cn.net/blog/load-balancing-tcp-and-udp-traffic-in-kubernetes-with-nginx/</a></p>
+<h2 id="ingress日志追踪">Ingress日志追踪</h2>
+<p>在当今互联网架构中，<a class="link" href="https://so.csdn.net/so/search?q=Web&amp;spm=1001.2101.3001.7020"  target="_blank" rel="noopener"
+    >Web</a>应用防火墙（WAF）与Nginx(Ingress)作为前端代理的整合越来越常见，特别是在提升Web应用程序的安全性方面。这种结构不仅增强了对应用的保护，还提升了系统的整体性能。在这种架构中，理解WAF与Nginx(ingress)如何协作，以及如何实现日志追踪的整合尤为重要。</p>
+<h3 id="用户访问流程日志分析">用户访问流程日志分析</h3>
+<p><strong>总结：阿里云的WAF日志更加详细，Nginx层面的日志也是WAF过来的（数据一样的）</strong></p>
+<p>下方四个截图的数据日志，就是一条的请求的访问。数据都是一样的，各个层面都有日志记录。毫无疑问 WAF更加专业 ，图像化更多。
+<img src="/../../image/782a22c470fb4d8082446676b0190042.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+><strong>阿里云的WAF</strong>
+<img src="/../../image/03fba65ea96642d48efe7a334313aa1d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>Nginx中转</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        listen      80<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        server_name xx.xxx.com<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># IP白名单</span>
+</span></span><span class="line"><span class="cl">        include /usr/local/openresty/nginx/whitelist/corporation.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	    rewrite ^/<span class="o">(</span>.*<span class="o">)</span>$ https://<span class="nv">$host</span>/<span class="nv">$1</span> permanent<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        listen       <span class="m">443</span> ssl<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        server_name  kpi.xxxx.com<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#proxy_read_timeout 180;</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#proxy_send_timeout 180;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1"># IP白名单</span>
+</span></span><span class="line"><span class="cl">        include /usr/local/openresty/nginx/whitelist/corporation.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        ssl                   on<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        ssl_certificate      /usr/local/openresty/nginx/ssl/xxx.com.crt<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        ssl_certificate_key  /usr/local/openresty/nginx/ssl/xx.com.key<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        include ssl.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            proxy_pass  http://kubernetes-cluster<span class="p">;</span>
+</span></span><span class="line"><span class="cl">            include https_proxy.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>下方的地址为INgress的地址端口（可以看出，Nginx走https，Ingree走http）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@nginx sites<span class="o">]</span><span class="c1"># cat kubernetes-cluster.conf </span>
+</span></span><span class="line"><span class="cl">upstream kubernetes-cluster <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        server 172.18.xxx.xxx:80<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/ea52b9c0f93f47bdaccae270b8801825.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>Ingree（中转）</strong></p>
+<p>Ingress</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@jenkins ops<span class="o">]</span><span class="c1"># kubectl get ingresses -n prod new-fujfu-kpi-frontend -oyaml</span>
+</span></span><span class="line"><span class="cl">apiVersion: extensions/v1beta1
+</span></span><span class="line"><span class="cl">kind: Ingress
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: new-fujfu-kpi-frontend
+</span></span><span class="line"><span class="cl">  namespace: prod
+</span></span><span class="line"><span class="cl">  resourceVersion: <span class="s2">&#34;3381713262&#34;</span>
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  rules:
+</span></span><span class="line"><span class="cl">  - host: kpi.xxx.com
+</span></span><span class="line"><span class="cl">    http:
+</span></span><span class="line"><span class="cl">      paths:
+</span></span><span class="line"><span class="cl">      - backend:
+</span></span><span class="line"><span class="cl">          serviceName: new-fujfu-kpi-frontend
+</span></span><span class="line"><span class="cl">          servicePort: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">        path: /
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>SVC</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@jenkins ops<span class="o">]</span><span class="c1"># kubectl get svc -n prod new-fujfu-kpi-frontend -oyaml</span>
+</span></span><span class="line"><span class="cl">apiVersion: v1
+</span></span><span class="line"><span class="cl">kind: Service
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  labels:
+</span></span><span class="line"><span class="cl">    app: new-fujfu-kpi-frontend
+</span></span><span class="line"><span class="cl">  name: new-fujfu-kpi-frontend
+</span></span><span class="line"><span class="cl">  namespace: prod
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  clusterIP: 172.21.14.20
+</span></span><span class="line"><span class="cl">  ports:
+</span></span><span class="line"><span class="cl">  - name: http
+</span></span><span class="line"><span class="cl">    port: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">    protocol: TCP
+</span></span><span class="line"><span class="cl">    targetPort: <span class="m">80</span>
+</span></span><span class="line"><span class="cl">  selector:
+</span></span><span class="line"><span class="cl">    app: new-fujfu-kpi-frontend
+</span></span><span class="line"><span class="cl">  sessionAffinity: None
+</span></span><span class="line"><span class="cl">  type: ClusterIP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Pod</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@jenkins ops<span class="o">]</span><span class="c1"># kubectl get pod  -n prod --show-labels | grep &#34;new-fujfu-kpi-frontend&#34;</span>
+</span></span><span class="line"><span class="cl">new-fujfu-kpi-frontend.prod-8464c5df44-vsdcw             1/1     Running   <span class="m">0</span>          185d     <span class="nv">app</span><span class="o">=</span>new-fujfu-kpi-frontend,notfixedvalue<span class="o">=</span>value-20231009171117,pod-template-hash<span class="o">=</span>8464c5df44
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>整个Ingree访问流程</p>
+<p>Ingree的日志</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl logs -f nginx-ingress-controller-7795b48595-n2dcr -n kube-system <span class="p">|</span>grep  <span class="s2">&#34;kpi.xxxx.com&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/17c5cba6dd0746179f4ea771bd8c0960.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>Nginx（Pod）</strong></p>
+<p>Nginx前端 也只是Pod</p>
+<p>pod中的Nginx配置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">root@new-fujfu-kpi-frontend:/etc/nginx/conf.d# cat default.conf 
+</span></span><span class="line"><span class="cl">                server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">                    listen       80<span class="p">;</span>
+</span></span><span class="line"><span class="cl">                    server_name  localhost<span class="p">;</span>
+</span></span><span class="line"><span class="cl">                    root   /usr/share/nginx/html<span class="p">;</span>
+</span></span><span class="line"><span class="cl">                    index  index.html index.htm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">                    location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        try_files <span class="nv">$uri</span> /index.html<span class="p">;</span>
+</span></span><span class="line"><span class="cl">                    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@jenkins ops<span class="o">]</span><span class="c1"># kubectl get pod  -n prod --show-labels | grep &#34;new-fujfu-kpi-frontend&#34;</span>
+</span></span><span class="line"><span class="cl">new-fujfu-kpi-frontend.prod-8464c5df44-vsdcw             1/1     Running   <span class="m">0</span>          185d     <span class="nv">app</span><span class="o">=</span>new-fujfu-kpi-frontend,notfixedvalue<span class="o">=</span>value-20231009171117,pod-template-hash<span class="o">=</span>8464c5df44
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>日志时间不对，因为pod中差个8个小时引起的
+<img src="/../../image/d3d583bdd623429e80cac21a9642afdc.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/583fb35641d7450f99d6d8817df56d87.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+日志分析与可视化
+利用自定义日志数据进行日志分析与可视化是提高安全性和响应能力的关键。通过集成SIEM工具、ELK栈（Elasticsearch、Logstash、Kibana）或其他日志分析平台，可以对日志数据进行实时监控、异常检测和攻击行为分析。这些工具能够帮助团队快速识别并响应安全威胁，同时提供直观的数据可视化，以便深入理解和改进安全策略。</p>
+<p>参考文档：</p>
+<p><a class="link" href="https://blog.csdn.net/sinat_32582203/article/details/120449471"  target="_blank" rel="noopener"
+    >从逻辑上深入理解Kubernetes中Ingress及Nginx Ingress Controller的概念及原理</a></p>
+<p><a class="link" href="https://www.cnblogs.com/varden/p/15128802.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/varden/p/15128802.html</a></p>
+<p><a class="link" href="https://www.modb.pro/db/405641"  target="_blank" rel="noopener"
+    >https://www.modb.pro/db/405641</a></p>
+<p><a class="link" href="https://blog.csdn.net/heian_99/article/details/134776164?spm=1001.2014.3001.5501"  target="_blank" rel="noopener"
+    >Kubernetes安装ingress-nginx</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/">云原生</a>
+        
+            <a href="/tags/ingress/">ingress</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202305112139/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/06.jpg" loading="lazy" data-key="202305112139" data-hash="/../../title_pic/06.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Calico的BGP打通Kubernetes网络和局域网</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202308311841/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/43.jpg" loading="lazy" data-key="202308311841" data-hash="/../../title_pic/43.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">掌握Kubernetes API：释放容器编排的潜力</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404021613/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202404021613" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx在Kubernetes集群中的进阶应用</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202401191019/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/49.jpg" loading="lazy" data-key="202401191019" data-hash="/../../title_pic/49.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 监控Ingress实战</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202401121719/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/32.jpg" loading="lazy" data-key="202401121719" data-hash="/../../title_pic/32.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Istio安装和基础原理</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

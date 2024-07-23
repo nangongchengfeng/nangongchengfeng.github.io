@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='目前集群机器比较多，因为下载业务比较多，网络状态不好监控，涉及的状态比较多。有几次出问题，对方的锅，还要扔给我们。有必要做一下监控。防止背锅目前业务方式是把日志写入本地，到时间那台有问题，再去分析那一。。。。。。。'>
+<title>Rsyslog同步集群服务器的网络连接状态</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/rsyslog%E5%90%8C%E6%AD%A5%E9%9B%86%E7%BE%A4%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E7%8A%B6%E6%80%81/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Rsyslog同步集群服务器的网络连接状态'>
+<meta property='og:description' content='目前集群机器比较多，因为下载业务比较多，网络状态不好监控，涉及的状态比较多。有几次出问题，对方的锅，还要扔给我们。有必要做一下监控。防止背锅目前业务方式是把日志写入本地，到时间那台有问题，再去分析那一。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/rsyslog%E5%90%8C%E6%AD%A5%E9%9B%86%E7%BE%A4%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E7%8A%B6%E6%80%81/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='linux' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='k8s' /><meta property='article:published_time' content='2021-11-19T23:13:08&#43;00:00'/><meta property='article:modified_time' content='2021-11-19T23:13:08&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/02.jpg' />
+<meta name="twitter:title" content="Rsyslog同步集群服务器的网络连接状态">
+<meta name="twitter:description" content="目前集群机器比较多，因为下载业务比较多，网络状态不好监控，涉及的状态比较多。有几次出问题，对方的锅，还要扔给我们。有必要做一下监控。防止背锅目前业务方式是把日志写入本地，到时间那台有问题，再去分析那一。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/02.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#rsyslog-服务器配置"><strong>rsyslog 服务器配置</strong></a></li>
+    <li><a href="#rsyslog-客户端配置"><strong>rsyslog 客户端配置</strong></a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/rsyslog%E5%90%8C%E6%AD%A5%E9%9B%86%E7%BE%A4%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E7%8A%B6%E6%80%81/">
+                
+                    <img src="http://image.ownit.top/4kdongman/02.jpg" loading="lazy" alt="Featured image of post Rsyslog同步集群服务器的网络连接状态" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/linux%E5%AE%9E%E6%88%98%E6%93%8D%E4%BD%9C/" >
+                Linux实战操作
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/rsyslog%E5%90%8C%E6%AD%A5%E9%9B%86%E7%BE%A4%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5%E7%8A%B6%E6%80%81/">Rsyslog同步集群服务器的网络连接状态</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            目前集群机器比较多，因为下载业务比较多，网络状态不好监控，涉及的状态比较多。有几次出问题，对方的锅，还要扔给我们。有必要做一下监控。防止背锅目前业务方式是把日志写入本地，到时间那台有问题，再去分析那一。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Nov 19, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>目前集群机器比较多，因为下载业务比较多，网络状态不好监控，涉及的状态比较多。有几次出问题，对方的锅，还要扔给我们。有必要做一下监控。防止背锅</p>
+<p>目前业务方式是把日志写入本地，到时间那台有问题，再去分析那一台。</p>
+<p>我一看，这还的行吗。如果出问题业务量大，分析半天能累死人，太累了，不太建议。</p>
+<p>看来的拿出来看家本领，好歹也是管理过上K台机器的菜鸡，还是有点方法的。</p>
+<p>（1）使用脚本分析本地网络的问题</p>
+<p>（2）写入rsyslog</p>
+<p>（3）使用rsyslog的同步，把日志接入一台机器</p>
+<p>（4）然后把数据接入elk，使用可视化界面操作（逼格是否一下上来了）</p>
+<h1 id="1分析网络的脚本">1、分析网络的脚本</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>heian@game ~<span class="o">]</span>$ netstat -n <span class="p">|</span> awk <span class="s1">&#39;/^tcp/ {print $0}&#39;</span>  <span class="p">|</span> awk <span class="s1">&#39;{print $(NF-1),$NF}&#39;</span> <span class="p">|</span>  awk -F <span class="s1">&#39;:| &#39;</span> <span class="s1">&#39;{print $1,$NF}&#39;</span> <span class="p">|</span>awk  <span class="s1">&#39;{a[$1&#34; &#34;$2]++}END{for(i in a)print i,a[i]}&#39;</span> <span class="p">|</span>sort -nk <span class="m">3</span>
+</span></span><span class="line"><span class="cl">10.10.10.3 ESTABLISHED <span class="m">1</span>
+</span></span><span class="line"><span class="cl">127.0.0.1 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">172.18.0.2 ESTABLISHED <span class="m">1</span>
+</span></span><span class="line"><span class="cl">192.168.1.100 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">192.168.1.15 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">192.168.1.210 ESTABLISHED <span class="m">1</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>脚本实现，把数据写入rsyslog</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@game heian<span class="o">]</span><span class="c1"># cat tcp_listen.sh </span>
+</span></span><span class="line"><span class="cl"><span class="c1">#!/bin/bash</span>
+</span></span><span class="line"><span class="cl"><span class="nv">date_time</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">&#34;%Y%m%d%H%M&#34;</span><span class="sb">`</span>
+</span></span><span class="line"><span class="cl"><span class="nv">today</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">&#34;%Y-%m-%d&#34;</span><span class="sb">`</span>
+</span></span><span class="line"><span class="cl"><span class="nv">date_hour</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">&#34;%Y-%m-%d_%H&#34;</span><span class="sb">`</span>
+</span></span><span class="line"><span class="cl"><span class="nv">log_dir</span><span class="o">=</span><span class="s2">&#34;/app/bighead/scripts/monitorNetstat_log&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">log_path</span><span class="o">=</span><span class="nv">$log_dir</span>/<span class="nv">$today</span>/<span class="si">${</span><span class="nv">date_hour</span><span class="si">}</span>.log
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#检查文件夹是否存在，不存在则创建</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span> ! -d <span class="nv">$log_dir</span>/<span class="nv">$today</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> mkdir -p <span class="nv">$log_dir</span>/<span class="nv">$today</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#获取数据</span>
+</span></span><span class="line"><span class="cl">netstat -n <span class="p">|</span> awk <span class="s1">&#39;/^tcp/ {print $0}&#39;</span>  <span class="p">|</span> awk <span class="s1">&#39;{print $(NF-1),$NF}&#39;</span> <span class="p">|</span>  awk -F <span class="s1">&#39;:| &#39;</span> <span class="s1">&#39;{print $1,$NF}&#39;</span> <span class="p">|</span>awk -v <span class="nv">date_time</span><span class="o">=</span><span class="nv">$date_time</span> <span class="s1">&#39;{a[$1&#34; &#34;$2]++}END{for(i in a)print date_time,i,a[i]}&#39;</span> <span class="p">|</span>sort -nk <span class="m">4</span> &gt;&gt; <span class="nv">$log_path</span>
+</span></span><span class="line"><span class="cl"><span class="nv">tcp_listen2</span><span class="o">=</span><span class="k">$(</span>netstat -n <span class="p">|</span> awk <span class="s1">&#39;/^tcp/ {print $0}&#39;</span>  <span class="p">|</span> awk <span class="s1">&#39;{print $(NF-1),$NF}&#39;</span> <span class="p">|</span>  awk -F <span class="s1">&#39;:| &#39;</span> <span class="s1">&#39;{print $1,$NF}&#39;</span> <span class="p">|</span>awk  <span class="s1">&#39;{a[$1&#34; &#34;$2]++}END{for(i in a)print i,a[i]}&#39;</span> <span class="p">|</span>sort -nk 3<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#写入本地文件 </span>
+</span></span><span class="line"><span class="cl"><span class="k">while</span> <span class="nb">read</span> tcp
+</span></span><span class="line"><span class="cl"><span class="k">do</span> 
+</span></span><span class="line"><span class="cl">  <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$tcp</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">  logger -p local5.info  <span class="s2">&#34;</span><span class="nv">$tcp</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span> <span class="o">&lt;&lt;&lt;</span> <span class="s2">&#34;</span><span class="nv">$tcp_listen2</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#删除5天前的文件夹</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span> -d <span class="nv">$log_dir</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> find <span class="nv">$log_dir</span> -type d -mtime +5 <span class="p">|</span> xargs rm -rf
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>此脚本会把数据在本地保存一份，也会把数据写入rsyslog</p>
+<p>为什么要这么做，防止rsyslog服务器宕机，数据丢失喽（别说，考虑全面点）</p>
+<h1 id="2分发脚本执行定时任务">2、分发脚本，执行定时任务</h1>
+<p>把这个脚本分发到集群机器上，设置定时任务，10分钟执行一次，会同步一次网络状态。</p>
+<p>至于分发，和执行命令创建，ansible喽，自己写了命令，一个copy 一个cron 两个命令搞定</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#大致这格式</span>
+</span></span><span class="line"><span class="cl">ansible p3 -m copy -a <span class="s2">&#34;src=/root/node_monitor dest=/root&#34;</span>
+</span></span><span class="line"><span class="cl">ansible p3 -m shell -a <span class="s2">&#34;chmod a+x /root/node_monitor/*&#34;</span> -f <span class="m">10</span>
+</span></span><span class="line"><span class="cl">ansible p3 -m cron -a <span class="s2">&#34;minute=* hour=* day=* month=* weekday=* name=&#39;chia&#39; job=&#39;/usr/bin/python3 /root/node_monitor/node_monitor.py&#39; user=&#39;root&#39; state=&#39;present&#39;&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="3同步集群网络状态到rsyslog">3、同步集群网络状态到rsyslog</h1>
+<h2 id="rsyslog-服务器配置"><strong>rsyslog 服务器配置</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@jenkins ~<span class="o">]</span><span class="c1"># cat /etc/rsyslog.conf </span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imuxsock <span class="c1"># provides support for local system logging (e.g. via logger command)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imklog   <span class="c1"># provides kernel logging support (previously done by rklogd)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imudp
+</span></span><span class="line"><span class="cl"><span class="nv">$UDPServerRun</span> <span class="m">514</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imtcp
+</span></span><span class="line"><span class="cl"><span class="nv">$InputTCPServerRun</span> <span class="m">514</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$template</span> myFormat,<span class="s2">&#34;%timestamp:::date-rfc3339% %fromhost-ip% %HOSTNAME%  [%programname%] %syslogseverity-text%:%msg%\n&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ActionFileDefaultTemplate</span> RSYSLOG_TraditionalFileFormat
+</span></span><span class="line"><span class="cl"><span class="nv">$IncludeConfig</span> /etc/rsyslog.d/*.conf
+</span></span><span class="line"><span class="cl">*.info<span class="p">;</span>mail.none<span class="p">;</span>authpriv.none<span class="p">;</span>cron.none                /var/log/messages<span class="p">;</span>myFormat
+</span></span><span class="line"><span class="cl">authpriv.*                                              /var/log/secure<span class="p">;</span>myFormat
+</span></span><span class="line"><span class="cl">mail.*                                                  -/var/log/maillog
+</span></span><span class="line"><span class="cl">cron.*                                                  /var/log/cron
+</span></span><span class="line"><span class="cl">*.emerg                                                 :omusrmsg:*
+</span></span><span class="line"><span class="cl">uucp,news.crit                                          /var/log/spooler
+</span></span><span class="line"><span class="cl">local7.*                                                /var/log/boot.log
+</span></span><span class="line"><span class="cl">local5.*                                                /var/log/history/tcp.log<span class="p">;</span>myFormat
+</span></span><span class="line"><span class="cl"><span class="c1">#将local类型5的日志存放到 /var/log/history/tcp.log下 使用myFormat模板</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="rsyslog-客户端配置"><strong>rsyslog 客户端配置</strong></h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>heian@game ~<span class="o">]</span>$ cat  /etc/rsyslog.conf  <span class="p">|</span> grep -Ev <span class="s2">&#34;^</span>$<span class="s2">|^#&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imuxsock <span class="c1"># provides support for local system logging (e.g. via logger command)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imjournal <span class="c1"># provides access to the systemd journal</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$WorkDirectory</span> /var/lib/rsyslog
+</span></span><span class="line"><span class="cl"><span class="nv">$ActionFileDefaultTemplate</span> RSYSLOG_TraditionalFileFormat
+</span></span><span class="line"><span class="cl"><span class="nv">$IncludeConfig</span> /etc/rsyslog.d/*.conf
+</span></span><span class="line"><span class="cl"><span class="nv">$OmitLocalLogging</span> on
+</span></span><span class="line"><span class="cl"><span class="nv">$IMJournalStateFile</span> imjournal.state
+</span></span><span class="line"><span class="cl">*.info<span class="p">;</span>mail.none<span class="p">;</span>authpriv.none<span class="p">;</span>cron.none                /var/log/messages
+</span></span><span class="line"><span class="cl">authpriv.*                                              /var/log/secure
+</span></span><span class="line"><span class="cl">mail.*                                                  -/var/log/maillog
+</span></span><span class="line"><span class="cl">cron.*                                                  /var/log/cron
+</span></span><span class="line"><span class="cl">*.emerg                                                 :omusrmsg:*
+</span></span><span class="line"><span class="cl">uucp,news.crit                                          /var/log/spooler
+</span></span><span class="line"><span class="cl">local7.*                                                /var/log/boot.log
+</span></span><span class="line"><span class="cl">*.* @@192.168.1.210
+</span></span><span class="line"><span class="cl"><span class="c1">#主要是最后一行啊啊啊啊啊啊啊啊啊，注意</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>配置文件后，记得重启客户端啊</p>
+<h1 id="4查看日志">4、查看日志</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@jenkins history<span class="o">]</span><span class="c1"># pwd</span>
+</span></span><span class="line"><span class="cl">/var/log/history
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@jenkins history<span class="o">]</span><span class="c1"># ls</span>
+</span></span><span class="line"><span class="cl">tcp.log
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@jenkins history<span class="o">]</span><span class="c1"># cat tcp.log |wc -l</span>
+</span></span><span class="line"><span class="cl"><span class="m">28</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@jenkins history<span class="o">]</span><span class="c1"># tail -f tcp.log </span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:21+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 172.18.0.2 ESTABLISHED <span class="m">1</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:21+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 192.168.1.100 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:21+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 192.168.1.15 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:21+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 192.168.1.210 ESTABLISHED <span class="m">1</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:40+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 10.10.10.3 ESTABLISHED <span class="m">1</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:40+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 127.0.0.1 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:40+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 172.18.0.2 ESTABLISHED <span class="m">1</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:40+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 192.168.1.100 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:40+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 192.168.1.15 ESTABLISHED <span class="m">6</span>
+</span></span><span class="line"><span class="cl">2021-11-19T16:32:40+08:00 192.168.1.100 game  <span class="o">[</span>heian<span class="o">]</span> info: 192.168.1.210 ESTABLISHED <span class="m">1</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>集群的数据已经同步过来，后面直接接入elk就可以了。</p>
+<h1 id="rsyslog同步集群服务器的网络连接状态httpsblogcsdnnetheian_99articledetails121432620"><a class="link" href="https://blog.csdn.net/heian_99/article/details/121432620"  target="_blank" rel="noopener"
+    >Rsyslog同步集群服务器的网络连接状态</a></h1>
+<p><img src="http://image.ownit.top/csdn/07d4b6c2a5684582a567930301edfb08.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="集群服务器的网络连接状态接入elk可视化操作httpsblogcsdnnetheian_99articledetails121472415"><a class="link" href="https://blog.csdn.net/heian_99/article/details/121472415"  target="_blank" rel="noopener"
+    >集群服务器的网络连接状态接入ELK（可视化操作）</a></h1>
+<p><img src="http://image.ownit.top/csdn/f0d382ca74a74af2b711e7e8e8a4a5cb.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/linux/">linux</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/k8s/">k8s</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E6%94%B6%E9%9B%86pod%E7%9A%84%E6%97%A5%E5%BF%97/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/76.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/76.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes收集pod的日志</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E8%B0%81%E5%8A%A8%E4%BA%86%E6%88%91%E7%9A%84%E4%B8%BB%E6%9C%BA-history/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/65.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/65.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">谁动了我的主机?（ History）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/linux-%E5%AE%89%E8%A3%85%E5%90%8E%E5%9F%BA%E6%9C%AC%E4%BC%98%E5%8C%96%E6%93%8D%E4%BD%9C/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/22.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/22.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Linux 安装后基本优化操作</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E6%89%8B%E8%AF%AF%E5%88%A0%E5%BA%93-%E8%B7%91%E8%B7%AF%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84-linux%E5%9B%9E%E6%94%B6%E7%AB%99/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/87.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/87.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">手误【删库】 == 跑路，不存在的    Linux回收站</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E5%A4%A7%E8%A7%84%E6%A8%A1%E9%9B%86%E7%BE%A4%E5%85%A8%E7%BD%91%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/02.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/02.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">大规模集群全网数据备份解决方案</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

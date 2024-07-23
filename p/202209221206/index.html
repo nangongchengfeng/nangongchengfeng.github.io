@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='监控主机监控服务器主要用来做服务器监控，比如服务器的进程数、消耗了多少、内存，磁盘空间，，连接数等资源。是用于暴露主机指标的，比如采集、内存、磁盘等信息。采用编写，不存在任何第三方依赖，所以只需要下载。。。。。。。'>
+<title>Prometheus监控Linux主机（node-exporter）</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202209221206/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='Prometheus监控Linux主机（node-exporter）'>
+<meta property='og:description' content='监控主机监控服务器主要用来做服务器监控，比如服务器的进程数、消耗了多少、内存，磁盘空间，，连接数等资源。是用于暴露主机指标的，比如采集、内存、磁盘等信息。采用编写，不存在任何第三方依赖，所以只需要下载。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202209221206/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='linux' /><meta property='article:tag' content='prometheus' /><meta property='article:tag' content='服务器' /><meta property='article:published_time' content='2022-09-22T12:06:49&#43;00:00'/><meta property='article:modified_time' content='2022-09-22T12:06:49&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/50.jpg' />
+<meta name="twitter:title" content="Prometheus监控Linux主机（node-exporter）">
+<meta name="twitter:description" content="监控主机监控服务器主要用来做服务器监控，比如服务器的进程数、消耗了多少、内存，磁盘空间，，连接数等资源。是用于暴露主机指标的，比如采集、内存、磁盘等信息。采用编写，不存在任何第三方依赖，所以只需要下载。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/50.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#一node-exporter-使用">一、node-exporter 使用</a>
+      <ol>
+        <li><a href="#11-下载-node-exporter">1.1 下载 node-exporter</a></li>
+        <li><a href="#12-配置node-exporter">1.2 配置node-exporter</a></li>
+        <li><a href="#13-编写启动脚本">1.3 编写启动脚本</a></li>
+        <li><a href="#14-启动-node_exporter">1.4 启动 node_exporter</a></li>
+      </ol>
+    </li>
+    <li><a href="#二prometheus-配置">二、prometheus 配置</a></li>
+    <li><a href="#三grafana-出图">三、grafana 出图</a></li>
+    <li><a href="#四常用监控规则">四、常用监控规则</a></li>
+    <li><a href="#五ansible-批量添加部署">五、Ansible 批量添加部署</a>
+      <ol>
+        <li><a href="#51consul-注册脚本">5.1Consul 注册脚本</a></li>
+        <li><a href="#52-ansible-剧本脚本">5.2 Ansible 剧本脚本</a></li>
+      </ol>
+    </li>
+    <li><a href="#六指标自定义监控">六、指标自定义监控</a>
+      <ol>
+        <li><a href="#61-自定义监控">6.1 自定义监控</a></li>
+        <li><a href="#62-textfile-collector使用">6.2 Textfile Collector使用</a></li>
+        <li><a href="#63-启动">6.3 启动</a></li>
+        <li><a href="#64-写入自定义指标">6.4 写入自定义指标</a></li>
+        <li><a href="#65-配置定时任务启动">6.5 配置定时任务启动</a></li>
+        <li><a href="#66-ansible批量添加执行">6.6 ansible批量添加执行</a></li>
+        <li><a href="#67-验证数据">6.7 验证数据</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202209221206/">
+                
+                    <img src="/../../title_pic/50.jpg" loading="lazy" alt="Featured image of post Prometheus监控Linux主机（node-exporter）" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus%E7%9B%91%E6%8E%A7/" >
+                Prometheus监控
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202209221206/">Prometheus监控Linux主机（node-exporter）</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            监控主机监控服务器主要用来做服务器监控，比如服务器的进程数、消耗了多少、内存，磁盘空间，，连接数等资源。是用于暴露主机指标的，比如采集、内存、磁盘等信息。采用编写，不存在任何第三方依赖，所以只需要下载。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Sep 22, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 8 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="prometheus监控linux主机">Prometheus监控Linux主机</h1>
+<p><strong>Prometheus node-exporter 监控Linux服务器</strong></p>
+<p>node-export 主要用来做Linux服务器监控，比如服务器的进程数、消耗了多少 CPU、内存，磁盘空间，iops，tcp连接数等资源。</p>
+<p>Node Exporter 是用于暴露 *NIX 主机指标的 Exporter，比如采集 CPU、内存、磁盘等信息。采用 Go 编写，不存在任何第三方依赖，所以只需要下载解压即可运行。</p>
+<p>Exporter是Prometheus的一类数据采集组件的总称。它负责从目标处搜集数据，并将其转化为Prometheus支持的格式。与传统的数据采集组件不同的是，它并不向中央服务器发送数据，而是等待中央服务器主动前来抓取。</p>
+<p>node-exporter用于采集服务器层面的运行指标，包括机器的loadavg、filesystem、meminfo等基础监控，类似于传统主机监控维度的zabbix-agent</p>
+<blockquote>
+<p>node_exporter：用于监控Linux系统的指标采集器。</p>
+<p>常用指标：</p>
+<p>•CPU</p>
+<p>• 内存</p>
+<p>• 硬盘</p>
+<p>• 网络流量</p>
+<p>• 文件描述符</p>
+<p>• 系统负载</p>
+<p>• 系统服务</p>
+<p>数据接口：http://IP:9100/metrics</p>
+<p>使用文档：https://prometheus.io/docs/guides/node-exporter/</p>
+<p>GitHub：<a class="link" href="https://github.com/prometheus/node_exporter"  target="_blank" rel="noopener"
+    >GitHub - prometheus/node_exporter: Exporter for machine metrics</a></p>
+</blockquote>
+<h2 id="一node-exporter-使用">一、node-exporter 使用</h2>
+<p>‍</p>
+<h3 id="11-下载-node-exporter">1.1 下载 node-exporter</h3>
+<p>node-exporter 下载地址：https://prometheus.io/download/</p>
+<p><a class="link" href="https://github.com/prometheus/node_exporter/releases/tag/v1.3.1"  title="node-expoeter下载地址"
+     target="_blank" rel="noopener"
+    >node-expoeter</a></p>
+<p>node-exporter 可以使用命令行参数也可以指定参数命令启动</p>
+<h3 id="12-配置node-exporter">1.2 配置node-exporter</h3>
+<p>该 metrics 接口数据就是一个标准的 Prometheus 监控指标格式，我们只需要将该端点配置到 Prometheus 中即可抓取该指标数据。为了了解 <code>node_exporter</code> 可配置的参数，我们可以使用 <code>./node_exporter \-h</code> 来查看帮助信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">☸ ➜ ./node_exporter -h
+</span></span><span class="line"><span class="cl">    --web.listen-address<span class="o">=</span><span class="s2">&#34;:9100&#34;</span>  <span class="c1"># 监听的端口，默认是9100</span>
+</span></span><span class="line"><span class="cl">    --web.telemetry-path<span class="o">=</span><span class="s2">&#34;/metrics&#34;</span>  <span class="c1"># metrics的路径，默认为/metrics</span>
+</span></span><span class="line"><span class="cl">    --web.disable-exporter-metrics  <span class="c1"># 是否禁用go、prome默认的metrics</span>
+</span></span><span class="line"><span class="cl">    --web.max-requests<span class="o">=</span><span class="m">40</span>     <span class="c1"># 最大并行请求数，默认40，设置为0时不限制</span>
+</span></span><span class="line"><span class="cl">    --log.level<span class="o">=</span><span class="s2">&#34;info&#34;</span>        <span class="c1"># 日志等级: [debug, info, warn, error, fatal]</span>
+</span></span><span class="line"><span class="cl">    --log.format<span class="o">=</span>logfmt     <span class="c1"># 置日志打印target和格式: [logfmt, json]</span>
+</span></span><span class="line"><span class="cl">    --version                 <span class="c1"># 版本号</span>
+</span></span><span class="line"><span class="cl">    --collector.<span class="o">{</span>metric-name<span class="o">}</span> <span class="c1"># 各个metric对应的参数</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">以使用 --collectors.enabled参数指定node_exporter收集的功能模块,或者用--no-collector指定不需要的模块，如果不指定，将使用默认配置。
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>最重要的参数就是 --collector.，通过该参数可以启用我们收集的功能模块，node_exporter 会默认采集一些模块，要禁用这些默认启用的收集器可以通过 --no-collector. 标志来禁用，如果只启用某些特定的收集器，基于先使用 --collector.disable-defaults 标志禁用所有默认的，然后在通过指定具体的收集器 --collector. 来进行启用。下图列出了默认启用的收集器：</p>
+<p><img src="/../../image/3a9d3b6f427448cc8adaa46f6b158adc.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><a class="link" href="https://github.com/prometheus/node_exporter"  title="https://github.com/prometheus/node_exporter"
+     target="_blank" rel="noopener"
+    >相关文档地址</a></p>
+<p>‍</p>
+<h3 id="13-编写启动脚本">1.3 编写启动脚本</h3>
+<p>创建prometheus组和用户</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo groupadd -r prometheus
+</span></span><span class="line"><span class="cl">sudo useradd -r -g prometheus -s /sbin/nologin -M -c <span class="s2">&#34;prometheus Daemons&#34;</span> prometheus
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vim /usr/lib/systemd/system/node_exporter.service
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Unit<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">Description</span><span class="o">=</span>node_exporter
+</span></span><span class="line"><span class="cl"><span class="nv">After</span><span class="o">=</span>network.target 
+</span></span><span class="line"><span class="cl"> <span class="c1">#可以创建相应的用户和组 启动</span>
+</span></span><span class="line"><span class="cl"><span class="nv">User</span><span class="o">=</span>prometheus
+</span></span><span class="line"><span class="cl"><span class="nv">Group</span><span class="o">=</span>prometheus
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Service<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/node_exporter/node_exporter<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --web.listen-address<span class="o">=</span>:9100<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.systemd<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.systemd.unit-whitelist<span class="o">=(</span>sshd<span class="p">|</span>nginx<span class="o">)</span>.service<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.processes<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.tcpstat
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Install<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">WantedBy</span><span class="o">=</span>multi-user.target
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="14-启动-node_exporter">1.4 启动 node_exporter</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl daemon-reload
+</span></span><span class="line"><span class="cl">systemctl start process_exporter
+</span></span><span class="line"><span class="cl">systemctl <span class="nb">enable</span> process_exporter
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>验证监控数据</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl http://localhost:9100/metrics
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/6792f028208c46fda42c7dedc44b5b83.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>​</p>
+<h2 id="二prometheus-配置">二、prometheus 配置</h2>
+<p>添加或修改配置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">- job_name: <span class="s1">&#39;dev_prometheus&#39;</span>
+</span></span><span class="line"><span class="cl">  scrape_interval: 10s
+</span></span><span class="line"><span class="cl">  honor_labels: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  metrics_path: <span class="s1">&#39;/metrics&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  static_configs:
+</span></span><span class="line"><span class="cl">  - targets: <span class="o">[</span><span class="s1">&#39;127.0.0.1:9090&#39;</span>,<span class="s1">&#39;127.0.0.1:9100&#39;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">    labels: <span class="o">{</span>cluster: <span class="s1">&#39;dev&#39;</span>,type: <span class="s1">&#39;basic&#39;</span>,env: <span class="s1">&#39;dev&#39;</span>,job: <span class="s1">&#39;prometheus&#39;</span>,export: <span class="s1">&#39;node-exporter&#39;</span><span class="o">}</span>
+</span></span><span class="line"><span class="cl">  - targets: <span class="o">[</span><span class="s1">&#39;127.0.0.1:9256&#39;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">    labels: <span class="o">{</span>cluster: <span class="s1">&#39;dev&#39;</span>,type: <span class="s1">&#39;process&#39;</span>,env: <span class="s1">&#39;dev&#39;</span>,job: <span class="s1">&#39;prometheus&#39;</span>,export: <span class="s1">&#39;process_exporter&#39;</span><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>重启 prometheus 服务</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -X POST http://127.0.0.1:9090/-/reload
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="三grafana-出图">三、grafana 出图</h2>
+<p>process-exporter 对应的 dashboard 为：<a class="link" href="https://grafana.com/grafana/dashboards/16098-1-node-exporter-for-prometheus-dashboard-cn-0417-job/"  target="_blank" rel="noopener"
+    >https://grafana.com/grafana/dashboards/16098-1-node-exporter-for-prometheus-dashboard-cn-0417-job/</a></p>
+<p><strong>效果如下</strong></p>
+<p><img src="/../../image/45c8a6661a044137833bcaf5234c3404.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+><br>
+<img src="/../../image/1e6c5cd0525a4ecbabd53546ee11df16.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="四常用监控规则">四、常用监控规则</h2>
+<p><a class="link" href="https://www.cnblogs.com/yaoxinlei/p/15664623.html"  title="Prometheus 告警规则 "
+     target="_blank" rel="noopener"
+    >Prometheus 告警规则</a></p>
+<p>参考网站：<a class="link" href="https://awesome-prometheus-alerts.grep.to/rules"  target="_blank" rel="noopener"
+    >https://awesome-prometheus-alerts.grep.to/rules</a></p>
+<p>这个网站上有好多常用软件的告警规则，但是有些并不一定实用，有些使用起来会有错误，这里就把这些都给排除掉，只保留能使用的</p>
+<p>结合文章：<a class="link" href="https://www.cnblogs.com/sanduzxcvbnm/p/13589792.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/sanduzxcvbnm/p/13589792.html</a> 来使用</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">groups:
+</span></span><span class="line"><span class="cl">    - name: 主机状态-监控告警
+</span></span><span class="line"><span class="cl">      rules:
+</span></span><span class="line"><span class="cl">      - alert: 主机状态
+</span></span><span class="line"><span class="cl">        expr: <span class="nv">up</span> <span class="o">==</span> <span class="m">0</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 非常严重
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.instance}}:服务器宕机&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.instance}}:服务器延时超过5分钟&#34;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">      - alert: CPU使用情况
+</span></span><span class="line"><span class="cl">        expr: 100-<span class="o">(</span>avg<span class="o">(</span>irate<span class="o">(</span>node_cpu_seconds_total<span class="o">{</span><span class="nv">mode</span><span class="o">=</span><span class="s2">&#34;idle&#34;</span><span class="o">}[</span>5m<span class="o">]))</span> by<span class="o">(</span>instance<span class="o">)</span>* 100<span class="o">)</span> &gt; <span class="m">60</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 一般告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} CPU使用率过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }} CPU使用大于60%(目前使用:{{</span><span class="nv">$value</span><span class="s2">}}%)&#34;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">      - alert: 内存使用
+</span></span><span class="line"><span class="cl">        expr: <span class="m">100</span> -<span class="o">(</span>node_memory_MemTotal_bytes -node_memory_MemFree_bytes+node_memory_Buffers_bytes+node_memory_Cached_bytes <span class="o">)</span> / node_memory_MemTotal_bytes * 100&gt; <span class="m">80</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 严重告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} 内存使用率过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }} 内存使用大于80%(目前使用:{{</span><span class="nv">$value</span><span class="s2">}}%)&#34;</span>
+</span></span><span class="line"><span class="cl">      - alert: IO性能
+</span></span><span class="line"><span class="cl">        expr: 100-<span class="o">(</span>avg<span class="o">(</span>irate<span class="o">(</span>node_disk_io_time_seconds_total<span class="o">[</span>1m<span class="o">]))</span> by<span class="o">(</span>instance<span class="o">)</span>* 100<span class="o">)</span> &lt; <span class="m">60</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 严重告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} 流入磁盘IO使用率过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }} 流入磁盘IO大于60%(目前使用:{{</span><span class="nv">$value</span><span class="s2">}})&#34;</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">      - alert: 网络
+</span></span><span class="line"><span class="cl">        expr: <span class="o">((</span>sum<span class="o">(</span>rate <span class="o">(</span>node_network_receive_bytes_total<span class="o">{</span>device!~<span class="s1">&#39;tap.*|veth.*|br.*|docker.*|virbr*|lo*&#39;</span><span class="o">}[</span>5m<span class="o">]))</span> by <span class="o">(</span>instance<span class="o">))</span> / 100<span class="o">)</span> &gt; <span class="m">102400</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 严重告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} 流入网络带宽过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }}流入网络带宽持续2分钟高于100M. RX带宽使用率{{</span><span class="nv">$value</span><span class="s2">}}&#34;</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">      - alert: 网络
+</span></span><span class="line"><span class="cl">        expr: <span class="o">((</span>sum<span class="o">(</span>rate <span class="o">(</span>node_network_transmit_bytes_total<span class="o">{</span>device!~<span class="s1">&#39;tap.*|veth.*|br.*|docker.*|virbr*|lo*&#39;</span><span class="o">}[</span>5m<span class="o">]))</span> by <span class="o">(</span>instance<span class="o">))</span> / 100<span class="o">)</span> &gt; <span class="m">102400</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 严重告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} 流出网络带宽过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }}流出网络带宽持续2分钟高于100M. RX带宽使用率{{</span><span class="nv">$value</span><span class="s2">}}&#34;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">      - alert: TCP会话
+</span></span><span class="line"><span class="cl">        expr: node_netstat_Tcp_CurrEstab &gt; <span class="m">1000</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 严重告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} TCP_ESTABLISHED过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }} TCP_ESTABLISHED大于1000%(目前使用:{{</span><span class="nv">$value</span><span class="s2">}}%)&#34;</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">      - alert: 磁盘容量
+</span></span><span class="line"><span class="cl">        expr: 100-<span class="o">(</span>node_filesystem_free_bytes<span class="o">{</span><span class="nv">fstype</span><span class="o">=</span>~<span class="s2">&#34;ext4|xfs&#34;</span><span class="o">}</span>/node_filesystem_size_bytes <span class="o">{</span><span class="nv">fstype</span><span class="o">=</span>~<span class="s2">&#34;ext4|xfs&#34;</span><span class="o">}</span>*100<span class="o">)</span> &gt; <span class="m">80</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span>: 1m
+</span></span><span class="line"><span class="cl">        labels:
+</span></span><span class="line"><span class="cl">          status: 严重告警
+</span></span><span class="line"><span class="cl">        annotations:
+</span></span><span class="line"><span class="cl">          summary: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint}} 磁盘分区使用率过高！&#34;</span>
+</span></span><span class="line"><span class="cl">          description: <span class="s2">&#34;{{</span><span class="nv">$labels</span><span class="s2">.mountpoint }} 磁盘分区使用大于80%(目前使用:{{</span><span class="nv">$value</span><span class="s2">}}%)&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="五ansible-批量添加部署">五、Ansible 批量添加部署</h2>
+<p><img src="/../../image/251d5db1866140cfa5c16898f199158e.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>这里采用 Consul 注册发现方式，相关类容可以查询网上</p>
+<h3 id="51consul-注册脚本">5.1Consul 注册脚本</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nv">service_name</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl"><span class="nv">instance_id</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ip</span><span class="o">=</span><span class="nv">$3</span>
+</span></span><span class="line"><span class="cl"><span class="nv">port</span><span class="o">=</span><span class="nv">$4</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">curl -X PUT -d <span class="s1">&#39;{&#34;id&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$instance_id</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;name&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$service_name</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;address&#34;: &#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$ip</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;port&#34;: &#39;</span><span class="s2">&#34;</span><span class="nv">$port</span><span class="s2">&#34;</span><span class="s1">&#39;,&#34;tags&#34;: [&#34;&#39;</span><span class="s2">&#34;</span><span class="nv">$service_name</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;],&#34;checks&#34;: [{&#34;http&#34;: &#34;http://&#39;</span><span class="s2">&#34;</span><span class="nv">$ip</span><span class="s2">&#34;</span><span class="s1">&#39;:&#39;</span><span class="s2">&#34;</span><span class="nv">$port</span><span class="s2">&#34;</span><span class="s1">&#39;&#34;,&#34;interval&#34;: &#34;5s&#34;}]}&#39;</span> http://10.1.8.202:8500/v1/agent/service/register
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="52-ansible-剧本脚本">5.2 Ansible 剧本脚本</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@openvpn node<span class="o">]</span><span class="c1"># cat playbook.yml </span>
+</span></span><span class="line"><span class="cl">- hosts: Sm
+</span></span><span class="line"><span class="cl">  remote_user: root
+</span></span><span class="line"><span class="cl">  gather_facts: no
+</span></span><span class="line"><span class="cl">  tasks:
+</span></span><span class="line"><span class="cl">    - name: 推送采集器安装包
+</span></span><span class="line"><span class="cl">      unarchive: <span class="nv">src</span><span class="o">=</span>node_exporter-1.2.2.linux-amd64.tar.gz <span class="nv">dest</span><span class="o">=</span>/usr/local/
+</span></span><span class="line"><span class="cl">    - name: 重命名
+</span></span><span class="line"><span class="cl">      shell: <span class="p">|</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">cd</span> /usr/local/ 
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="o">[</span> ! -d node_exporter <span class="o">]</span><span class="p">;</span><span class="k">then</span> 
+</span></span><span class="line"><span class="cl">           mv node_exporter-1.2.2.linux-amd64  node_exporter 
+</span></span><span class="line"><span class="cl">        <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    - name: 查询主机名称
+</span></span><span class="line"><span class="cl">      shell: <span class="nb">echo</span> <span class="s2">&#34;`hostname`&#34;</span>
+</span></span><span class="line"><span class="cl">      register: name_host
+</span></span><span class="line"><span class="cl">    - name: 推送system文件
+</span></span><span class="line"><span class="cl">      copy: <span class="nv">src</span><span class="o">=</span>node_exporter.service <span class="nv">dest</span><span class="o">=</span>/usr/lib/systemd/system
+</span></span><span class="line"><span class="cl">    - name: 启动服务
+</span></span><span class="line"><span class="cl">      systemd: <span class="nv">name</span><span class="o">=</span>node_exporter <span class="nv">state</span><span class="o">=</span>started <span class="nv">enabled</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl">    - name: 推送注册脚本
+</span></span><span class="line"><span class="cl">      copy: <span class="nv">src</span><span class="o">=</span>consul-register.sh <span class="nv">dest</span><span class="o">=</span>/usr/local/node_exporter
+</span></span><span class="line"><span class="cl">    - name: 注册当前节点
+</span></span><span class="line"><span class="cl">      shell: /bin/sh /usr/local/node_exporter/consul-register.sh <span class="o">{{</span> group_names<span class="o">[</span>0<span class="o">]</span> <span class="o">}}</span> <span class="o">{{</span> name_host.stdout  <span class="o">}}</span> <span class="o">{{</span> inventory_hostname <span class="o">}}</span> <span class="m">9100</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>‍</p>
+<h2 id="六指标自定义监控">六、指标自定义监控</h2>
+<h3 id="61-自定义监控">6.1 自定义监控</h3>
+<p>node_exporter的–collector.textfile是一个收集器，这个收集器可以允许我们暴露自定义指标，比如某些pushgateway功能中自定义的指标，就可以使用–collector.textfile功能来实现，而且，node_exporter实现起来更加优雅。用node_expoerter ，直接在现在基础上做textfile collector即可。如果有pushgateway的话，可是使用pushgateway的，也可以使用textfilecollector。</p>
+<p>‍</p>
+<p>node_exporter的collector.textfile 功能自定义监控，collector.text收集器通过扫描指定目录中的文件，提取所有格式为Prometheus指标的字符串，然后暴露它们以便抓取</p>
+<p>参数：<strong>–collector.textfile.directory</strong></p>
+<h3 id="62-textfile-collector使用">6.2 Textfile Collector使用</h3>
+<p>因为node_exporter之前已经安装过，如果node_exporter启动时没有指定–collector.textfile.directory参数，需要在启动文件里面，添加上参数，并确认文件指的目录存在。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@openvpn disk<span class="o">]</span><span class="c1"># cat node_exporter.service </span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Unit<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">Description</span><span class="o">=</span>node_exporter
+</span></span><span class="line"><span class="cl"><span class="nv">After</span><span class="o">=</span>network.target 
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Service<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/node_exporter/node_exporter<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --web.listen-address<span class="o">=</span>:9100<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.systemd<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.systemd.unit-whitelist<span class="o">=(</span>sshd<span class="p">|</span>nginx<span class="o">)</span>.service<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.processes<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.tcpstat<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.supervisord<span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>          --collector.textfile.directory<span class="o">=</span><span class="s2">&#34;/usr/local/node_exporter&#34;</span>
+</span></span><span class="line"><span class="cl">	  <span class="c1">#指定以的监控目录</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Install<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="nv">WantedBy</span><span class="o">=</span>multi-user.target
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="63-启动">6.3 启动</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#启动</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># systemd 方式启动</span>
+</span></span><span class="line"><span class="cl">systemctl daemon-reload 
+</span></span><span class="line"><span class="cl">systemctl <span class="nb">enable</span> node_exporter
+</span></span><span class="line"><span class="cl">systemctl start node_exporter
+</span></span><span class="line"><span class="cl">systemctl status node_exporter
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># supervisor方式启动</span>
+</span></span><span class="line"><span class="cl">supervisorctl update
+</span></span><span class="line"><span class="cl">supervisorctl status
+</span></span><span class="line"><span class="cl">supervisorctl start node_exporter
+</span></span><span class="line"><span class="cl">supervisorctl restart node_exporter
+</span></span><span class="line"><span class="cl">​
+</span></span><span class="line"><span class="cl">​
+</span></span><span class="line"><span class="cl"><span class="c1">#检查是否启动成功</span>
+</span></span><span class="line"><span class="cl">ss -untlp <span class="p">|</span>grep <span class="m">9100</span>
+</span></span><span class="line"><span class="cl">ps -ef <span class="p">|</span>grep node_exporter
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="64-写入自定义指标">6.4 写入自定义指标</h3>
+<p><strong>写入自定义指标，这个需要自己开发脚本，将数据写入对应的文件即可。也可以在</strong><a class="link" href="https://github.com/prometheus-community/node-exporter-textfile-collector-scripts"  target="_blank" rel="noopener"
+    >github（点我点我…）</a>中看实例文件，熟悉python或者shell都可以写。</p>
+<p><strong>GitHub 中有提供模板的，比如 directory-size.sh</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="c1"># cat directory-size.sh</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl"><span class="c1">#!/bin/sh</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Expose directory usage metrics, passed as an argument.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Usage: add this to crontab:</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># */5 * * * * prometheus directory-size.sh /var/lib/prometheus | sponge /var/lib/node_exporter/directory_size.prom</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># sed pattern taken from https://www.robustperception.io/monitoring-directory-sizes-with-the-textfile-collector/</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Author: Antoine Beaupré &lt;anarcat@debian.org&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;# HELP node_directory_size_bytes Disk space used by some directories&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;# TYPE node_directory_size_bytes gauge&#34;</span>
+</span></span><span class="line"><span class="cl">du --block-size<span class="o">=</span><span class="m">1</span> --summarize <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="p">|</span> sed -ne <span class="s1">&#39;s/\\/\\\\/;s/&#34;/\\&#34;/g;s/^\([0-9]\+\)\t\(.*\)$/node_directory_size_bytes{directory=&#34;\2&#34;} \1/p&#39;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>此处是我给的简单shell脚本获取数据</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@openvpn disk<span class="o">]</span><span class="c1"># cat disk_cheak.sh </span>
+</span></span><span class="line"><span class="cl"><span class="c1">#!/bin/sh</span>
+</span></span><span class="line"><span class="cl"><span class="nv">system</span><span class="o">=</span><span class="k">$(</span>lsblk -fs <span class="p">|</span>grep -w  / <span class="p">|</span>awk <span class="s1">&#39;{print $1}&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">disk</span><span class="o">=</span><span class="k">$(</span>lsblk   -rfs<span class="p">|</span>grep -E <span class="s1">&#39;xfs|f2fs|ntfs&#39;</span><span class="p">|</span> grep -v <span class="nv">$system</span><span class="p">|</span>awk <span class="s1">&#39;{print $5}&#39;</span> <span class="p">|</span>awk -F <span class="s1">&#39;%&#39;</span> <span class="s1">&#39;{print $1}&#39;</span> <span class="p">|</span>wc -l<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">theNum</span><span class="o">=</span><span class="k">$(</span> df -h <span class="p">|</span>grep /data/plot  <span class="p">|</span>wc -l<span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">name</span><span class="o">=</span><span class="s2">&#34;check_disk_nums&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">pool_nums</span><span class="o">=</span><span class="k">$(</span>tail -n <span class="m">1</span>  /root/hpool/log/miner.log.log <span class="p">|</span> awk <span class="s1">&#39;{print $6}&#39;</span><span class="p">|</span>cut -d <span class="s1">&#39;=&#39;</span> -f 2<span class="p">|</span>awk -F <span class="s1">&#39;[ &#34;]&#39;</span> <span class="s1">&#39;{print $4,$NF}&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{sub(/^[\t ]*/,&#34;&#34;);print}&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">CPU_sensors</span><span class="o">=</span><span class="k">$(</span>sensors <span class="p">|</span> grep <span class="s2">&#34;^Package id 0:&#34;</span> <span class="p">|</span> sed <span class="s1">&#39;s/Package id 0://&#39;</span> <span class="p">|</span> sed <span class="s1">&#39;s/^\s*.+//&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{print $1}&#39;</span> <span class="p">|</span> sed <span class="s1">&#39;s/°C//&#39;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;check_cpu_sensors   </span><span class="nv">$CPU_sensors</span><span class="s2">&#34;</span> &gt; /usr/local/node_exporter/check_cpu_sensors.prom
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;check_pool_nums   </span><span class="nv">$pool_nums</span><span class="s2">&#34;</span> &gt; /usr/local/node_exporter/check_pool_nums.prom
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">[</span> <span class="nv">$disk</span>  !<span class="o">=</span>  <span class="nv">$theNum</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$name</span><span class="s2">  0&#34;</span>  &gt; /usr/local/node_exporter/check_disk_nums.prom
+</span></span><span class="line"><span class="cl"><span class="k">else</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$name</span><span class="s2">  </span><span class="nv">$disk</span><span class="s2">&#34;</span> &gt; /usr/local/node_exporter/check_disk_nums.prom
+</span></span><span class="line"><span class="cl"><span class="k">fi</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="65-配置定时任务启动">6.5 配置定时任务启动</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chmod a+x disk_cheak.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">crontab -l
+</span></span><span class="line"><span class="cl"><span class="c1">#Ansible: check_disk</span>
+</span></span><span class="line"><span class="cl">*/5 * * * * /bin/bash /usr/local/node_exporter/disk_cheak.sh
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/06b0815d71084f15aee5eea02eb0f39b.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="66-ansible批量添加执行">6.6 ansible批量添加执行</h3>
+<p><img src="/../../image/27a84f1adbd94c5aaec335058dbf153f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@openvpn disk<span class="o">]</span><span class="c1"># cat playbook.yml </span>
+</span></span><span class="line"><span class="cl">- hosts: all
+</span></span><span class="line"><span class="cl">  remote_user: root
+</span></span><span class="line"><span class="cl">  gather_facts: no
+</span></span><span class="line"><span class="cl">  tasks:
+</span></span><span class="line"><span class="cl">    - name: 推送system文件
+</span></span><span class="line"><span class="cl">      copy: <span class="nv">src</span><span class="o">=</span>node_exporter.service <span class="nv">dest</span><span class="o">=</span>/usr/lib/systemd/system
+</span></span><span class="line"><span class="cl">    - name: 开机启动服务
+</span></span><span class="line"><span class="cl">      systemd: <span class="nv">name</span><span class="o">=</span>node_exporter <span class="nv">state</span><span class="o">=</span>restarted <span class="nv">enabled</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl">    - name: 推送磁盘脚本
+</span></span><span class="line"><span class="cl">      copy: <span class="nv">src</span><span class="o">=</span>disk_cheak.sh <span class="nv">dest</span><span class="o">=</span>/usr/local/node_exporter <span class="nv">mode</span><span class="o">=</span>u+x
+</span></span><span class="line"><span class="cl">    - name: 设置定时任务
+</span></span><span class="line"><span class="cl">      cron: <span class="nv">name</span><span class="o">=</span><span class="s2">&#34;check_disk&#34;</span> <span class="nv">minute</span><span class="o">=</span><span class="s2">&#34;*/5&#34;</span> <span class="nv">job</span><span class="o">=</span><span class="s2">&#34;/bin/bash /usr/local/node_exporter/disk_cheak.sh&#34;</span> <span class="nv">state</span><span class="o">=</span><span class="s2">&#34;present&#34;</span>
+</span></span><span class="line"><span class="cl">    - name: 执行脚本
+</span></span><span class="line"><span class="cl">      shell: /bin/bash /usr/local/node_exporter/disk_cheak.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">执行命令
+</span></span><span class="line"><span class="cl">ansible-playbook playbook.yml -i ./hosts1  -f <span class="m">10</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="67-验证数据">6.7 验证数据</h3>
+<p><img src="/../../image/55dd5a9079ab4407abd9dcff5f98a7db.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>‍</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/linux/">linux</a>
+        
+            <a href="/tags/prometheus/">prometheus</a>
+        
+            <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8/">服务器</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202209211437/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/33.jpg" loading="lazy" data-key="202209211437" data-hash="/../../title_pic/33.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Prometheus监控进程</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407091024/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/27.jpg" loading="lazy" data-key="202407091024" data-hash="/../../title_pic/27.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">基于Padavan Exporter的Prometheus客户端二次开发实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405291810/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/57.jpg" loading="lazy" data-key="202405291810" data-hash="/../../title_pic/57.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Go开发Prometheus客户端实战步骤</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202403041144/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/51.jpg" loading="lazy" data-key="202403041144" data-hash="/../../title_pic/51.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 监控Istio</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202311281517/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/14.jpg" loading="lazy" data-key="202311281517" data-hash="/../../title_pic/14.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">使用Prometheus监控Synology（群辉）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

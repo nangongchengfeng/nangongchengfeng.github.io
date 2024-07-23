@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='和快照概述的重要性：支持的灵活的文档模型，使其成为处理大量分散数据的理想选择，特别是在需要快速迭代和频繁更改数据结构的应用中。逻辑卷管理快照技术基本概念：允许在不停止数据库服务的情况下，创建数据在某一。。。。。。。'>
+<title>MongoDB快照（LVM）业务场景应用实战</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202404081616/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='MongoDB快照（LVM）业务场景应用实战'>
+<meta property='og:description' content='和快照概述的重要性：支持的灵活的文档模型，使其成为处理大量分散数据的理想选择，特别是在需要快速迭代和频繁更改数据结构的应用中。逻辑卷管理快照技术基本概念：允许在不停止数据库服务的情况下，创建数据在某一。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202404081616/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='mongodb' /><meta property='article:tag' content='数据库' /><meta property='article:published_time' content='2024-04-08T16:16:38&#43;00:00'/><meta property='article:modified_time' content='2024-04-08T16:16:38&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/66.jpg' />
+<meta name="twitter:title" content="MongoDB快照（LVM）业务场景应用实战">
+<meta name="twitter:description" content="和快照概述的重要性：支持的灵活的文档模型，使其成为处理大量分散数据的理想选择，特别是在需要快速迭代和频繁更改数据结构的应用中。逻辑卷管理快照技术基本概念：允许在不停止数据库服务的情况下，创建数据在某一。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/66.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#mongodb和lvm快照概述">MongoDB和LVM快照概述</a></li>
+    <li><a href="#应用方面">应用方面</a></li>
+    <li><a href="#lvm快照的优势">LVM快照的优势</a></li>
+    <li><a href="#环境准备">环境准备</a>
+      <ol>
+        <li><a href="#步骤详解">步骤详解</a></li>
+        <li><a href="#快照恢复流程">快照恢复流程</a></li>
+      </ol>
+    </li>
+    <li><a href="#业务实战">业务实战</a>
+      <ol>
+        <li><a href="#实践步骤">实践步骤</a>
+          <ol>
+            <li><a href="#1-准备工作">1. 准备工作</a></li>
+            <li><a href="#2-自动化脚本">2. 自动化脚本</a></li>
+            <li><a href="#3-数据同步">3. 数据同步</a></li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202404081616/">
+                
+                    <img src="/../../title_pic/66.jpg" loading="lazy" alt="Featured image of post MongoDB快照（LVM）业务场景应用实战" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202404081616/">MongoDB快照（LVM）业务场景应用实战</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            和快照概述的重要性：支持的灵活的文档模型，使其成为处理大量分散数据的理想选择，特别是在需要快速迭代和频繁更改数据结构的应用中。逻辑卷管理快照技术基本概念：允许在不停止数据库服务的情况下，创建数据在某一。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 08, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 9 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="mongodb和lvm快照概述">MongoDB和LVM快照概述</h2>
+<p><strong>MongoDB的重要性</strong>：MongoDB支持的灵活的文档模型，使其成为处理大量分散数据的理想选择，特别是在需要快速迭代和频繁更改数据结构的应用中。</p>
+<p><strong>LVM（逻辑卷管理）快照技术基本概念</strong>：LVM允许在不停止数据库服务的情况下，创建数据在某一时间点的快照。这意味着可以在不影响数据库性能和用户体验的情况下进行备份。</p>
+<h2 id="应用方面">应用方面</h2>
+<p>1、备份（恢复）的重要性：</p>
+<p>备份MongoDB数据对于确保数据安全和业务连续性至关重要。无论是因为硬件故障、软件故障、还是人为错误，数据丢失的后果都可能是灾难性的。定期备份可以最小化这些风险，确保在出现问题时可以快速恢复。</p>
+<p>2、测试和开发环境的创建</p>
+<p>在测试和开发过程中，需要创建一个与生产环境相同的数据库副本。通过使用快照，可以在测试和开发环境中快速创建一个具有相同数据和结构的数据库副本，以便进行有效的测试和开发工作。</p>
+<p>3、数据分析和报告生成</p>
+<p>某些情况下，需要对数据库进行离线分析和报告生成。通过使用快照，在不影响生产环境的情况下，可以在备份中创建一个副本，用于数据分析和报告生成，而不会对生产环境的性能产生负面影响。</p>
+<h2 id="lvm快照的优势">LVM快照的优势</h2>
+<p>使用LVM快照作为MongoDB备份策略的优点包括：</p>
+<ul>
+<li><strong>快速备份</strong>：能够迅速捕捉到数据的瞬时状态，减少备份时间。</li>
+<li><strong>最小化停机时间</strong>：备份过程中不需要停止服务，这对于需要24/7运行的业务至关重要。</li>
+<li><strong>有效地恢复数据</strong>：可以精确到备份时的状态恢复数据，提高恢复效率。</li>
+</ul>
+<h2 id="环境准备">环境准备</h2>
+<p>进行MongoDB备份前的环境准备包括：</p>
+<ul>
+<li>确保已安装LVM并正确配置存储。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yml" data-lang="yml"><span class="line"><span class="cl"><span class="l">sudo yum install lvm2</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">首先，识别可用的磁盘或分区（例如，/dev/sdb）并创建物理卷：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo pvcreate /dev/sdb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">展示效果：该命令应返回“Physical volume &#34;/dev/sdb&#34; successfully created”的信息。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">接着，创建一个卷组，加入刚创建的物理卷：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo vgcreate vg0 /dev/sdb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">展示效果：返回“Volume group &#34;vg0&#34; successfully created”表明卷组创建成功。</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">步骤三：创建逻辑卷</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">最后，在卷组内创建逻辑卷用于MongoDB数据存储：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo lvcreate -L 10G -n mongo_data vg0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">展示效果：应返回“Logical volume &#34;mongo_data&#34; created”的消息。</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>MongoDB数据库运行在支持LVM的存储卷上。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yml" data-lang="yml"><span class="line"><span class="cl"><span class="l">配置MongoDB以使用逻辑卷</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">修改MongoDB的配置文件（通常为/etc/mongod.conf），指定数据存储路径到刚创建的逻辑卷上的某个目录：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">storage</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">dbPath</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/mnt/mongo_data&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">然后，将MongoDB数据目录移动到新的位置，并修改目录权限：</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo mkdir /mnt/mongo_data</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo mount /dev/vg0/mongo_data /mnt/mongo_data</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo rsync -av /var/lib/mongo/ /mnt/mongo_data</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">sudo chown -R mongodb:mongodb /mnt/mongo_data</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>验证系统的性能和存储空间，确保快照操作不会导致性能瓶颈或空间耗尽。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yml" data-lang="yml"><span class="line"><span class="cl"><span class="l">htop</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">htop将显示CPU和内存的实时使用情况，用户需要确保在创建快照期间，这些资源的使用不会达到饱和</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="步骤详解">步骤详解</h3>
+<ol>
+<li>确认MongoDB数据库的存储卷</li>
+</ol>
+<p>首先，使用<code>lvdisplay</code>命令来查找MongoDB数据存储在哪个逻辑卷上：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">lvdisplay
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个命令会列出系统中所有的逻辑卷。你需要找到与MongoDB数据相关联的逻辑卷信息，比如卷名（Volume Name）、卷组名（VG Name）等。</p>
+<ol start="2">
+<li>创建快照卷</li>
+</ol>
+<p>**注意：在执行的时候需要关闭数据库，以防止有数据继续写入（**​<code>systemctl stop mongod</code>​ <strong>）</strong></p>
+<p>接着，根据确认的MongoDB数据卷，使用<code>lvcreate</code>命令创建一个新的快照卷。例如，如果MongoDB数据存储在名为<code>mongo_data</code>的逻辑卷上，位于卷组<code>vg0</code>中，可以执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo lvcreate --size 1G --snapshot --name mongo_backup /dev/vg0/mongo_data
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个命令创建了一个名为<code>mongo_backup</code>的快照卷，大小为1GB。</p>
+<ol start="3">
+<li>挂载快照卷并备份</li>
+</ol>
+<p>创建快照卷后，需要将其挂载到系统的一个目录上，以便访问和备份数据。首先，创建一个挂载点，然后挂载快照卷：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo mkdir /mnt/mongo_backup
+</span></span><span class="line"><span class="cl">sudo mount /dev/vg0/mongo_backup /mnt/mongo_backup
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>挂载完成后，使用标准备份工具（如<code>tar</code>或<code>rsync</code>）备份数据。例如，使用<code>tar</code>创建一个压缩的备份文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo tar czf /path/to/backup/mongo_backup.tar.gz /mnt/mongo_backup
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol start="4">
+<li>卸载快照卷并删除</li>
+</ol>
+<p>备份完成后，不要忘记卸载快照卷并删除它，以释放空间：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo umount /mnt/mongo_backup
+</span></span><span class="line"><span class="cl">sudo lvremove /dev/vg0/mongo_backup
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在删除快照卷时，系统会询问你是否确定删除，输入<code>y</code>确认。</p>
+<h3 id="快照恢复流程">快照恢复流程</h3>
+<ol>
+<li>准备恢复环境</li>
+</ol>
+<p>在恢复数据之前，确保目标位置有足够的空间接收从快照中恢复的数据。可以使用<code>df -h</code>命令检查磁盘空间，并根据需要清理或添加存储空间。</p>
+<ol start="2">
+<li>使用快照数据恢复</li>
+</ol>
+<p>在进行数据恢复之前，确保MongoDB服务已停止，以避免数据恢复过程中的冲突。使用以下命令停止MongoDB服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo systemctl stop mongod
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>然后，将快照数据恢复到MongoDB的数据目录中。首先，确认快照挂载点和MongoDB的数据目录路径。假设快照挂载在<code>/mnt/mongo_backup</code>，MongoDB数据目录为<code>/var/lib/mongo</code>，可以使用<code>rsync</code>进行数据恢复：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo rsync -av /mnt/mongo_backup/ /var/lib/mongo/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>确保使用结束斜杠<code>/</code>来指示同步目录内容而非目录本身。</p>
+<ol start="3">
+<li>启动MongoDB服务</li>
+</ol>
+<p>数据恢复完成后，重启MongoDB服务，并验证数据的一致性和完整性：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">sudo systemctl start mongod
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>重启服务后，检查MongoDB的日志文件，确保没有启动错误，并进行必要的数据一致性检查。使用MongoDB客户端或应用程序验证数据完整性和访问性。</p>
+<p>MongoDB，作为一个高性能、开源、无模式的文档数据库，因其高可伸缩性和灵活性而受到广泛欢迎。然而，正如任何技术专家所知，无论数据库的强大与否，数据备份和恢复计划的重要性都不可忽视。本文将探讨如何利用逻辑卷管理（LVM）快照技术来备份MongoDB数据库，确保数据的安全和业务的连续性。</p>
+<h2 id="业务实战">业务实战</h2>
+<p>（数据分析和报告生成：某些情况下，需要对数据库进行离线分析和报告生成。通过使用快照，在不影响生产环境的情况下，可以在备份中创建一个副本，用于数据分析和报告生成，而不会对生产环境的性能产生负面影响）。</p>
+<p>财务报表的准确性对于公司的及时决策至关重要。当前，报表直接在业务数据库上运行，不仅耗时长，而且在月初出报时常常失败，这对财务部门和公司决策产生了影响。随着公司业务规模的持续增长，现有的报表运行方式已不再适用。</p>
+<p>我们的业务数据每日凌晨从多个业务数据库同步到数据仓库中。数据同步的耗时长意味着，同步完成时的数据已不再是某一时刻的精准快照（因为业务数据库在不断更新）。</p>
+<p><strong>需求</strong>：我们需要一个能将数据从MongoDB业务数据库精准同步到阿里云MaxCompute数据仓库的简单且可靠方案。简单性至关重要，因为它能提高系统的可靠性。理想的解决方案中应避免使用复杂的自编脚本来处理主从同步的细节，例如确定binlog的位置或时间点等技术栈，而是应尽可能使用封装良好的技术解决方案。数据的精确性非常关键，任何错误都可能导致不可逆的后果。</p>
+<p><strong>思路</strong>：利用操作系统提供的LVM快照技术，可以在某一时刻将基于MongoDB的业务数据库数据精准同步到另一个MongoDB数据库中。这样，MaxCompute就可以从后者获取数据，进行同步任务。</p>
+<p><strong>实践</strong>：以核心系统的MongoDB数据库为例，我们将展示如何将数据精准同步到数据仓库中，从而为财务报表的生成提供可靠的数据基础。
+<img src="/../../image/2d1526f752b44783a08178c6e1e15260.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="实践步骤">实践步骤</h3>
+<h4 id="1-准备工作">1. 准备工作</h4>
+<p>首先，确保已经在服务器上安装并配置了MongoDB，并且有足够的磁盘空间用于创建快照。</p>
+<h4 id="2-自动化脚本">2. 自动化脚本</h4>
+<p>为了实现这一过程的自动化，我们编写了一个MongoDB脚本和一个Shell脚本。MongoDB脚本用于锁定数据库，触发快照的创建，然后解锁数据库。Shell脚本负责实际创建LVM快照。</p>
+<h5 id="mongodb-脚本-snapshotjs">MongoDB 脚本 (<code>snapshot.js</code>)</h5>
+<p>这个JavaScript脚本是为了在MongoDB数据库中创建一个数据快照，同时确保数据一致性，而设计的。这是通过在不完全停止数据库服务的情况下“锁定”数据库来实现的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yml" data-lang="yml"><span class="line"><span class="cl"><span class="l">conn = new Mongo();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">db = conn.getDB(&#34;admin&#34;);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">db.auth(&#39;root&#39;,&#39;xxx&#39;);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">db = db.getSiblingDB(&#39;数据库名称&#39;);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">session = db.getMongo().startSession();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">session.startTransaction();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">db.fsyncLock();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">run(&#39;/opt/mongodb_snap.sh&#39;);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">db.fsyncUnlock();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">session.commitTransaction();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">session.endSession();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">conn.close();</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>
+<p><strong>建立连接和认证</strong>：</p>
+<ul>
+<li><code>conn = new Mongo();</code> 创建一个新的MongoDB连接。</li>
+<li><code>db = conn.getDB(&quot;admin&quot;);</code> 选择<code>admin</code>数据库进行操作。</li>
+<li><code>db.auth('root','xxx');</code> 使用root账号和对应密码进行认证。</li>
+<li><code>db = db.getSiblingDB('fubaodai');</code> 切换到目标数据库<code>fubaodai</code>，这是实际要快照的数据库。</li>
+</ul>
+</li>
+<li>
+<p><strong>事务和锁定</strong>：</p>
+<ul>
+<li><code>session = db.getMongo().startSession();</code> 启动一个新的会话。</li>
+<li><code>session.startTransaction();</code> 在该会话中开始一个新的事务。</li>
+<li><code>db.fsyncLock();</code> 锁定数据库，以准备进行快照。这个操作会阻止写操作，但读操作仍然可以继续，从而保证了数据的一致性而不完全停止服务。</li>
+</ul>
+</li>
+<li>
+<p><strong>执行快照脚本</strong>：</p>
+<ul>
+<li><code>run('/opt/mongodb_snap.sh');</code> 执行Shell脚本<code>/opt/mongodb_snap.sh</code>来创建一个LVM快照。注意，<code>run</code>函数在这个上下文中并不是MongoDB Shell的内置函数，这里假设它是为了说明目的而使用的。在实际MongoDB Shell脚本中，你可能需要通过其他方式触发快照脚本，比如通过MongoDB的系统命令执行或外部程序调度。</li>
+</ul>
+</li>
+<li>
+<p><strong>解锁和结束</strong>：</p>
+<ul>
+<li><code>db.fsyncUnlock();</code> 解锁数据库，恢复正常的读写操作。</li>
+<li><code>session.commitTransaction();</code> 提交事务，虽然这里的事务主要用于fsync锁定和解锁操作。</li>
+<li><code>session.endSession();</code> 结束会话。</li>
+<li><code>conn.close();</code> 关闭与MongoDB的连接。</li>
+</ul>
+</li>
+</ol>
+<p>通过上述步骤，这个脚本使得数据库能够在确保数据一致性的同时，进行LVM快照创建，而不需要停机或重启服务。这对于需要24/7运行的生产环境尤为重要。</p>
+<h5 id="shell-脚本-mongodb_snapsh">Shell 脚本 (<code>mongodb_snap.sh</code>)</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yml" data-lang="yml"><span class="line"><span class="cl"><span class="c">#!/bin/bash</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">name=mongodb-$(date +%Y%m%d%H%M%S)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="l">/usr/sbin/lvcreate -s -L 100G -n $name /dev/mapper/data-mongodb</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这些脚本通过Cron任务在每天零点自动执行，以确保数据同步的准确性和及时性。</p>
+<p>要通过<code>cron</code>在凌晨自动执行<code>mongo --nodb mongodb_snap.js</code>命令，你需要按照以下步骤操作：</p>
+<p>在终端中运行<code>crontab -e</code>命令。这将打开一个文本编辑器，允许你编辑当前用户的<code>cron</code>作业。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yml" data-lang="yml"><span class="line"><span class="cl"><span class="m">0</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span>*<span class="w"> </span><span class="l">/usr/bin/mongo --nodb /path/to/mongodb_snap.js</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>在每天的1:00 AM，执行<code>/usr/bin/mongo --nodb /path/to/mongodb_snap.js</code>命令。请确保根据你的环境替换<code>/usr/bin/mongo</code>和<code>/path/to/mongodb_snap.js</code>为<code>mongo</code>命令和<code>mongodb_snap.js</code>脚本的实际路径。</p>
+<h4 id="3-数据同步">3. 数据同步</h4>
+<p>完成LVM快照后，我们可以将快照数据同步到另一个MongoDB数据库实例，该实例将作为数据仓库同步任务的数据源。这保证了数据仓库中的数据既准确又是最新的。</p>
+<h2 id="总结">总结</h2>
+<p>MongoDB数据库的备份和恢复是确保数据安全和业务连续性的重要环节。通过使用LVM快照作为备份策略，我们能够快速备份MongoDB数据，最小化停机时间，并以高效的方式恢复数据。这种备份方式的优点在于它提供了高级别的数据保护和可靠性，使得企业能够在数据风险和灾难发生时保持高度的安全性和稳定性。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/mongodb/">mongodb</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202405271605/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202405271605" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MongoDB数据库（10亿条数据）清理策略- 自动化过期数据删除实战</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405241437/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/45.jpg" loading="lazy" data-key="202405241437" data-hash="/../../title_pic/45.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">自动化重置数据库功能的探索与实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202101181233/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/19.jpg" loading="lazy" data-key="202101181233" data-hash="/../../title_pic/19.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">当MySQL主从数据不一致，怎么解决？？？（2）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202101172346/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/53.jpg" loading="lazy" data-key="202101172346" data-hash="/../../title_pic/53.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">当MySQL主从数据不一致，怎么解决？？？</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407181155/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202407181155" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">处理.git文件夹过大出现臃肿问题</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

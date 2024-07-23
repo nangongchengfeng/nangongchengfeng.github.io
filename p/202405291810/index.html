@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='、项目背景在当前的运维环境中，我们的业务系统日益复杂，特别是针对特定的业务逻辑和定制化需求，传统的通用监控工具往往难以覆盖所有的监控场景。例如，考虑到一个复杂的电商平台，除了基础的服务器性能、网络状况。。。。。。。'>
+<title>Go开发Prometheus客户端实战步骤</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202405291810/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='Go开发Prometheus客户端实战步骤'>
+<meta property='og:description' content='、项目背景在当前的运维环境中，我们的业务系统日益复杂，特别是针对特定的业务逻辑和定制化需求，传统的通用监控工具往往难以覆盖所有的监控场景。例如，考虑到一个复杂的电商平台，除了基础的服务器性能、网络状况。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202405291810/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='golang' /><meta property='article:tag' content='prometheus' /><meta property='article:tag' content='开发语言' /><meta property='article:published_time' content='2024-05-29T18:10:56&#43;00:00'/><meta property='article:modified_time' content='2024-05-29T18:10:56&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/57.jpg' />
+<meta name="twitter:title" content="Go开发Prometheus客户端实战步骤">
+<meta name="twitter:description" content="、项目背景在当前的运维环境中，我们的业务系统日益复杂，特别是针对特定的业务逻辑和定制化需求，传统的通用监控工具往往难以覆盖所有的监控场景。例如，考虑到一个复杂的电商平台，除了基础的服务器性能、网络状况。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/57.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1项目背景">1、项目背景</a></li>
+    <li><a href="#2开发环境搭建">2、开发环境搭建</a></li>
+    <li><a href="#3编写exporter基础代码">3、编写Exporter基础代码</a></li>
+    <li><a href="#4理解prometheus指标">4、理解Prometheus指标</a>
+      <ol>
+        <li><a href="#1-counter累加指标">1. <strong>Counter（累加指标）</strong></a></li>
+        <li><a href="#2-gauge测量指标">2. <strong>Gauge（测量指标）</strong></a></li>
+        <li><a href="#3-summary概略图">3. <strong>Summary（概略图）</strong></a></li>
+        <li><a href="#4-histogram直方图">4. <strong>Histogram（直方图）</strong></a></li>
+        <li><a href="#5-summary-和-histogram-的区别">5. Summary 和 Histogram 的区别</a></li>
+      </ol>
+    </li>
+    <li><a href="#5定义和注册指标">5、定义和注册指标</a></li>
+    <li><a href="#6实现自定义数据采集">6、实现自定义数据采集</a></li>
+    <li><a href="#7实现数据采集逻辑">7、实现数据采集逻辑</a></li>
+    <li><a href="#8集成和测试">8、集成和测试</a></li>
+    <li><a href="#9启动服务并测试">9、启动服务并测试</a></li>
+    <li><a href="#10原理">10、原理</a>
+      <ol>
+        <li><a href="#1prometheus-监控总结">1、Prometheus 监控总结</a></li>
+        <li><a href="#2golang-中的监控器逻辑解析">2、Golang 中的监控器逻辑解析</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202405291810/">
+                
+                    <img src="/../../title_pic/57.jpg" loading="lazy" alt="Featured image of post Go开发Prometheus客户端实战步骤" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus%E7%9B%91%E6%8E%A7/" >
+                Prometheus监控
+            </a>
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202405291810/">Go开发Prometheus客户端实战步骤</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            、项目背景在当前的运维环境中，我们的业务系统日益复杂，特别是针对特定的业务逻辑和定制化需求，传统的通用监控工具往往难以覆盖所有的监控场景。例如，考虑到一个复杂的电商平台，除了基础的服务器性能、网络状况。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">May 29, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 11 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="1项目背景">1、项目背景</h2>
+<p>在当前的IT运维环境中，我们的业务系统日益复杂，特别是针对特定的业务逻辑和定制化需求，传统的通用监控工具往往难以覆盖所有的监控场景。例如，考虑到一个复杂的电商平台，除了基础的服务器性能、网络状况等基础设施监控外，我们还迫切需要对特定业务指标进行监控，比如DNS解析成功率、API响应延迟、特定业务流程的错误率等，这些都是直接影响用户体验和业务连续性的关键因素。</p>
+<p>面对这样的需求，虽然Prometheus官方提供了一系列标准的Exporter，如node_exporter和snmp_exporter，它们在基础监控层面表现优秀，但对于上述提到的业务逻辑相关的监控需求却鞭长莫及。为了弥补这一空白，我们需要自定义一个专为业务定制的Prometheus Exporter，以实现对这些特定业务指标的精准监控。</p>
+<p>为此，我们选择使用Go语言（Golang）来编写这个Exporter，原因在于Go语言天生对并发友好，适合编写高性能的网络服务，且官方提供了成熟的Prometheus客户端库，便于快速集成和开发</p>
+<p>下面的代码地址：<a class="link" href="https://github.com/nangongchengfeng/Prometheus-Go-Template"  target="_blank" rel="noopener"
+    >https://github.com/nangongchengfeng/Prometheus-Go-Template</a></p>
+<h2 id="2开发环境搭建">2、开发环境搭建</h2>
+<ol>
+<li>
+<p><strong>安装Go语言</strong>：确保机器上安装了Go语言（1.20版本以上）并配置了GOPATH。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -L https://go.dev/dl/go1.21.3.linux-amd64.tar.gz -o ./go-linux-amd64.tar.gz
+</span></span><span class="line"><span class="cl">解压
+</span></span><span class="line"><span class="cl">sudo tar -zxvf go-linux-amd64.tar.gz -C /usr/local/lib/
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">下面语句是给所有用户创建环境变量
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 下面内容需要多行复制</span>
+</span></span><span class="line"><span class="cl">sudo tee -a ~/.bashrc <span class="s">&lt;&lt; EOF
+</span></span></span><span class="line"><span class="cl"><span class="s">export GOROOT=/usr/local/lib/go/
+</span></span></span><span class="line"><span class="cl"><span class="s">export GOPATH=/home/${USER}/sdk/go
+</span></span></span><span class="line"><span class="cl"><span class="s">export PATH=\$PATH:\$GOROOT/bin:\$GOPATH/bin
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 单行</span>
+</span></span><span class="line"><span class="cl"><span class="nb">source</span> ~/.bashrc
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p><strong>下载Prometheus包</strong>：通过<code>go get</code>命令下载<code>client_golang</code>包。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">go get github.com/prometheus/client_golang/prometheus
+</span></span><span class="line"><span class="cl">go get github.com/prometheus/client_golang/prometheus/promhttp
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>开启Go模块代理</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">go env -w <span class="nv">GO111MODULE</span><span class="o">=</span>on
+</span></span><span class="line"><span class="cl">go env -w <span class="nv">GOPROXY</span><span class="o">=</span>https://goproxy.cn,direct
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">如果不行，请修改 如下设置：
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> <span class="nv">GOPRIVATE</span><span class="o">=</span>gitlab.xx.com
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> <span class="nv">GOPROXY</span><span class="o">=</span>https://goproxy.cn
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> <span class="nv">GONOPROXY</span><span class="o">=</span>gitlab.xx.com
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> <span class="nv">GONOSUMDB</span><span class="o">=</span>gitlab.xx.com
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+<h2 id="3编写exporter基础代码">3、编写Exporter基础代码</h2>
+<ol>
+<li><strong>创建HTTP服务</strong>：使用Go的<code>http</code>模块创建一个服务，指定<code>/metrics</code>路径，并使用<code>promhttp.Handler()</code>作为处理器。</li>
+<li><strong>启动服务</strong>：通过<code>http.ListenAndServe</code>启动HTTP服务监听8080端口。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;log&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;net/http&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="s">&#34;github.com/prometheus/client_golang/prometheus/promhttp&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">http</span><span class="p">.</span><span class="nf">Handle</span><span class="p">(</span><span class="s">&#34;/metrics&#34;</span><span class="p">,</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nf">Handler</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">http</span><span class="p">.</span><span class="nf">ListenAndServe</span><span class="p">(</span><span class="s">&#34;:8080&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>访问：ip+端口:/metrics 会出现如下页面，Go模块自带的监控项，仅仅展示了一个默认的采集器，并且通过接口调用隐藏了太多实施细节
+<img src="/../../image/34f7a7586c854085a3a64060b192ef3d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="4理解prometheus指标">4、理解Prometheus指标</h2>
+<ol>
+<li>
+<p><strong>指标类型</strong>：Prometheus支持四种主要的指标类型：</p>
+<ul>
+<li>Counter（累加指标）</li>
+<li>Gauge（测量指标）</li>
+<li>Summary（概略图）</li>
+<li>Histogram（直方图）</li>
+</ul>
+</li>
+</ol>
+<h3 id="1-counter累加指标">1. <strong>Counter（累加指标）</strong></h3>
+<p><strong>什么是Counter？</strong></p>
+<ul>
+<li>Counter是一种只能增加的指标。它用来记录一些只会累加的数值，例如处理的请求数量、完成的任务数量等。</li>
+</ul>
+<p><strong>通俗解释：</strong></p>
+<ul>
+<li>想象一个只能加法不能减法的计数器。每当你完成一个任务，就按一次加号，这个数字会一直增加，不会减少。</li>
+</ul>
+<p><strong>例子：</strong></p>
+<ul>
+<li>记录一个网站的访问次数，每次有新的访问时，计数器增加1。</li>
+</ul>
+<h3 id="2-gauge测量指标">2. <strong>Gauge（测量指标）</strong></h3>
+<p><strong>什么是Gauge？</strong></p>
+<ul>
+<li>Gauge是一种可以任意增减的指标。它用来记录一些瞬时的数值，例如当前的温度、CPU使用率等。</li>
+</ul>
+<p><strong>通俗解释：</strong></p>
+<ul>
+<li>想象一个温度计，温度可以升高也可以降低。它反映的是当前的状态，而不是累积的数值。</li>
+</ul>
+<p><strong>例子：</strong></p>
+<ul>
+<li>记录服务器当前的内存使用量，这个数值会随着时间的推移而增加或减少。</li>
+</ul>
+<h3 id="3-summary概略图">3. <strong>Summary（概略图）</strong></h3>
+<p><strong>什么是Summary？</strong></p>
+<ul>
+<li>Summary是一种用来记录一系列数值的分布情况的指标。它会统计这些数值的分位数（例如中位数、90%分位数等）。</li>
+</ul>
+<p><strong>通俗解释：</strong></p>
+<ul>
+<li>想象你有一堆考试成绩，你想知道这些成绩的中位数是多少，90%的成绩在哪个分数以上。这种指标会帮助你了解一组数据的分布情况。</li>
+</ul>
+<p><strong>例子：</strong></p>
+<ul>
+<li>记录API响应时间，通过Summary可以知道大多数请求的响应时间情况，比如中位数响应时间、90%请求的响应时间等。</li>
+</ul>
+<h3 id="4-histogram直方图">4. <strong>Histogram（直方图）</strong></h3>
+<p><strong>什么是Histogram？</strong></p>
+<ul>
+<li>Histogram也是一种记录数值分布的指标，但它会把数值划分到不同的区间（桶）中，统计每个区间的数量。</li>
+</ul>
+<p><strong>通俗解释：</strong></p>
+<ul>
+<li>想象你有一堆不同高度的孩子，你把他们分成不同的身高区间，比如1米到1米1，1米1到1米2等，然后统计每个区间有多少孩子。Histogram会帮助你知道数据在不同区间的分布情况。</li>
+</ul>
+<p><strong>例子：</strong></p>
+<ul>
+<li>记录API响应时间，通过Histogram可以知道不同响应时间范围内的请求数量，比如0到100ms有多少请求，100到200ms有多少请求等。</li>
+</ul>
+<p>可以理解为柱状图，典型的应用如：请求持续时间，响应大小。可以对观察结果采样，分组及统计。例如设置一个name为<code>web_request_duration_seconds</code>的Histogram 的metrics,并设置区间值为<code>[0.1,0.5,1]</code>会对区间点生成一条统计数据.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="err">#</span> <span class="err">响应时间小于</span><span class="mf">0.1</span><span class="nx">s</span><span class="err">的请求有</span><span class="mi">5</span><span class="err">次</span>
+</span></span><span class="line"><span class="cl"><span class="nx">web_request_duration_seconds_bucket</span><span class="p">{</span><span class="nx">endpoint</span><span class="p">=</span><span class="s">&#34;/query&#34;</span><span class="p">,</span><span class="nx">method</span><span class="p">=</span><span class="s">&#34;GET&#34;</span><span class="p">,</span><span class="nx">le</span><span class="p">=</span><span class="s">&#34;0.1&#34;</span><span class="p">}</span> <span class="mi">3</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="err">#</span> <span class="err">响应时间小于</span><span class="mf">0.5</span><span class="nx">s</span><span class="err">的请求有次</span>
+</span></span><span class="line"><span class="cl"><span class="nx">web_request_duration_seconds_bucket</span><span class="p">{</span><span class="nx">endpoint</span><span class="p">=</span><span class="s">&#34;/query&#34;</span><span class="p">,</span><span class="nx">method</span><span class="p">=</span><span class="s">&#34;GET&#34;</span><span class="p">,</span><span class="nx">le</span><span class="p">=</span><span class="s">&#34;0.5&#34;</span><span class="p">}</span> <span class="mi">5</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="err">#</span> <span class="err">响应时间小于</span><span class="mi">1</span><span class="nx">s</span><span class="err">的请求有</span><span class="mi">7</span><span class="err">次</span>
+</span></span><span class="line"><span class="cl"><span class="nx">web_request_duration_seconds_bucket</span><span class="p">{</span><span class="nx">endpoint</span><span class="p">=</span><span class="s">&#34;/query&#34;</span><span class="p">,</span><span class="nx">method</span><span class="p">=</span><span class="s">&#34;GET&#34;</span><span class="p">,</span><span class="nx">le</span><span class="p">=</span><span class="s">&#34;1&#34;</span><span class="p">}</span> <span class="mi">7</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="err">#</span> <span class="err">总共</span><span class="mi">7</span><span class="err">次请求</span>
+</span></span><span class="line"><span class="cl"><span class="nx">web_request_duration_seconds_bucket</span><span class="p">{</span><span class="nx">endpoint</span><span class="p">=</span><span class="s">&#34;/query&#34;</span><span class="p">,</span><span class="nx">method</span><span class="p">=</span><span class="s">&#34;GET&#34;</span><span class="p">,</span><span class="nx">le</span><span class="p">=</span><span class="s">&#34;+Inf&#34;</span><span class="p">}</span> <span class="mi">7</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="err">#</span> <span class="mi">7</span><span class="err">次请求</span><span class="nx">duration</span><span class="err">的总和</span>
+</span></span><span class="line"><span class="cl"><span class="nx">web_request_duration_seconds_sum</span><span class="p">{</span><span class="nx">endpoint</span><span class="p">=</span><span class="s">&#34;/query&#34;</span><span class="p">,</span><span class="nx">method</span><span class="p">=</span><span class="s">&#34;GET&#34;</span><span class="p">}</span> <span class="mf">2.7190880529999997</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="5-summary-和-histogram-的区别">5. Summary 和 Histogram 的区别</h3>
+<p>在使用 Prometheus 进行监控时，Summary 和 Histogram 都是用于测量和分析数据分布的强大工具，但它们在细节和应用场景上有所不同。下面将从两者的定义、使用场景和特点来详细阐述它们的区别。</p>
+<p><strong>Summary</strong></p>
+<p>Summary 用于提供一组数据的概述信息，它能够计算数据的分位数（例如中位数、90%分位数等）。这种指标特别适合需要了解整体数据分布情况但不需要精细区间划分的场景。</p>
+<p><strong>特点：</strong></p>
+<ul>
+<li><strong>分位数计算</strong>：可以直接计算出指定分位数，例如中位数、90%分位数等。</li>
+<li><strong>适合样本量大时</strong>：当你需要了解大量请求的整体响应时间分布时，Summary 是非常有用的工具。</li>
+<li><strong>无需预定义桶</strong>：Summary 通过算法动态计算分位数，而无需提前划分数据区间（桶）。</li>
+</ul>
+<p><strong>使用场景：</strong></p>
+<ul>
+<li><strong>API 响应时间分析</strong>：需要知道绝大多数请求的响应时间情况，例如中位数响应时间和90%的请求响应时间。</li>
+<li><strong>整体性能评估</strong>：适合评估系统的整体性能，而不需要详细的区间数据。</li>
+</ul>
+<p><strong>Histogram</strong></p>
+<p>Histogram 则是将数据划分到不同的区间（桶）中，统计每个区间的数据量。它适合需要详细了解数据在不同范围内分布情况的场景。</p>
+<p><strong>特点：</strong></p>
+<ul>
+<li><strong>区间划分</strong>：将数据划分到不同的区间（桶）中，每个区间统计数据量。</li>
+<li><strong>精细数据分析</strong>：适合需要详细了解数据分布情况的场景，可以明确知道数据在不同区间的分布。</li>
+<li><strong>需要预定义桶</strong>：在使用前需要定义数据的区间（桶），适合事先已知数据范围的情况。</li>
+</ul>
+<p><strong>使用场景：</strong></p>
+<ul>
+<li><strong>详细响应时间分析</strong>：需要知道在不同响应时间范围内的请求数量，比如0-100ms、100-200ms等。</li>
+<li><strong>资源使用情况监控</strong>：可以用来监控系统资源使用情况的分布，例如内存使用量在不同范围内的分布。</li>
+</ul>
+<h2 id="5定义和注册指标">5、定义和注册指标</h2>
+<p><img src="/../../image/14c95cc8ab2041b88dc89bbdb687f9c0.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<ol>
+<li>
+<p><strong>引入依赖库</strong>：通过<code>go get</code>命令获取<code>prometheus</code>库。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">import</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;github.com/prometheus/client_golang/prometheus&#34;</span>
+</span></span><span class="line"><span class="cl">	<span class="s">&#34;sync/atomic&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p><strong>定义指标</strong>：创建Counter类型的指标，例如API请求次数的监控</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// APIRequestCounter 结构体，用于管理API请求次数的监控
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">APIRequestCounter</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">Zone</span>           <span class="kt">string</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">APIRequestDesc</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">requestCount</span>   <span class="kt">uint64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p><strong>注册指标</strong>：使用<code>prometheus.MustRegister</code>将指标注册到默认的Registry中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl">    <span class="nx">apiRequestCounter</span> <span class="o">:=</span> <span class="nx">collector</span><span class="p">.</span><span class="nf">NewAPIRequestCounter</span><span class="p">(</span><span class="o">*</span><span class="nx">metricsNamespace</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">   <span class="c1">// 创建一个新的Prometheus指标注册表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">registry</span> <span class="o">:=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewRegistry</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 注册APIRequestCounter实例到Prometheus注册表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">registry</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">apiRequestCounter</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+<h2 id="6实现自定义数据采集">6、实现自定义数据采集</h2>
+<ol>
+<li>
+<p><strong>实现Collector接口</strong>：创建自定义的Collector结构体来实现数据采集。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// APIRequestCounter 结构体，用于管理API请求次数的监控
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">type</span> <span class="nx">APIRequestCounter</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">Zone</span>           <span class="kt">string</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">APIRequestDesc</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">requestCount</span>   <span class="kt">uint64</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p><strong>定义指标描述符</strong>：使用<code>prometheus.NewDesc</code>创建指标描述符。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// NewAPIRequestCounter 创建一个新的APIRequestCounter实例
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">NewAPIRequestCounter</span><span class="p">(</span><span class="nx">zone</span> <span class="kt">string</span><span class="p">)</span> <span class="o">*</span><span class="nx">APIRequestCounter</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">APIRequestCounter</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">Zone</span><span class="p">:</span> <span class="nx">zone</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">APIRequestDesc</span><span class="p">:</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewDesc</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">			<span class="s">&#34;api_request_count_total&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">			<span class="s">&#34;API请求总次数&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">			<span class="kc">nil</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">prometheus</span><span class="p">.</span><span class="nx">Labels</span><span class="p">{</span><span class="s">&#34;zone&#34;</span><span class="p">:</span> <span class="nx">zone</span><span class="p">},</span>
+</span></span><span class="line"><span class="cl">		<span class="p">),</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p><strong>实现Describe和Collect方法</strong>：<code>Describe</code>方法发送指标描述符到channel，<code>Collect</code>方法执行数据采集并返回数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// Describe 向Prometheus描述收集的指标
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">APIRequestCounter</span><span class="p">)</span> <span class="nf">Describe</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="o">*</span><span class="nx">prometheus</span><span class="p">.</span><span class="nx">Desc</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">c</span><span class="p">.</span><span class="nx">APIRequestDesc</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Collect 收集指标数据并发送到Prometheus
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">APIRequestCounter</span><span class="p">)</span> <span class="nf">Collect</span><span class="p">(</span><span class="nx">ch</span> <span class="kd">chan</span><span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nx">Metric</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">count</span> <span class="o">:=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nf">LoadUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">c</span><span class="p">.</span><span class="nx">requestCount</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">ch</span> <span class="o">&lt;-</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">MustNewConstMetric</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">c</span><span class="p">.</span><span class="nx">APIRequestDesc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">prometheus</span><span class="p">.</span><span class="nx">CounterValue</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">		<span class="nb">float64</span><span class="p">(</span><span class="nx">count</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">	<span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+<h2 id="7实现数据采集逻辑">7、实现数据采集逻辑</h2>
+<ol>
+<li>
+<p><strong>自定义数据采集函数</strong>：实现一个函数来模拟或获取系统状态数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// IncrementRequestCount  增加API请求计数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">APIRequestCounter</span><span class="p">)</span> <span class="nf">IncrementRequestCount</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">atomic</span><span class="p">.</span><span class="nf">AddUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">c</span><span class="p">.</span><span class="nx">requestCount</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p><strong>收集数据</strong>：在<code>Collect</code>方法中调用数据采集函数，并使用<code>MustNewConstMetric</code>创建指标数据。</p>
+</li>
+</ol>
+<h2 id="8集成和测试">8、集成和测试</h2>
+<ol>
+<li><strong>创建自定义Collector实例</strong>：根据需要创建多个Collector实例。</li>
+<li><strong>注册到Registry</strong>：使用<code>NewPedanticRegistry</code>创建一个新的Registry，并注册自定义Collector。</li>
+<li><strong>设置HTTP Handler</strong>：使用<code>promhttp.HandlerFor</code>创建一个HTTP Handler，用于处理<code>/metrics</code>路径的请求并返回指标数据。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">var</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// Set during go build
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="c1">// version   string
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="c1">// gitCommit string
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 命令行参数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">listenAddr</span>       <span class="p">=</span> <span class="nx">flag</span><span class="p">.</span><span class="nf">String</span><span class="p">(</span><span class="s">&#34;web.listen-port&#34;</span><span class="p">,</span> <span class="s">&#34;8080&#34;</span><span class="p">,</span> <span class="s">&#34;An port to listen on for web interface and telemetry.&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">metricsPath</span>      <span class="p">=</span> <span class="nx">flag</span><span class="p">.</span><span class="nf">String</span><span class="p">(</span><span class="s">&#34;web.telemetry-path&#34;</span><span class="p">,</span> <span class="s">&#34;/metrics&#34;</span><span class="p">,</span> <span class="s">&#34;A path under which to expose metrics.&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">metricsNamespace</span> <span class="p">=</span> <span class="nx">flag</span><span class="p">.</span><span class="nf">String</span><span class="p">(</span><span class="s">&#34;metric.namespace&#34;</span><span class="p">,</span> <span class="s">&#34;app&#34;</span><span class="p">,</span> <span class="s">&#34;Prometheus metrics namespace, as the prefix of metrics name&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 解析命令行参数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">apiRequestCounter</span> <span class="o">:=</span> <span class="nx">collector</span><span class="p">.</span><span class="nf">NewAPIRequestCounter</span><span class="p">(</span><span class="o">*</span><span class="nx">metricsNamespace</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 创建一个新的Prometheus指标注册表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">registry</span> <span class="o">:=</span> <span class="nx">prometheus</span><span class="p">.</span><span class="nf">NewRegistry</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 注册APIRequestCounter实例到Prometheus注册表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">registry</span><span class="p">.</span><span class="nf">MustRegister</span><span class="p">(</span><span class="nx">apiRequestCounter</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 设置HTTP服务器以处理Prometheus指标的HTTP请求
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">http</span><span class="p">.</span><span class="nf">Handle</span><span class="p">(</span><span class="o">*</span><span class="nx">metricsPath</span><span class="p">,</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nf">HandlerFor</span><span class="p">(</span><span class="nx">registry</span><span class="p">,</span> <span class="nx">promhttp</span><span class="p">.</span><span class="nx">HandlerOpts</span><span class="p">{}))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 设置根路径的处理函数，用于返回一个简单的HTML页面，包含指向指标页面的链接
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">w</span><span class="p">.</span><span class="nf">Write</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="s">`&lt;html&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">	            &lt;head&gt;&lt;title&gt;A Prometheus Exporter&lt;/title&gt;&lt;/head&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">	            &lt;body&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">	            &lt;h1&gt;A Prometheus Exporter&lt;/h1&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">	            &lt;p&gt;&lt;a href=&#39;/metrics&#39;&gt;Metrics&lt;/a&gt;&lt;/p&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">	            &lt;/body&gt;
+</span></span></span><span class="line"><span class="cl"><span class="s">	            &lt;/html&gt;`</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="p">})</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">// 模拟API请求的处理函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">http</span><span class="p">.</span><span class="nf">HandleFunc</span><span class="p">(</span><span class="s">&#34;/api&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">r</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">apiRequestCounter</span><span class="p">.</span><span class="nf">IncrementRequestCount</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">// 模拟API处理时间
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>		<span class="nx">w</span><span class="p">.</span><span class="nf">Write</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="s">&#34;API请求处理成功&#34;</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="p">})</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1">// 记录启动日志并启动HTTP服务器监听
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Starting Server at http://localhost:%s%s&#34;</span><span class="p">,</span> <span class="o">*</span><span class="nx">listenAddr</span><span class="p">,</span> <span class="o">*</span><span class="nx">metricsPath</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">http</span><span class="p">.</span><span class="nf">ListenAndServe</span><span class="p">(</span><span class="s">&#34;:&#34;</span><span class="o">+*</span><span class="nx">listenAddr</span><span class="p">,</span> <span class="kc">nil</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="9启动服务并测试">9、启动服务并测试</h2>
+<p>请下载：<a class="link" href="https://github.com/nangongchengfeng/Prometheus-Go-Template.git"  target="_blank" rel="noopener"
+    >https://github.com/nangongchengfeng/Prometheus-Go-Template.git</a>   启动测试</p>
+<ol>
+<li><strong>启动HTTP服务</strong>：启动服务并监听8080端口。</li>
+<li><strong>访问指标数据</strong>：通过浏览器访问<code>http://localhost:8080/metrics</code>查看指标数据。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="err">测试接口</span>
+</span></span><span class="line"><span class="cl"><span class="nx">http</span><span class="p">:</span><span class="c1">//localhost:8080/api
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="nx">http</span><span class="p">:</span><span class="c1">//localhost:8080/query
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/305c0c556cad4aa4944219a70ed2c9fb.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="10原理">10、原理</h2>
+<h3 id="1prometheus-监控总结">1、Prometheus 监控总结</h3>
+<p>在使用 Prometheus 进行监控时，理解指标的采集方式和不同指标类型的应用场景至关重要。以下是对相关概念的总结：</p>
+<ol>
+<li>
+<p><strong>指标采集：</strong>
+Exporter 定期采集指标数据，并通过 HTTP 接口暴露。这些数据可以由 Prometheus 服务进行抓取和存储，便于后续的分析和展示。</p>
+</li>
+<li>
+<p><strong>指标类型：</strong></p>
+<ul>
+<li><strong>Counter</strong>：适用于持续增长的指标，例如请求计数、任务完成次数等。它只会递增，不会减少。</li>
+<li><strong>Gauge</strong>：适用于可能增减的指标，例如当前内存使用量、CPU 使用率等。它既可以递增，也可以递减。</li>
+<li><strong>Histogram</strong>：适用于需要聚合和统计数据分布的场景，例如请求响应时间分布。它将数据划分到不同的区间（桶）中，并统计每个区间的数据量。</li>
+<li><strong>Summary</strong>：同样适用于需要聚合和统计分布的场景，但它通过计算分位数来描述数据分布情况，例如中位数、90% 分位数等。</li>
+</ul>
+</li>
+<li>
+<p><strong>数据聚合：</strong>
+Histogram 和 Summary 这两种类型的指标专注于数据的聚合和统计分布。它们能够提供关于数据分布的详细信息，便于深入分析系统性能和行为。</p>
+</li>
+<li>
+<p><strong>自定义 Collector：</strong>
+开发者可以通过实现 <code>Collector</code> 接口来自定义数据采集逻辑，以满足特定的监控需求。自定义 Collector 需要实现 <code>describe</code> 和 <code>collect</code> 两个方法，以便将自定义逻辑集成到 Prometheus 的数据采集流程中。</p>
+</li>
+</ol>
+<h3 id="2golang-中的监控器逻辑解析">2、Golang 中的监控器逻辑解析</h3>
+<p>在 Golang 中使用 Prometheus 进行监控时，了解监控器的逻辑和工作原理至关重要。下面将简要总结一下监控器的基本逻辑：</p>
+<ol>
+<li>
+<p><strong>监控器初始化：</strong>
+默认情况下，当引入 <code>registry</code> 包时，会触发对 <code>gocollect</code> 这个采集器的初始化，这是因为 <code>registry</code> 在初始化时会调用 <code>describe</code> 接口，而 <code>gocollect</code> 正是实现了这个接口。</p>
+</li>
+<li>
+<p><strong>数据采集流程：</strong>
+当有 HTTP 请求到达时，<code>http.handle</code> 会调用 <code>registry</code> 的 <code>gather</code> 函数。在 <code>gather</code> 函数内部，会调用具体采集器的 <code>collect</code> 接口，这个实现就是 <code>gocollect</code> 中的 <code>collect</code> 函数。这一流程确保了数据的采集和处理。</p>
+</li>
+<li>
+<p><strong>多类型处理：</strong>
+上述流程仅是一种特殊情况，实际上，对于四种不同类型的监控器（Counter、Gauge、Histogram 和 Summary），都有对应的结构体继承了基本函数接口，并实现了相应的接口。每种监控器都有自己独特的逻辑和实现方式，但整体流程大致相同。</p>
+</li>
+<li>
+<p><strong>自定义监控器：</strong>
+如果需要实现自定义的监控器逻辑，可以新建一个结构体作为监控器，实现 <code>describe</code> 和 <code>collect</code> 接口。这样，就可以根据自己的需求实现特定的监控逻辑。最终，这些自定义监控器的实现原理也是调用了四种不同类型监控器的相关函数，以实现数据的采集和处理。</p>
+<p><img src="/../../image/8d2ca51cf8a44b05966ecbb758a30638.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+参考项目和文档：</p>
+</li>
+</ol>
+<p><a class="link" href="https://github.com/crockitwood/go-prometheus-example.git"  target="_blank" rel="noopener"
+    >https://github.com/crockitwood/go-prometheus-example.git</a></p>
+<p><a class="link" href="https://frezc.github.io/2019/08/03/prometheus-metrics/"  target="_blank" rel="noopener"
+    >Prometheus四种指标详细解释</a></p>
+<p><a class="link" href="https://kingjcy.github.io/post/monitor/metrics/prometheus/library/client_golang/"  target="_blank" rel="noopener"
+    >https://kingjcy.github.io/post/monitor/metrics/prometheus/library/client_golang/</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/golang/">golang</a>
+        
+            <a href="/tags/prometheus/">prometheus</a>
+        
+            <a href="/tags/%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80/">开发语言</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202407091024/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/27.jpg" loading="lazy" data-key="202407091024" data-hash="/../../title_pic/27.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">基于Padavan Exporter的Prometheus客户端二次开发实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202406201700/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/63.jpg" loading="lazy" data-key="202406201700" data-hash="/../../title_pic/63.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">生产环境OpenLDAP主从集群</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405161544/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/76.jpg" loading="lazy" data-key="202405161544" data-hash="/../../title_pic/76.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">生产环境 OpenLDAP 部署流程</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404242231/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/49.jpg" loading="lazy" data-key="202404242231" data-hash="/../../title_pic/49.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python实现“黑猫投诉平台，舆论监控系统”</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202403041144/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/51.jpg" loading="lazy" data-key="202403041144" data-hash="/../../title_pic/51.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 监控Istio</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

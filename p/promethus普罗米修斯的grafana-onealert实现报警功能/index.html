@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='、安装普罗米修斯监控系统完整版、普罗米修斯监控数据库、普罗米修斯安装可视化图形工具、的图形显示监控数据、普罗米修斯的实现报警功能目录、安装普罗米修斯监控系统完整版、安装普罗米修斯监控系统完整版、普罗米。。。。。。。'>
+<title>Promethus(普罗米修斯）的Grafana&#43;onealert实现报警功能</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9A%84grafana-onealert%E5%AE%9E%E7%8E%B0%E6%8A%A5%E8%AD%A6%E5%8A%9F%E8%83%BD/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Promethus(普罗米修斯）的Grafana&#43;onealert实现报警功能'>
+<meta property='og:description' content='、安装普罗米修斯监控系统完整版、普罗米修斯监控数据库、普罗米修斯安装可视化图形工具、的图形显示监控数据、普罗米修斯的实现报警功能目录、安装普罗米修斯监控系统完整版、安装普罗米修斯监控系统完整版、普罗米。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9A%84grafana-onealert%E5%AE%9E%E7%8E%B0%E6%8A%A5%E8%AD%A6%E5%8A%9F%E8%83%BD/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Grafana' /><meta property='article:tag' content='Promethus' /><meta property='article:tag' content='onealert' /><meta property='article:tag' content='告警' /><meta property='article:tag' content='监控' /><meta property='article:published_time' content='2020-01-13T16:52:18&#43;00:00'/><meta property='article:modified_time' content='2020-01-13T16:52:18&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/11.jpg' />
+<meta name="twitter:title" content="Promethus(普罗米修斯）的Grafana&#43;onealert实现报警功能">
+<meta name="twitter:description" content="、安装普罗米修斯监控系统完整版、普罗米修斯监控数据库、普罗米修斯安装可视化图形工具、的图形显示监控数据、普罗米修斯的实现报警功能目录、安装普罗米修斯监控系统完整版、安装普罗米修斯监控系统完整版、普罗米。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/11.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1-先在onealert里添加grafana应用申请onealert账号">1、 先在onealert里添加grafana应用(申请onealert账号)</a></li>
+    <li><a href="#2在grafana中配置webhook-url">2、在Grafana中配置Webhook URL</a></li>
+    <li><a href="#现在可以去设置一个报警来测试了这里以我们前面加的cpu负载监控来-做测试">现在可以去设置一个报警来测试了(这里以我们前面加的cpu负载监控来 做测试)</a></li>
+    <li><a href="#最终的邮件报警效果">最终的邮件报警效果：</a></li>
+    <li><a href="#测试mysql链接数报警">测试mysql链接数报警</a></li>
+    <li><a href="#总结报警不成功的可能原因">总结报警不成功的可能原因</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9A%84grafana-onealert%E5%AE%9E%E7%8E%B0%E6%8A%A5%E8%AD%A6%E5%8A%9F%E8%83%BD/">
+                
+                    <img src="http://image.ownit.top/4kdongman/11.jpg" loading="lazy" alt="Featured image of post Promethus(普罗米修斯）的Grafana&#43;onealert实现报警功能" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/prometheus%E7%9B%91%E6%8E%A7/" >
+                Prometheus监控
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9A%84grafana-onealert%E5%AE%9E%E7%8E%B0%E6%8A%A5%E8%AD%A6%E5%8A%9F%E8%83%BD/">Promethus(普罗米修斯）的Grafana&#43;onealert实现报警功能</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            、安装普罗米修斯监控系统完整版、普罗米修斯监控数据库、普罗米修斯安装可视化图形工具、的图形显示监控数据、普罗米修斯的实现报警功能目录、安装普罗米修斯监控系统完整版、安装普罗米修斯监控系统完整版、普罗米。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jan 13, 2020</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 1 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="1centos7安装promethus普罗米修斯监控系统完整版httpsblogcsdnnetheian_99articledetails103952955"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103952955"  target="_blank" rel="noopener"
+    >1、Centos7安装Promethus(普罗米修斯）监控系统完整版</a></h1>
+<h1 id="2promethus普罗米修斯监控mysql数据库httpsblogcsdnnetheian_99articledetails103956583"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103956583"  target="_blank" rel="noopener"
+    >2、Promethus(普罗米修斯）监控Mysql数据库</a></h1>
+<h1 id="3promethus普罗米修斯安装grafana可视化图形工具httpsblogcsdnnetheian_99articledetails103956931"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103956931"  target="_blank" rel="noopener"
+    >3、Promethus(普罗米修斯）安装Grafana可视化图形工具</a></h1>
+<h1 id="4promethus的grafana图形显示mysql监控数据httpsblogcsdnnetheian_99articledetails103958032"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103958032"  target="_blank" rel="noopener"
+    >4、Promethus的Grafana图形显示MySQL监控数据</a></h1>
+<h1 id="5promethus普罗米修斯的grafanaonealert实现报警功能httpsblogcsdnnetheian_99articledetails103959379"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103959379"  target="_blank" rel="noopener"
+    >5、Promethus(普罗米修斯）的Grafana+onealert实现报警功能</a></h1>
+<p> </p>
+<p><strong>目录</strong></p>
+<p><a class="link" href="#1%e3%80%81Centos7%e5%ae%89%e8%a3%85Promethus%28%e6%99%ae%e7%bd%97%e7%b1%b3%e4%bf%ae%e6%96%af%ef%bc%89%e7%9b%91%e6%8e%a7%e7%b3%bb%e7%bb%9f%e5%ae%8c%e6%95%b4%e7%89%88" >1、Centos7安装Promethus(普罗米修斯）监控系统完整版</a></p>
+<p><a class="link" href="#2%e3%80%81Promethus%28%e6%99%ae%e7%bd%97%e7%b1%b3%e4%bf%ae%e6%96%af%ef%bc%89%e7%9b%91%e6%8e%a7Mysql%e6%95%b0%e6%8d%ae%e5%ba%93" >2、Promethus(普罗米修斯）监控Mysql数据库</a></p>
+<p><a class="link" href="#3%e3%80%81Promethus%28%e6%99%ae%e7%bd%97%e7%b1%b3%e4%bf%ae%e6%96%af%ef%bc%89%e5%ae%89%e8%a3%85Grafana%e5%8f%af%e8%a7%86%e5%8c%96%e5%9b%be%e5%bd%a2%e5%b7%a5%e5%85%b7" >3、Promethus(普罗米修斯）安装Grafana可视化图形工具</a></p>
+<p><a class="link" href="#4%E3%80%81Promethus%E7%9A%84Grafana%E5%9B%BE%E5%BD%A2%E6%98%BE%E7%A4%BAMySQL%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AE" >4、Promethus的Grafana图形显示MySQL监控数据</a></p>
+<p><a class="link" href="#Grafana%2Bonealert%E6%8A%A5%E8%AD%A6" >Grafana+onealert报警</a></p>
+<p><a class="link" href="#1%e3%80%81%20%e5%85%88%e5%9c%a8onealert%e9%87%8c%e6%b7%bb%e5%8a%a0grafana%e5%ba%94%e7%94%a8%28%e7%94%b3%e8%af%b7onealert%e8%b4%a6%e5%8f%b7%29" >1、 先在onealert里添加grafana应用(申请onealert账号)</a></p>
+<p><a class="link" href="#2%e3%80%81%e5%9c%a8Grafana%e4%b8%ad%e9%85%8d%e7%bd%aeWebhook%20URL" >2、在Grafana中配置Webhook URL</a></p>
+<p><a class="link" href="#%e7%8e%b0%e5%9c%a8%e5%8f%af%e4%bb%a5%e5%8e%bb%e8%ae%be%e7%bd%ae%e4%b8%80%e4%b8%aa%e6%8a%a5%e8%ad%a6%e6%9d%a5%e6%b5%8b%e8%af%95%e4%ba%86%28%e8%bf%99%e9%87%8c%e4%bb%a5%e6%88%91%e4%bb%ac%e5%89%8d%e9%9d%a2%e5%8a%a0%e7%9a%84cpu%e8%b4%9f%e8%bd%bd%e7%9b%91%e6%8e%a7%e6%9d%a5%20%e5%81%9a%e6%b5%8b%e8%af%95%29" >现在可以去设置一个报警来测试了(这里以我们前面加的cpu负载监控来 做测试)</a></p>
+<p><a class="link" href="#%E6%9C%80%E7%BB%88%E7%9A%84%E9%82%AE%E4%BB%B6%E6%8A%A5%E8%AD%A6%E6%95%88%E6%9E%9C%EF%BC%9A" >最终的邮件报警效果：</a></p>
+<p><a class="link" href="#%E6%B5%8B%E8%AF%95mysql%E9%93%BE%E6%8E%A5%E6%95%B0%E6%8A%A5%E8%AD%A6" >测试mysql链接数报警</a></p>
+<p><a class="link" href="#%E6%80%BB%E7%BB%93%E6%8A%A5%E8%AD%A6%E4%B8%8D%E6%88%90%E5%8A%9F%E7%9A%84%E5%8F%AF%E8%83%BD%E5%8E%9F%E5%9B%A0" >总结报警不成功的可能原因</a></p>
+<p><a class="link" href="#%E6%89%A9%E5%B1%95" >扩展</a></p>
+<hr>
+<p> </p>
+<h1 id="grafanaonealert报警">Grafana+onealert报警</h1>
+<p>prometheus报警需要使用alertmanager这个组件，而且报警规则需要手 动编写(对运维来说不友好)。所以我这里选用grafana+onealert报警。</p>
+<p>注意: 实现报警前把所有机器时间同步再检查一遍.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">ntpdate time.windows.com
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="1-先在onealert里添加grafana应用申请onealert账号">1、 先在onealert里添加grafana应用(申请onealert账号)</h2>
+<p><a class="link" href="https://caweb.aiops.com/#/"  target="_blank" rel="noopener"
+    >https://caweb.aiops.com/</a></p>
+<p><img src="http://image.ownit.top/csdn/20200113161638506.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p><img src="http://image.ownit.top/csdn/20200113161840200.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113161917501.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h2 id="2在grafana中配置webhook-url">2、在Grafana中配置Webhook URL</h2>
+<p>1、在Grafana中创建Notification channel，选择类型为Webhook；</p>
+<p><img src="http://image.ownit.top/csdn/20200113162343122.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>2、推荐选中Send on all alerts和Include image，Cloud Alert体验更佳；</p>
+<p>3、将第一步中生成的Webhook URL填入Webhook settings Url；</p>
+<p>4、Http Method选择POST；</p>
+<p>5、Send Test&amp;Save；</p>
+<p><img src="http://image.ownit.top/csdn/20200113162656163.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113162840747.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h2 id="现在可以去设置一个报警来测试了这里以我们前面加的cpu负载监控来-做测试">现在可以去设置一个报警来测试了(这里以我们前面加的cpu负载监控来 做测试)</h2>
+<p><img src="http://image.ownit.top/csdn/20200113163106677.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>配置</p>
+<p><img src="http://image.ownit.top/csdn/20200113163345919.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113163324830.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>保存后就可以测试了</p>
+<p><img src="http://image.ownit.top/csdn/20200113163729952.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>如果node1上的cpu负载还没有到0.5，你可以试试0.1,或者运行一些程序 把node1负载调大。最终能测试报警成功</p>
+<p><img src="http://image.ownit.top/csdn/20200113163902132.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>模拟cpu负载</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">cat /dev/urandom | md5sum
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<h2 id="最终的邮件报警效果">最终的邮件报警效果：</h2>
+<p><img src="http://image.ownit.top/csdn/20200113164329432.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113164457435.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h2 id="测试mysql链接数报警">测试mysql链接数报警</h2>
+<p><img src="http://image.ownit.top/csdn/20200113164810425.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113164821235.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113164837652.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113164839384.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113164902506.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h2 id="总结报警不成功的可能原因">总结报警不成功的可能原因</h2>
+<ul>
+<li>各服务器之间时间不同步，这样时序数据会出问题，也会造成报警出问 题</li>
+<li>必须写通知内容，留空内容是不会发报警的</li>
+<li>修改完报警配置后，记得要点右上角的保存</li>
+<li>保存配置后，需要由OK状态变为alerting状态才会报警(也就是说，你 配置保存后，就已经是alerting状态是不会报警的)</li>
+<li>grafana与onealert通信有问题</li>
+</ul>
+<h1 id="扩展">扩展</h1>
+<p>prometheus目前还在发展中，很多相应的监控都需要开发。但在官网的 dashboard库中,也有一些官方和社区开发人员开发的dashboard可以直接 拿来用。</p>
+<p><img src="http://image.ownit.top/csdn/20200113165033603.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113165056782.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="http://image.ownit.top/csdn/20200113165113140.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="相关博文">相关博文</h1>
+<p> </p>
+<h1 id="1centos7安装promethus普罗米修斯监控系统完整版httpsblogcsdnnetheian_99articledetails103952955-1"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103952955"  target="_blank" rel="noopener"
+    >1、Centos7安装Promethus(普罗米修斯）监控系统完整版</a></h1>
+<h1 id="2promethus普罗米修斯监控mysql数据库httpsblogcsdnnetheian_99articledetails103956583-1"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103956583"  target="_blank" rel="noopener"
+    >2、Promethus(普罗米修斯）监控Mysql数据库</a></h1>
+<h1 id="3promethus普罗米修斯安装grafana可视化图形工具httpsblogcsdnnetheian_99articledetails103956931-1"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103956931"  target="_blank" rel="noopener"
+    >3、Promethus(普罗米修斯）安装Grafana可视化图形工具</a></h1>
+<h1 id="4promethus的grafana图形显示mysql监控数据httpsblogcsdnnetheian_99articledetails103958032-1"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103958032"  target="_blank" rel="noopener"
+    >4、Promethus的Grafana图形显示MySQL监控数据</a></h1>
+<h1 id="5promethus普罗米修斯的grafanaonealert实现报警功能httpsblogcsdnnetheian_99articledetails103959379-1"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103959379"  target="_blank" rel="noopener"
+    >5、Promethus(普罗米修斯）的Grafana+onealert实现报警功能</a></h1>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/grafana/">Grafana</a>
+        
+            <a href="/tags/promethus/">Promethus</a>
+        
+            <a href="/tags/onealert/">onealert</a>
+        
+            <a href="/tags/%E5%91%8A%E8%AD%A6/">告警</a>
+        
+            <a href="/tags/%E7%9B%91%E6%8E%A7/">监控</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/promethus%E7%9A%84grafana%E5%9B%BE%E5%BD%A2%E6%98%BE%E7%A4%BAmysql%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AE/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/14.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/14.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Promethus的Grafana图形显示MySQL监控数据</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E5%AE%89%E8%A3%85grafana%E5%8F%AF%E8%A7%86%E5%8C%96%E5%9B%BE%E5%BD%A2%E5%B7%A5%E5%85%B7/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/43.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/43.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Promethus(普罗米修斯）安装Grafana可视化图形工具</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9B%91%E6%8E%A7mysql%E6%95%B0%E6%8D%AE%E5%BA%93/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/48.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/48.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Promethus(普罗米修斯）监控Mysql数据库</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/centos7%E5%AE%89%E8%A3%85promethus%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E6%95%B4%E7%89%88/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/76.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/76.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7安装Promethus(普罗米修斯）监控系统完整版</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/django%E5%BC%80%E5%8F%91%E5%91%8A%E8%AD%A6%E6%8E%A5%E5%8F%A3webhook%E5%AF%B9%E6%8E%A5altermanager%E5%91%8A%E8%AD%A6/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/92.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/92.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Django开发告警接口（webhook）对接Altermanager告警</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

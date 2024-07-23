@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='通过部署集群部署有状态的应用会简单很多文档：在上管理集群每个主节点及其从节点都由管理，为每个创建无头，并为所有节点创建服务。每个有状态集都使用来确保主节点和从节点分散在不同的节点上。同时，当操作员在每。。。。。。。'>
+<title>Kubernetes使用operator安装Redis集群</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/kubernetes%E4%BD%BF%E7%94%A8operator%E5%AE%89%E8%A3%85redis%E9%9B%86%E7%BE%A4/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Kubernetes使用operator安装Redis集群'>
+<meta property='og:description' content='通过部署集群部署有状态的应用会简单很多文档：在上管理集群每个主节点及其从节点都由管理，为每个创建无头，并为所有节点创建服务。每个有状态集都使用来确保主节点和从节点分散在不同的节点上。同时，当操作员在每。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/kubernetes%E4%BD%BF%E7%94%A8operator%E5%AE%89%E8%A3%85redis%E9%9B%86%E7%BE%A4/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='redis' /><meta property='article:tag' content='github' /><meta property='article:tag' content='git' /><meta property='article:published_time' content='2021-03-09T21:43:40&#43;00:00'/><meta property='article:modified_time' content='2021-03-09T21:43:40&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/07.jpg' />
+<meta name="twitter:title" content="Kubernetes使用operator安装Redis集群">
+<meta name="twitter:description" content="通过部署集群部署有状态的应用会简单很多文档：在上管理集群每个主节点及其从节点都由管理，为每个创建无头，并为所有节点创建服务。每个有状态集都使用来确保主节点和从节点分散在不同的节点上。同时，当操作员在每。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/07.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#通过operator部署redis集群">通过operator部署redis集群</a>
+      <ol>
+        <li><a href="#1下载redis-cluster-operator">（1）下载redis-cluster-operator</a></li>
+        <li><a href="#2创建自定义资源crd">（2）创建自定义资源（CRD）</a></li>
+        <li><a href="#3创建operator">（3）创建operator</a></li>
+        <li><a href="#4部署样本redis集群">（4）部署样本Redis集群</a></li>
+        <li><a href="#5验证集群">（5）验证集群</a></li>
+        <li><a href="#6扩展redis集群">（6）扩展Redis集群</a></li>
+        <li><a href="#7缩减redis集群">（7）缩减Redis集群</a></li>
+        <li><a href="#8删除redis集群">（8）删除redis集群</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/kubernetes%E4%BD%BF%E7%94%A8operator%E5%AE%89%E8%A3%85redis%E9%9B%86%E7%BE%A4/">
+                
+                    <img src="http://image.ownit.top/4kdongman/07.jpg" loading="lazy" alt="Featured image of post Kubernetes使用operator安装Redis集群" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes/" >
+                Kubernetes
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/kubernetes%E4%BD%BF%E7%94%A8operator%E5%AE%89%E8%A3%85redis%E9%9B%86%E7%BE%A4/">Kubernetes使用operator安装Redis集群</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            通过部署集群部署有状态的应用会简单很多文档：在上管理集群每个主节点及其从节点都由管理，为每个创建无头，并为所有节点创建服务。每个有状态集都使用来确保主节点和从节点分散在不同的节点上。同时，当操作员在每。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 09, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="通过operator部署redis集群">通过operator部署redis集群</h2>
+<p>operator部署有状态的应用会简单很多</p>
+<p><img src="http://image.ownit.top/csdn/20210225160104777.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p>github文档：<a class="link" href="https://github.com/ucloud/redis-cluster-operator#deploy-redis-cluster-operator"  target="_blank" rel="noopener"
+    >https://github.com/ucloud/redis-cluster-operator#deploy-redis-cluster-operator</a></p>
+<p>Redis Cluster Operator在Kubernetes上管理Redis-Cluster集群</p>
+<p>每个主节点及其从节点都由statefulSet管理，为每个statefulSet创建无头svc，并为所有节点创建clusterIP服务。<br>
+每个有状态集都使用PodAntiAffinity来确保主节点和从节点分散在不同的节点上。同时，当操作员在每个有状态集中选择主节点时，它会优先选择具有不同k8s节点的容器作为主节点。</p>
+<h3 id="1下载redis-cluster-operator">（1）下载redis-cluster-operator</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git  clone  https://github.com/ucloud/redis-cluster-operator.git
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在名称空间：redis-cluster下部署Redis集群，注意修改yaml文件的namespace参数<br>
+创建名称空间Namespace：redis-cluster</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis-cluster-operator-master<span class="o">]</span><span class="c1"># kubectl create ns redis-cluster</span>
+</span></span><span class="line"><span class="cl">namespace/redis-node created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis-cluster-operator-master<span class="o">]</span><span class="c1"># kubectl get ns</span>
+</span></span><span class="line"><span class="cl">NAME                   STATUS   AGE
+</span></span><span class="line"><span class="cl">default                Active   76d
+</span></span><span class="line"><span class="cl">ingress-nginx          Active   9d
+</span></span><span class="line"><span class="cl">kube-node-lease        Active   76d
+</span></span><span class="line"><span class="cl">kube-public            Active   76d
+</span></span><span class="line"><span class="cl">kube-system            Active   76d
+</span></span><span class="line"><span class="cl">kube-users             Active   2d21h
+</span></span><span class="line"><span class="cl">kubernetes-dashboard   Active   45h
+</span></span><span class="line"><span class="cl">redis-cluster          Active   11s
+</span></span><span class="line"><span class="cl">rook-ceph              Active   33h
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis-cluster-op
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2创建自定义资源crd">（2）创建自定义资源（CRD）</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl apply -f deploy/crds/</span>
+</span></span><span class="line"><span class="cl">customresourcedefinition.apiextensions.k8s.io/distributedredisclusters.redis.kun created
+</span></span><span class="line"><span class="cl">customresourcedefinition.apiextensions.k8s.io/redisclusterbackups.redis.kun created
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3创建operator">（3）创建operator</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl create -f deploy/service_account.yaml</span>
+</span></span><span class="line"><span class="cl">serviceaccount/redis-cluster-operator created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl create -f deploy/cluster/cluster_role.yaml</span>
+</span></span><span class="line"><span class="cl">clusterrole.rbac.authorization.k8s.io/redis-cluster-operator created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl create -f deploy/cluster/cluster_role_binding.yaml</span>
+</span></span><span class="line"><span class="cl">clusterrolebinding.rbac.authorization.k8s.io/redis-cluster-operator created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl create -f deploy/cluster/operator.yaml</span>
+</span></span><span class="line"><span class="cl">deployment.apps/redis-cluster-operator created
+</span></span><span class="line"><span class="cl">configmap/redis-admin created
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl get deployment</span>
+</span></span><span class="line"><span class="cl">NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+</span></span><span class="line"><span class="cl">metrics-metrics-server   1/1     <span class="m">1</span>            <span class="m">1</span>           10d
+</span></span><span class="line"><span class="cl">redis-cluster-operator   1/1     <span class="m">1</span>            <span class="m">1</span>           12s
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">// cluster-scoped 命令
+</span></span><span class="line"><span class="cl">$ kubectl create -f deploy/service_account.yaml
+</span></span><span class="line"><span class="cl">$ kubectl create -f deploy/cluster/cluster_role.yaml
+</span></span><span class="line"><span class="cl">$ kubectl create -f deploy/cluster/cluster_role_binding.yaml
+</span></span><span class="line"><span class="cl">$ kubectl create -f deploy/cluster/operator.yaml
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="4部署样本redis集群">（4）部署样本Redis集群</h3>
+<p>注意：<strong>只有使用持久性存储（pvc）的redis集群在意外删除或滚动更新后才能恢复。即使您不使用持久性（如rdb或aof），也需要将pvc设置为redis。</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: redis.kun/v1alpha1
+</span></span><span class="line"><span class="cl">kind: DistributedRedisCluster
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  annotations:
+</span></span><span class="line"><span class="cl">    <span class="c1"># if your operator run as cluster-scoped, add this annotations</span>
+</span></span><span class="line"><span class="cl">    redis.kun/scope: cluster-scoped
+</span></span><span class="line"><span class="cl">  name: example-distributedrediscluster
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  image: redis:5.0.4-alpine
+</span></span><span class="line"><span class="cl">  masterSize: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">  clusterReplicas: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  resources:
+</span></span><span class="line"><span class="cl">    limits:
+</span></span><span class="line"><span class="cl">      cpu: 200m
+</span></span><span class="line"><span class="cl">      memory: 200Mi
+</span></span><span class="line"><span class="cl">    requests:
+</span></span><span class="line"><span class="cl">      cpu: 200m
+</span></span><span class="line"><span class="cl">      memory: 100Mi
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为使用样本，没有资源限制，会因为内存不足导致初始化失败，限制使用这个测试</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl create -f deploy/example/custom-resources.yaml
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl get pod,svc</span>
+</span></span><span class="line"><span class="cl">NAME                                          READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">pod/drc-example-distributedrediscluster-0-0   1/1     Running   <span class="m">0</span>          6m39s
+</span></span><span class="line"><span class="cl">pod/drc-example-distributedrediscluster-0-1   1/1     Running   <span class="m">0</span>          6m2s
+</span></span><span class="line"><span class="cl">pod/drc-example-distributedrediscluster-1-0   1/1     Running   <span class="m">0</span>          6m39s
+</span></span><span class="line"><span class="cl">pod/drc-example-distributedrediscluster-1-1   1/1     Running   <span class="m">0</span>          6m7s
+</span></span><span class="line"><span class="cl">pod/drc-example-distributedrediscluster-2-0   1/1     Running   <span class="m">0</span>          6m39s
+</span></span><span class="line"><span class="cl">pod/drc-example-distributedrediscluster-2-1   1/1     Running   <span class="m">0</span>          6m6s
+</span></span><span class="line"><span class="cl">pod/metrics-metrics-server-6c7745d876-cw72h   1/1     Running   <span class="m">0</span>          8h
+</span></span><span class="line"><span class="cl">pod/redis-cluster-operator-7f6cf86475-dhttx   1/1     Running   <span class="m">0</span>          11m
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                                        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>              AGE
+</span></span><span class="line"><span class="cl">service/example-distributedrediscluster     ClusterIP   10.96.104.199   &lt;none&gt;        6379/TCP,16379/TCP   6m38s
+</span></span><span class="line"><span class="cl">service/example-distributedrediscluster-0   ClusterIP   None            &lt;none&gt;        6379/TCP,16379/TCP   6m38s
+</span></span><span class="line"><span class="cl">service/example-distributedrediscluster-1   ClusterIP   None            &lt;none&gt;        6379/TCP,16379/TCP   6m38s
+</span></span><span class="line"><span class="cl">service/example-distributedrediscluster-2   ClusterIP   None            &lt;none&gt;        6379/TCP,16379/TCP   6m38s
+</span></span><span class="line"><span class="cl">service/kubernetes                          ClusterIP   10.96.0.1       &lt;none&gt;        443/TCP              76d
+</span></span><span class="line"><span class="cl">service/metrics-metrics-server              ClusterIP   10.96.86.164    &lt;none&gt;        443/TCP              10d
+</span></span><span class="line"><span class="cl">service/nginx                               ClusterIP   10.96.215.251   &lt;none&gt;        80/TCP               9d
+</span></span><span class="line"><span class="cl">service/redis-cluster-operator-metrics      ClusterIP   10.96.58.127    &lt;none&gt;        8383/TCP,8686/TCP    11m
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># </span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>创建指定命名空间和动态存储的，我这个没有构建动态存储</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat redis-cluster.yaml 
+</span></span><span class="line"><span class="cl">apiVersion: redis.kun/v1alpha1
+</span></span><span class="line"><span class="cl">kind: DistributedRedisCluster
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  annotations:
+</span></span><span class="line"><span class="cl">    <span class="c1"># if your operator run as cluster-scoped, add this annotations</span>
+</span></span><span class="line"><span class="cl">    redis.kun/scope: cluster-scoped
+</span></span><span class="line"><span class="cl">  name: example-distributedrediscluster
+</span></span><span class="line"><span class="cl">  namespace: redis-cluster
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  image: redis:5.0.4-alpine
+</span></span><span class="line"><span class="cl">  imagePullPolicy: IfNotPresent
+</span></span><span class="line"><span class="cl">  masterSize: 3			<span class="c1">#master节点数量</span>
+</span></span><span class="line"><span class="cl">  clusterReplicas: 1	<span class="c1">#每个master节点的从节点数量</span>
+</span></span><span class="line"><span class="cl">  serviceName: redis-svc
+</span></span><span class="line"><span class="cl">  <span class="c1"># resources config</span>
+</span></span><span class="line"><span class="cl">  resources:
+</span></span><span class="line"><span class="cl">    limits:
+</span></span><span class="line"><span class="cl">      cpu: 300m
+</span></span><span class="line"><span class="cl">      memory: 200Mi
+</span></span><span class="line"><span class="cl">    requests:
+</span></span><span class="line"><span class="cl">      cpu: 200m
+</span></span><span class="line"><span class="cl">      memory: 150Mi
+</span></span><span class="line"><span class="cl">  <span class="c1"># pv storage</span>
+</span></span><span class="line"><span class="cl">  storage:
+</span></span><span class="line"><span class="cl">    type: persistent-claim
+</span></span><span class="line"><span class="cl">    size: 2Gi
+</span></span><span class="line"><span class="cl">    class: nfs-storage
+</span></span><span class="line"><span class="cl">    deleteClaim: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl apply -f redis-cluster.yaml</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="5验证集群">（5）验证集群</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master01 redis<span class="o">]</span><span class="c1"># kubectl exec -it  drc-example-distributedrediscluster-0-0 -- sh</span>
+</span></span><span class="line"><span class="cl">/data <span class="c1"># redis-cli -c -h redis-svc</span>
+</span></span><span class="line"><span class="cl">Could not connect to Redis at redis-svc:6379: Name does not resolve
+</span></span><span class="line"><span class="cl">not connected&gt; 
+</span></span><span class="line"><span class="cl">/data <span class="c1"># redis-cli -c -h example-distributedrediscluster</span>
+</span></span><span class="line"><span class="cl">example-distributedrediscluster:6379&gt;  cluster info
+</span></span><span class="line"><span class="cl">cluster_state:ok
+</span></span><span class="line"><span class="cl">cluster_slots_assigned:16384
+</span></span><span class="line"><span class="cl">cluster_slots_ok:16384
+</span></span><span class="line"><span class="cl">cluster_slots_pfail:0
+</span></span><span class="line"><span class="cl">cluster_slots_fail:0
+</span></span><span class="line"><span class="cl">cluster_known_nodes:6
+</span></span><span class="line"><span class="cl">cluster_size:3
+</span></span><span class="line"><span class="cl">cluster_current_epoch:5
+</span></span><span class="line"><span class="cl">cluster_my_epoch:0
+</span></span><span class="line"><span class="cl">cluster_stats_messages_ping_sent:511
+</span></span><span class="line"><span class="cl">cluster_stats_messages_pong_sent:485
+</span></span><span class="line"><span class="cl">cluster_stats_messages_meet_sent:1
+</span></span><span class="line"><span class="cl">cluster_stats_messages_sent:997
+</span></span><span class="line"><span class="cl">cluster_stats_messages_ping_received:481
+</span></span><span class="line"><span class="cl">cluster_stats_messages_pong_received:512
+</span></span><span class="line"><span class="cl">cluster_stats_messages_meet_received:4
+</span></span><span class="line"><span class="cl">cluster_stats_messages_received:997
+</span></span><span class="line"><span class="cl">example-distributedrediscluster:6379&gt; <span class="nb">set</span> a b
+</span></span><span class="line"><span class="cl">-&gt; Redirected to slot <span class="o">[</span>15495<span class="o">]</span> located at 10.244.58.209:6379
+</span></span><span class="line"><span class="cl">OK
+</span></span><span class="line"><span class="cl">10.244.58.209:6379&gt; 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="6扩展redis集群">（6）扩展Redis集群</h3>
+<p>增加masterSize触发放大。（注意：这个也直接可以使用edit修改。）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: redis.kun/v1alpha1
+</span></span><span class="line"><span class="cl">kind: DistributedRedisCluster
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  annotations:
+</span></span><span class="line"><span class="cl">    <span class="c1"># if your operator run as cluster-scoped, add this annotations</span>
+</span></span><span class="line"><span class="cl">    redis.kun/scope: cluster-scoped
+</span></span><span class="line"><span class="cl">  name: example-distributedrediscluster
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  <span class="c1"># Increase the masterSize to trigger the scaling.</span>
+</span></span><span class="line"><span class="cl">  masterSize: <span class="m">4</span>
+</span></span><span class="line"><span class="cl">  ClusterReplicas: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  image: redis:5.0.4-alpine
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="7缩减redis集群">（7）缩减Redis集群</h3>
+<p>减小masterSize触发缩小。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: redis.kun/v1alpha1
+</span></span><span class="line"><span class="cl">kind: DistributedRedisCluster
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  annotations:
+</span></span><span class="line"><span class="cl">    <span class="c1"># if your operator run as cluster-scoped, add this annotations</span>
+</span></span><span class="line"><span class="cl">    redis.kun/scope: cluster-scoped
+</span></span><span class="line"><span class="cl">  name: example-distributedrediscluster
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  <span class="c1"># Increase the masterSize to trigger the scaling.</span>
+</span></span><span class="line"><span class="cl">  masterSize: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">  ClusterReplicas: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  image: redis:5.0.4-alpine
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="8删除redis集群">（8）删除redis集群</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># cd redis-cluster-operator/ </span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f redis-cluster.yaml</span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># cd cluster/</span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f operator.yaml </span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f cluster_role_binding.yaml </span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f cluster_role.yaml </span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f service_account.yaml </span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f deploy/crds/</span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span><span class="c1"># kubectl delete -f ns-redis-cluster.yaml</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<p>github文档：<a class="link" href="https://github.com/ucloud/redis-cluster-operator#deploy-redis-cluster-operator"  target="_blank" rel="noopener"
+    >https://github.com/ucloud/redis-cluster-operator#deploy-redis-cluster-operator</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/redis/">redis</a>
+        
+            <a href="/tags/github/">github</a>
+        
+            <a href="/tags/git/">git</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E9%83%A8%E7%BD%B2%E5%8D%95redis/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/92.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/92.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes部署单Redis</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E7%9A%84etcd%E9%9B%86%E7%BE%A4%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/07.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/07.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes的ETCD集群备份、恢复</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes-1.18.3-%E9%83%A8%E7%BD%B2-traefik2.2/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/89.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/89.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes 1.18.3 部署 Traefik2.2</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/prometheus%E9%BB%91%E7%9B%92%E6%B5%8B%E8%AF%95/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/16.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/16.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">prometheus黑盒测试</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E7%94%A8operator%E9%83%A8%E7%BD%B2prometheus/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/49.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/49.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes用operator部署prometheus</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

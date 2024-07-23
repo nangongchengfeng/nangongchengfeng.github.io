@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='某公司使用阿里云的 ECS 和 Redis 服务作为其业务支撑，为了及时了解机器的使用情况，领导要求业务部门对所有阿里云机器的平均资源使用率进行统计，并汇总在一个 Excel 表格中，以便领导查看和分析。'>
+<title>Python批量导出阿里云ECS和Redis实例的监控数据到Excel</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/python%E6%89%B9%E9%87%8F%E5%AF%BC%E5%87%BA%E9%98%BF%E9%87%8C%E4%BA%91ecs%E5%92%8Credis%E5%AE%9E%E4%BE%8B%E7%9A%84%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AE%E5%88%B0excel/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Python批量导出阿里云ECS和Redis实例的监控数据到Excel'>
+<meta property='og:description' content='某公司使用阿里云的 ECS 和 Redis 服务作为其业务支撑，为了及时了解机器的使用情况，领导要求业务部门对所有阿里云机器的平均资源使用率进行统计，并汇总在一个 Excel 表格中，以便领导查看和分析。'>
+<meta property='og:url' content='https://www.ownit.top/p/python%E6%89%B9%E9%87%8F%E5%AF%BC%E5%87%BA%E9%98%BF%E9%87%8C%E4%BA%91ecs%E5%92%8Credis%E5%AE%9E%E4%BE%8B%E7%9A%84%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AE%E5%88%B0excel/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='python' /><meta property='article:tag' content='阿里云' /><meta property='article:tag' content='redis' /><meta property='article:published_time' content='2023-04-11T10:18:30&#43;00:00'/><meta property='article:modified_time' content='2023-04-11T10:18:30&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/20.jpg' />
+<meta name="twitter:title" content="Python批量导出阿里云ECS和Redis实例的监控数据到Excel">
+<meta name="twitter:description" content="某公司使用阿里云的 ECS 和 Redis 服务作为其业务支撑，为了及时了解机器的使用情况，领导要求业务部门对所有阿里云机器的平均资源使用率进行统计，并汇总在一个 Excel 表格中，以便领导查看和分析。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/20.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#需求">需求</a></li>
+    <li><a href="#环境">环境</a></li>
+    <li><a href="#实例数据获取ecs和redis">实例数据获取（ECS和Redis）</a></li>
+    <li><a href="#ecs实例资源">ECS实例资源</a></li>
+    <li><a href="#redis实例资源">Redis实例资源</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/python%E6%89%B9%E9%87%8F%E5%AF%BC%E5%87%BA%E9%98%BF%E9%87%8C%E4%BA%91ecs%E5%92%8Credis%E5%AE%9E%E4%BE%8B%E7%9A%84%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AE%E5%88%B0excel/">
+                
+                    <img src="http://image.ownit.top/4kdongman/20.jpg" loading="lazy" alt="Featured image of post Python批量导出阿里云ECS和Redis实例的监控数据到Excel" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/python%E5%AD%A6%E4%B9%A0/" >
+                Python学习
+            </a>
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/python%E6%89%B9%E9%87%8F%E5%AF%BC%E5%87%BA%E9%98%BF%E9%87%8C%E4%BA%91ecs%E5%92%8Credis%E5%AE%9E%E4%BE%8B%E7%9A%84%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AE%E5%88%B0excel/">Python批量导出阿里云ECS和Redis实例的监控数据到Excel</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            某公司使用阿里云的 ECS 和 Redis 服务作为其业务支撑，为了及时了解机器的使用情况，领导要求业务部门对所有阿里云机器的平均资源使用率进行统计，并汇总在一个 Excel 表格中，以便领导查看和分析。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 11, 2023</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 8 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="背景">背景</h2>
+<p>某公司使用阿里云的 ECS 和 Redis 服务作为其业务支撑，为了及时了解机器的使用情况，领导要求业务部门对所有阿里云机器的平均资源使用率进行统计，并汇总在一个 Excel 表格中，以便领导查看和分析。</p>
+<h2 id="需求">需求</h2>
+<p>为了满足领导的需求，我们需要实现以下基本需求：</p>
+<ol>
+<li>
+<p>使用阿里云 Python SDK 获取所有 ECS 和 Redis 实例的 ID 和名称，以及机器的规格和资源使用情况等信息。</p>
+</li>
+<li>
+<p>使用阿里云监控服务 ECS、Redis API 获取实例的监控数据，并将其保存为 Python 字典类型。</p>
+</li>
+<li>
+<p>根据用户定义的时间范围，计算所有实例的平均资源使用率，并将其汇总到一个 Python 字典中。</p>
+</li>
+<li>
+<p>使用 Excel 处理库（例如 openpyxl），创建一个新的 Excel 文件，并在其中创建一个新的 sheet。</p>
+</li>
+<li>
+<p>将计算得到的数据写入到 Excel 文件中。在写入时，需要提取出每个实例的 ID、名称、规格、平均 CPU 使用率、平均内存使用率和平均网络带宽使用率等信息，并按照一定的格式写入到 Excel 文件的合适位置。</p>
+</li>
+<li>
+<p>最后，保存 Excel 文件并退出程序。用户应当能够方便地查看和使用导出的 Excel 表格，并根据需要进行数据分析和处理。</p>
+</li>
+</ol>
+<p>通过实现上述需求，业务部门可以较为方便和及时地了解到各个机器的使用情况，快速发现并解决资源使用过度或者资源浪费的问题，提高云计算资源的利用率和企业运营效率。同时，我们也能够充分发挥 Python 和阿里云 API 的强大能力，实现一个业务部门的全新 Python 项目，提升自己的编程能力和阿里云 API 使用经验。</p>
+<h2 id="环境">环境</h2>
+<blockquote>
+<p>Python 3.8
+pip install alibabacloud_cms20190101==2.0.5</p>
+<p>pip install alibabacloud_r_kvstore20150101==2.20.7</p>
+</blockquote>
+<p>获取所有ECS和Redis 机器的资源使用率</p>
+<p><strong>使用到的api接口</strong></p>
+<p><strong>产品排列表</strong> <a class="link" href="https://cms.console.aliyun.com/metric-meta/acs_ecs_dashboard/ecs"  target="_blank" rel="noopener"
+    >https://cms.console.aliyun.com/metric-meta/acs_ecs_dashboard/ecs</a>
+<strong>获取所有机器</strong> <a class="link" href="https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMonitoringAgentHosts"  target="_blank" rel="noopener"
+    >https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMonitoringAgentHosts</a>
+<strong>获取所有redis</strong>  <a class="link" href="https://next.api.aliyun.com/api/R-kvstore/2015-01-01/DescribeInstancesOverview"  target="_blank" rel="noopener"
+    >https://next.api.aliyun.com/api/R-kvstore/2015-01-01/DescribeInstancesOverview</a></p>
+<p><strong>资源使用率获取</strong> <a class="link" href="https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMetricLast"  target="_blank" rel="noopener"
+    >https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMetricLast</a>
+<img src="http://image.ownit.top/csdn/14f84bd084ad4568887b8defa60d99dd.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="实例数据获取ecs和redis">实例数据获取（ECS和Redis）</h2>
+<p>可以参考下方的Api接口，我已经封装成函数</p>
+<p><strong>获取所有机器</strong> <a class="link" href="https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMonitoringAgentHosts"  target="_blank" rel="noopener"
+    >https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMonitoringAgentHosts</a>
+<strong>获取所有redsi</strong>  <a class="link" href="https://next.api.aliyun.com/api/R-kvstore/2015-01-01/DescribeInstancesOverview"  target="_blank" rel="noopener"
+    >https://next.api.aliyun.com/api/R-kvstore/2015-01-01/DescribeInstancesOverview</a></p>
+<p><strong>如果要使用下方函数，请添加自己的密钥对</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Time    : 2023/4/12 9:55</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Author  : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Email   : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @File    : ecs_all.py</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Software: PyCharm</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_cms20190101.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">Cms20190101Client</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_cms20190101</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">cms_20190101_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_r_kvstore20150101.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">R_kvstore20150101Client</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_openapi</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">open_api_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_r_kvstore20150101</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">r_kvstore_20150101_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_util</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">util_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_util.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">UtilClient</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">create_client_redis</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_secret</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">R_kvstore20150101Client</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">    使用AK&amp;SK初始化账号Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @param access_key_id:
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @param access_key_secret:
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @return: Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @throws Exception
+</span></span></span><span class="line"><span class="cl"><span class="s2">    &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">config</span> <span class="o">=</span> <span class="n">open_api_models</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 必填，您的 AccessKey ID,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_id</span><span class="o">=</span><span class="n">access_key_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 必填，您的 AccessKey Secret,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_secret</span><span class="o">=</span><span class="n">access_key_secret</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 访问的域名</span>
+</span></span><span class="line"><span class="cl">    <span class="n">config</span><span class="o">.</span><span class="n">endpoint</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;r-kvstore.aliyuncs.com&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">R_kvstore20150101Client</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">create_client_ecs</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_secret</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cms20190101Client</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">    使用AK&amp;SK初始化账号Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @param access_key_id:
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @param access_key_secret:
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @return: Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">    @throws Exception
+</span></span></span><span class="line"><span class="cl"><span class="s2">    &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">config</span> <span class="o">=</span> <span class="n">open_api_models</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 必填，您的 AccessKey ID,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_id</span><span class="o">=</span><span class="n">access_key_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 必填，您的 AccessKey Secret,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">access_key_secret</span><span class="o">=</span><span class="n">access_key_secret</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 访问的域名</span>
+</span></span><span class="line"><span class="cl">    <span class="n">config</span><span class="o">.</span><span class="n">endpoint</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;metrics.ap-southeast-1.aliyuncs.com&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">Cms20190101Client</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">get_ecs_instances</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">    获取阿里云 ECS 实例列表
+</span></span></span><span class="line"><span class="cl"><span class="s2">    &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span> <span class="o">=</span> <span class="n">create_client_ecs</span><span class="p">(</span><span class="s1">&#39;xxxx&#39;</span><span class="p">,</span> <span class="s1">&#39;xxxx&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">describe_monitoring_agent_hosts_request</span> <span class="o">=</span> <span class="n">cms_20190101_models</span><span class="o">.</span><span class="n">DescribeMonitoringAgentHostsRequest</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">runtime</span> <span class="o">=</span> <span class="n">util_models</span><span class="o">.</span><span class="n">RuntimeOptions</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 复制代码运行请自行打印 API 的返回值</span>
+</span></span><span class="line"><span class="cl">        <span class="n">data</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">describe_monitoring_agent_hosts_with_options</span><span class="p">(</span><span class="n">describe_monitoring_agent_hosts_request</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">data</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 如有需要，请打印 error</span>
+</span></span><span class="line"><span class="cl">        <span class="n">UtilClient</span><span class="o">.</span><span class="n">assert_as_string</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">get_redis_instances</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 工程代码泄露可能会导致AccessKey泄露，并威胁账号下所有资源的安全性。以下代码示例仅供参考，建议使用更安全的 STS 方式，更多鉴权访问方式请参见：https://help.aliyun.com/document_detail/378659.html</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span> <span class="o">=</span> <span class="n">create_client_redis</span><span class="p">(</span><span class="s1">&#39;xxxx&#39;</span><span class="p">,</span> <span class="s1">&#39;xxxx&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">describe_instances_overview_request</span> <span class="o">=</span> <span class="n">r_kvstore_20150101_models</span><span class="o">.</span><span class="n">DescribeInstancesOverviewRequest</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">region_id</span><span class="o">=</span><span class="s1">&#39;cn-shenzhen&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">runtime</span> <span class="o">=</span> <span class="n">util_models</span><span class="o">.</span><span class="n">RuntimeOptions</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 复制代码运行请自行打印 API 的返回值</span>
+</span></span><span class="line"><span class="cl">        <span class="n">data</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">describe_instances_overview_with_options</span><span class="p">(</span><span class="n">describe_instances_overview_request</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">data</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 如有需要，请打印 error</span>
+</span></span><span class="line"><span class="cl">        <span class="n">UtilClient</span><span class="o">.</span><span class="n">assert_as_string</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ecs_data</span> <span class="o">=</span> <span class="n">get_ecs_instances</span><span class="p">()</span><span class="o">.</span><span class="n">to_map</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">redis_data</span> <span class="o">=</span> <span class="n">get_redis_instances</span><span class="p">()</span><span class="o">.</span><span class="n">to_map</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 将 ECS 数据写入 JSON 文件中</span>
+</span></span><span class="line"><span class="cl">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;ecs.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ecs_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 将 Redis 数据写入 JSON 文件中</span>
+</span></span><span class="line"><span class="cl">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;redis.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">redis_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="s2">&#34;数据已经写入本地文件&#34;</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/1903b62297554dafbda334f1ce851245.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="http://image.ownit.top/csdn/b51eec5f74ab4b8a8796a81f2fe7d5e1.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="ecs实例资源">ECS实例资源</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Time    : 2023/4/11 17:17</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Author  : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Email   : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @File    : ecs_monitor.py</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Software: PyCharm</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">sys</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_cms20190101.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">Cms20190101Client</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_openapi</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">open_api_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_cms20190101</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">cms_20190101_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_util</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">util_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_util.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">UtilClient</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">openpyxl</span> <span class="kn">import</span> <span class="n">Workbook</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">openpyxl.utils</span> <span class="kn">import</span> <span class="n">get_column_letter</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Sample</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="k">pass</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nd">@staticmethod</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">create_client</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_secret</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cms20190101Client</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">        使用AK&amp;SK初始化账号Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @param access_key_id:
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @param access_key_secret:
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @return: Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @throws Exception
+</span></span></span><span class="line"><span class="cl"><span class="s2">        &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">config</span> <span class="o">=</span> <span class="n">open_api_models</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 必填，您的 AccessKey ID,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_id</span><span class="o">=</span><span class="n">access_key_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 必填，您的 AccessKey Secret,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_secret</span><span class="o">=</span><span class="n">access_key_secret</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 访问的域名</span>
+</span></span><span class="line"><span class="cl">        <span class="n">config</span><span class="o">.</span><span class="n">endpoint</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;metrics.ap-southeast-1.aliyuncs.com&#39;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">Cms20190101Client</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nd">@staticmethod</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">parameter</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 工程代码泄露可能会导致AccessKey泄露，并威胁账号下所有资源的安全性。以下代码示例仅供参考，建议使用更安全的 STS 方式，更多鉴权访问方式请参见：https://help.aliyun.com/document_detail/378659.html</span>
+</span></span><span class="line"><span class="cl">        <span class="n">client</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">create_client</span><span class="p">(</span><span class="s1">&#39;xxxx&#39;</span><span class="p">,</span> <span class="s1">&#39;xxxx&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">describe_metric_top_request</span> <span class="o">=</span> <span class="n">cms_20190101_models</span><span class="o">.</span><span class="n">DescribeMetricTopRequest</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">period</span><span class="o">=</span><span class="s1">&#39;2592000&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;acs_ecs_dashboard&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">metric_name</span><span class="o">=</span><span class="n">parameter</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">orderby</span><span class="o">=</span><span class="s1">&#39;Average&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">start_time</span><span class="o">=</span><span class="s1">&#39;2023-03-12 00:00:00&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">end_time</span><span class="o">=</span><span class="s1">&#39;2023-04-11 00:00:00&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">length</span><span class="o">=</span><span class="s1">&#39;100&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">runtime</span> <span class="o">=</span> <span class="n">util_models</span><span class="o">.</span><span class="n">RuntimeOptions</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 复制代码运行请自行打印 API 的返回值</span>
+</span></span><span class="line"><span class="cl">            <span class="n">data</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">describe_metric_top_with_options</span><span class="p">(</span><span class="n">describe_metric_top_request</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">data</span>
+</span></span><span class="line"><span class="cl">        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 如有需要，请打印 error</span>
+</span></span><span class="line"><span class="cl">            <span class="n">UtilClient</span><span class="o">.</span><span class="n">assert_as_string</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">get_host</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="k">global</span> <span class="n">host_list</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 打开 host.json 文件</span>
+</span></span><span class="line"><span class="cl">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;ecs.json&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 读取文件中的 JSON 数据</span>
+</span></span><span class="line"><span class="cl">        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 输出读取到的数据</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">host_list</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">][</span><span class="s2">&#34;Hosts&#34;</span><span class="p">][</span><span class="s2">&#34;Host&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="n">host_list</span> <span class="o">=</span> <span class="p">[{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+</span></span><span class="line"><span class="cl">                  <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+</span></span><span class="line"><span class="cl">                      <span class="s1">&#39;isAliyunHost&#39;</span><span class="p">,</span> <span class="s1">&#39;NetworkType&#39;</span><span class="p">,</span> <span class="s1">&#39;InstanceTypeFamily&#39;</span><span class="p">,</span> <span class="s1">&#39;Region&#39;</span><span class="p">,</span> <span class="s1">&#39;AliUid&#39;</span><span class="p">,</span> <span class="s1">&#39;SerialNumber&#39;</span><span class="p">,</span> <span class="s1">&#39;EipId&#39;</span><span class="p">,</span><span class="s1">&#39;EipAddress&#39;</span><span class="p">)}</span>
+</span></span><span class="line"><span class="cl">                 <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span>
+</span></span><span class="line"><span class="cl">                 <span class="n">host_list</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">host_list</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">host_list</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">ecs_dashboard</span><span class="p">(</span><span class="n">parameter</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data_ecs</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">response_dict</span> <span class="o">=</span> <span class="n">data_ecs</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">to_map</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data_Datapoints</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response_dict</span><span class="p">[</span><span class="s2">&#34;Datapoints&#34;</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># for data in data_Datapoints:</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">#     print(data)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># print(type(data_Datapoints), data_Datapoints)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">data_Datapoints</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">set_workbook</span><span class="p">(</span><span class="n">ece_data_list</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;AgentVersion&#39;</span><span class="p">:</span> <span class="s1">&#39;2.1.56&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;HostName&#39;</span><span class="p">:</span> <span class="s1">&#39;xxx&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;InstanceId&#39;</span><span class="p">:</span> <span class="s1">&#39;i-xxxxxxx&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;IpGroup&#39;</span><span class="p">:</span> <span class="s1">&#39;xxxxxxxxxx&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;OperatingSystem&#39;</span><span class="p">:</span> <span class="s1">&#39;Linux&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;CPU_Average&#39;</span><span class="p">:</span> <span class="mf">4.475</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;Memory_Average&#39;</span><span class="p">:</span> <span class="mf">20.499</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 新建一个 Workbook 对象</span>
+</span></span><span class="line"><span class="cl">    <span class="n">wb</span> <span class="o">=</span> <span class="n">Workbook</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 获取第一个 sheet</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ws</span> <span class="o">=</span> <span class="n">wb</span><span class="o">.</span><span class="n">active</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 获取最大行数</span>
+</span></span><span class="line"><span class="cl">    <span class="n">max_row</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">max_row</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 设置表头</span>
+</span></span><span class="line"><span class="cl">    <span class="n">headers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">header</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">header</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 写入数据</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">row_data</span> <span class="ow">in</span> <span class="n">ece_data_list</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 写入数据</span>
+</span></span><span class="line"><span class="cl">        <span class="n">max_row</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">header</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row_data</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="n">column_letter</span> <span class="o">=</span> <span class="n">get_column_letter</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">cell_address</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_letter</span><span class="p">,</span> <span class="n">max_row</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ws</span><span class="p">[</span><span class="n">cell_address</span><span class="p">]</span> <span class="o">=</span> <span class="n">row_data</span><span class="p">[</span><span class="n">header</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 保存文件</span>
+</span></span><span class="line"><span class="cl">    <span class="n">wb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;ECS_服务器资源.xlsx&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">host_list_data</span> <span class="o">=</span> <span class="n">get_host</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">es_monitor_list_cpu</span> <span class="o">=</span> <span class="n">ecs_dashboard</span><span class="p">(</span><span class="s2">&#34;CPUUtilization&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">es_monitor_list_memory</span> <span class="o">=</span> <span class="n">ecs_dashboard</span><span class="p">(</span><span class="s2">&#34;memory_usedutilization&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 匹配CPU</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 遍历 list2，匹配 instanceId 并添加 Average 值到 list1 的对应字典中</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">d2</span> <span class="ow">in</span> <span class="n">es_monitor_list_cpu</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">d1</span> <span class="ow">in</span> <span class="n">host_list_data</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="n">d1</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">d2</span><span class="p">[</span><span class="s1">&#39;instanceId&#39;</span><span class="p">]:</span>
+</span></span><span class="line"><span class="cl">                <span class="n">d1</span><span class="p">[</span><span class="s1">&#39;CPU_Average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d2</span><span class="p">[</span><span class="s1">&#39;Average&#39;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 匹配内存</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">d3</span> <span class="ow">in</span> <span class="n">es_monitor_list_memory</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">d1</span> <span class="ow">in</span> <span class="n">host_list_data</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="n">d1</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">d3</span><span class="p">[</span><span class="s1">&#39;instanceId&#39;</span><span class="p">]:</span>
+</span></span><span class="line"><span class="cl">                <span class="n">d1</span><span class="p">[</span><span class="s1">&#39;Memory_Average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d3</span><span class="p">[</span><span class="s1">&#39;Average&#39;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 输出更新后的 list1</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># lst_sorted = sorted(host_list_data, key=lambda x: x[&#39;Memory_Average&#39;], reverse=True)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">host_list_data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">set_workbook</span><span class="p">(</span><span class="n">host_list_data</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/5805142c43d040cfbbe2d90a2a4d0064.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="redis实例资源">Redis实例资源</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Time    : 2023/4/11 17:17</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Author  : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Email   : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @File    : ecs_monitor.py</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Software: PyCharm</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 产品排列表 https://cms.console.aliyun.com/metric-meta/acs_ecs_dashboard/ecs?spm=a2c4g.163515.0.0.27c776abvQGocz</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 获取所有机器 https://next.api.aliyun.com/api/Cms/2019-01-01/DescribeMonitoringAgentHosts?params={}&amp;tab=DEBUG</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 获取所有redsi  https://next.api.aliyun.com/api/R-kvstore/2015-01-01/DescribeInstancesOverview?spm=a2c4g.473769.0.i0&amp;lang=PYTHON&amp;params={%22RegionId%22:%22cn-shenzhen%22}&amp;tab=DEBUG</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">sys</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_cms20190101.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">Cms20190101Client</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_openapi</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">open_api_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_cms20190101</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">cms_20190101_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_util</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">util_models</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">alibabacloud_tea_util.client</span> <span class="kn">import</span> <span class="n">Client</span> <span class="k">as</span> <span class="n">UtilClient</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">openpyxl</span> <span class="kn">import</span> <span class="n">Workbook</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">openpyxl.utils</span> <span class="kn">import</span> <span class="n">get_column_letter</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Sample</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="k">pass</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nd">@staticmethod</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">create_client</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_secret</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cms20190101Client</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">        使用AK&amp;SK初始化账号Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @param access_key_id:
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @param access_key_secret:
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @return: Client
+</span></span></span><span class="line"><span class="cl"><span class="s2">        @throws Exception
+</span></span></span><span class="line"><span class="cl"><span class="s2">        &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">config</span> <span class="o">=</span> <span class="n">open_api_models</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 必填，您的 AccessKey ID,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_id</span><span class="o">=</span><span class="n">access_key_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 必填，您的 AccessKey Secret,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">access_key_secret</span><span class="o">=</span><span class="n">access_key_secret</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 访问的域名</span>
+</span></span><span class="line"><span class="cl">        <span class="n">config</span><span class="o">.</span><span class="n">endpoint</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;metrics.ap-southeast-1.aliyuncs.com&#39;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">Cms20190101Client</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nd">@staticmethod</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">parameter</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 工程代码泄露可能会导致AccessKey泄露，并威胁账号下所有资源的安全性。以下代码示例仅供参考，建议使用更安全的 STS 方式，更多鉴权访问方式请参见：https://help.aliyun.com/document_detail/378659.html</span>
+</span></span><span class="line"><span class="cl">        <span class="n">client</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">create_client</span><span class="p">(</span><span class="s1">&#39;xxxx&#39;</span><span class="p">,</span> <span class="s1">&#39;xxx&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">describe_metric_top_request</span> <span class="o">=</span> <span class="n">cms_20190101_models</span><span class="o">.</span><span class="n">DescribeMetricTopRequest</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">period</span><span class="o">=</span><span class="s1">&#39;2592000&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;acs_kvstore&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">metric_name</span><span class="o">=</span><span class="n">parameter</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">orderby</span><span class="o">=</span><span class="s1">&#39;Average&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">start_time</span><span class="o">=</span><span class="s1">&#39;2023-03-12 00:00:00&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">end_time</span><span class="o">=</span><span class="s1">&#39;2023-04-11 00:00:00&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">length</span><span class="o">=</span><span class="s1">&#39;100&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">runtime</span> <span class="o">=</span> <span class="n">util_models</span><span class="o">.</span><span class="n">RuntimeOptions</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 复制代码运行请自行打印 API 的返回值</span>
+</span></span><span class="line"><span class="cl">            <span class="n">data</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">describe_metric_top_with_options</span><span class="p">(</span><span class="n">describe_metric_top_request</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">data</span>
+</span></span><span class="line"><span class="cl">        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 如有需要，请打印 error</span>
+</span></span><span class="line"><span class="cl">            <span class="n">UtilClient</span><span class="o">.</span><span class="n">assert_as_string</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">get_host</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="k">global</span> <span class="n">host_list</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 打开 host.json 文件</span>
+</span></span><span class="line"><span class="cl">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;redis.json&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 读取文件中的 JSON 数据</span>
+</span></span><span class="line"><span class="cl">        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 输出读取到的数据</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">host_list</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">][</span><span class="s2">&#34;Instances&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">host_list</span> <span class="o">=</span> <span class="p">[{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span>
+</span></span><span class="line"><span class="cl">                  <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;ArchitectureType&#39;</span><span class="p">,</span> <span class="s1">&#39;EngineVersion&#39;</span><span class="p">,</span> <span class="s1">&#39;EndTime&#39;</span><span class="p">,</span> <span class="s1">&#39;ResourceGroupId&#39;</span><span class="p">,</span> <span class="s1">&#39;ZoneId&#39;</span><span class="p">,</span> <span class="s1">&#39;CreateTime&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="s1">&#39;VSwitchId&#39;</span><span class="p">,</span> <span class="s1">&#39;InstanceClass&#39;</span><span class="p">,</span> <span class="s1">&#39;ConnectionDomain&#39;</span><span class="p">,</span> <span class="s1">&#39;VpcId&#39;</span><span class="p">,</span> <span class="s1">&#39;ChargeType&#39;</span><span class="p">,</span> <span class="s1">&#39;NetworkType&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="s1">&#39;InstanceStatus&#39;</span><span class="p">,</span> <span class="s1">&#39;RegionId&#39;</span><span class="p">,</span> <span class="s1">&#39;InstanceType&#39;</span><span class="p">,</span> <span class="s1">&#39;SecondaryZoneId&#39;</span><span class="p">)}</span>
+</span></span><span class="line"><span class="cl">                 <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span>
+</span></span><span class="line"><span class="cl">                 <span class="n">host_list</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">host_list</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">ecs_dashboard</span><span class="p">(</span><span class="n">parameter</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data_ecs</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">response_dict</span> <span class="o">=</span> <span class="n">data_ecs</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">to_map</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data_Datapoints</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response_dict</span><span class="p">[</span><span class="s2">&#34;Datapoints&#34;</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">data_Datapoints</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">set_workbook</span><span class="p">(</span><span class="n">host_list_data</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;Capacity&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;InstanceId&#39;</span><span class="p">:</span> <span class="s1">&#39;r-xxxxx&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;InstanceName&#39;</span><span class="p">:</span> <span class="s1">&#39;大数据&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;PrivateIp&#39;</span><span class="p">:</span> <span class="s1">&#39;xxxxxxxx&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="s1">&#39;Memory_Average&#39;</span><span class="p">:</span> <span class="mf">15.719</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 新建一个 Workbook 对象</span>
+</span></span><span class="line"><span class="cl">    <span class="n">wb</span> <span class="o">=</span> <span class="n">Workbook</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 获取第一个 sheet</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ws</span> <span class="o">=</span> <span class="n">wb</span><span class="o">.</span><span class="n">active</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 获取最大行数</span>
+</span></span><span class="line"><span class="cl">    <span class="n">max_row</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">max_row</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 设置表头</span>
+</span></span><span class="line"><span class="cl">    <span class="n">headers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">header</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ws</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">header</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 写入数据</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">row_data</span> <span class="ow">in</span> <span class="n">host_list_data</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 写入数据</span>
+</span></span><span class="line"><span class="cl">        <span class="n">max_row</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">header</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row_data</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="n">column_letter</span> <span class="o">=</span> <span class="n">get_column_letter</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">cell_address</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_letter</span><span class="p">,</span> <span class="n">max_row</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ws</span><span class="p">[</span><span class="n">cell_address</span><span class="p">]</span> <span class="o">=</span> <span class="n">row_data</span><span class="p">[</span><span class="n">header</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 保存文件</span>
+</span></span><span class="line"><span class="cl">    <span class="n">wb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;Redis_服务器资源.xlsx&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">host_list_data</span> <span class="o">=</span> <span class="n">get_host</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">redis_monitor_list_Memory</span> <span class="o">=</span> <span class="n">ecs_dashboard</span><span class="p">(</span><span class="s2">&#34;StandardMemoryUsage&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 匹配CPU</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 遍历 list2，匹配 instanceId 并添加 Average 值到 list1 的对应字典中</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">d2</span> <span class="ow">in</span> <span class="n">redis_monitor_list_Memory</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">d1</span> <span class="ow">in</span> <span class="n">host_list_data</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="n">d1</span><span class="p">[</span><span class="s1">&#39;InstanceId&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">d2</span><span class="p">[</span><span class="s1">&#39;instanceId&#39;</span><span class="p">]:</span>
+</span></span><span class="line"><span class="cl">                <span class="n">d1</span><span class="p">[</span><span class="s1">&#39;Memory_Average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d2</span><span class="p">[</span><span class="s1">&#39;Average&#39;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># # 输出更新后的 list1</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lst_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">host_list_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;Memory_Average&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">host_list_data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">set_workbook</span><span class="p">(</span><span class="n">lst_sorted</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/2afc4c4ea0da4113a16e0cb56620bc92.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/python/">python</a>
+        
+            <a href="/tags/%E9%98%BF%E9%87%8C%E4%BA%91/">阿里云</a>
+        
+            <a href="/tags/redis/">redis</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/flask%E8%BD%BB%E6%9D%BE%E6%9E%84%E5%BB%BA%E9%92%89%E9%92%89%E6%8E%A5%E5%8F%A3%E6%A8%A1%E7%89%88%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%81%E7%A8%8B%E4%BC%98%E5%8C%96/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/101.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/101.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Flask轻松构建钉钉接口模版实现自动化流程优化</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/python%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%9B%BE%E7%89%87%E4%B8%8B%E8%BD%BD%E5%8F%8A%E5%8E%BB%E9%87%8D%E5%A4%84%E7%90%86/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/19.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/19.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python实现批量图片下载及去重处理</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/python%E7%88%AC%E5%8F%96%E5%8A%A8%E6%BC%AB%E7%BE%8E%E5%A5%B3/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/99.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/99.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python爬取动漫美女</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/python%E8%8E%B7%E5%8F%96zabbix%E9%97%AE%E9%A2%98%E8%A7%A6%E5%8F%91%E5%99%A8/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/16.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/16.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python获取zabbix问题触发器</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/python%E8%AE%BF%E9%97%AEapollo%E8%8E%B7%E5%8F%96%E9%85%8D%E7%BD%AE/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/31.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/31.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python访问Apollo获取配置</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

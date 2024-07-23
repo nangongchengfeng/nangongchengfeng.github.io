@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='是什么一句话：有点类似我们里面的和文件先来看看的理念：将运用与运行的环境打包形成容器运行，运行可以伴随着容器，但是我们对数据的要求希望是持久化的容器之间希望有可能共享数据容器产生的数据，如果不通过生成。。。。。。。'>
+<title>Docker容器数据卷介绍和命令</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7%E4%BB%8B%E7%BB%8D%E5%92%8C%E5%91%BD%E4%BB%A4/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Docker容器数据卷介绍和命令'>
+<meta property='og:description' content='是什么一句话：有点类似我们里面的和文件先来看看的理念：将运用与运行的环境打包形成容器运行，运行可以伴随着容器，但是我们对数据的要求希望是持久化的容器之间希望有可能共享数据容器产生的数据，如果不通过生成。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7%E4%BB%8B%E7%BB%8D%E5%92%8C%E5%91%BD%E4%BB%A4/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='数据' /><meta property='article:tag' content='数据卷' /><meta property='article:tag' content='介绍' /><meta property='article:tag' content='命令' /><meta property='article:published_time' content='2019-12-12T11:41:16&#43;00:00'/><meta property='article:modified_time' content='2019-12-12T11:41:16&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/71.jpg' />
+<meta name="twitter:title" content="Docker容器数据卷介绍和命令">
+<meta name="twitter:description" content="是什么一句话：有点类似我们里面的和文件先来看看的理念：将运用与运行的环境打包形成容器运行，运行可以伴随着容器，但是我们对数据的要求希望是持久化的容器之间希望有可能共享数据容器产生的数据，如果不通过生成。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/71.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#直接命令添加">直接命令添加</a>
+      <ol>
+        <li><a href="#1命令"><strong>1、命令</strong></a></li>
+        <li><a href="#httpimageownittopcsdn20191212104146330png"><img src="http://image.ownit.top/csdn/20191212104146330.png" alt=""></a></li>
+        <li><a href="#2查看数据卷是否挂载成功"><strong>2、查看数据卷是否挂载成功</strong></a></li>
+        <li><a href="#3容器和宿主机之间数据共享"><strong>3、容器和宿主机之间数据共享</strong></a></li>
+        <li><a href="#4容器停止退出后主机修改后数据是否同步完全同步"><strong>4、容器停止退出后，主机修改后数据是否同步【完全同步】</strong></a></li>
+        <li><a href="#5命令带权限"><strong>5、命令(带权限)</strong></a></li>
+        <li><a href="#httpimageownittopcsdn20191212105055534png"><img src="http://image.ownit.top/csdn/20191212105055534.png" alt=""></a></li>
+      </ol>
+    </li>
+    <li><a href="#dockerfile添加">DockerFile添加</a>
+      <ol>
+        <li><a href="#httpimageownittopcsdn20191212112428988png"><img src="http://image.ownit.top/csdn/20191212112428988.png" alt=""></a></li>
+        <li><a href="#7主机对应默认地址">7、主机对应默认地址</a></li>
+        <li><a href="#备注">备注</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#是什么-1">是什么</a></li>
+    <li><a href="#总体介绍">总体介绍</a></li>
+    <li><a href="#容器间传递共享--volumes-from">容器间传递共享(&ndash;volumes-from)</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7%E4%BB%8B%E7%BB%8D%E5%92%8C%E5%91%BD%E4%BB%A4/">
+                
+                    <img src="http://image.ownit.top/4kdongman/71.jpg" loading="lazy" alt="Featured image of post Docker容器数据卷介绍和命令" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/docker/" >
+                Docker
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/docker%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%8D%B7%E4%BB%8B%E7%BB%8D%E5%92%8C%E5%91%BD%E4%BB%A4/">Docker容器数据卷介绍和命令</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            是什么一句话：有点类似我们里面的和文件先来看看的理念：将运用与运行的环境打包形成容器运行，运行可以伴随着容器，但是我们对数据的要求希望是持久化的容器之间希望有可能共享数据容器产生的数据，如果不通过生成。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Dec 12, 2019</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 1 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="是什么">是什么</h1>
+<p><strong>一句话：有点类似我们Redis里面的rdb和aof文件</strong></p>
+<p>先来看看Docker的理念：</p>
+<p>*  将运用与运行的环境打包形成容器运行 ，运行可以伴随着容器，但是我们对数据的要求希望是持久化的</p>
+<p>*  容器之间希望有可能共享数据</p>
+<p>Docker容器产生的数据，如果不通过docker commit生成新的镜像，使得数据做为镜像的一部分保存下来，</p>
+<p>那么当容器删除后，数据自然也就没有了。</p>
+<p>为了能保存数据在docker中我们使用卷。</p>
+<h1 id="能干嘛">能干嘛</h1>
+<ol>
+<li><strong>容器的持久化</strong></li>
+<li><strong>容器间继承+共享数据</strong></li>
+</ol>
+<p>卷就是目录或文件，存在于一个或多个容器中，由docker挂载到容器，但不属于联合文件系统，因此能够绕过Union File System提供一些用于持续存储或共享数据的特性：</p>
+<p> 卷的设计目的就是数据的持久化，完全独立于容器的生存周期，因此Docker不会在容器删除时删除其挂载的数据卷</p>
+<p>特点：</p>
+<ul>
+<li>1：数据卷可在容器之间共享或重用数据</li>
+<li>2：卷中的更改可以直接生效</li>
+<li>3：数据卷中的更改不会包含在镜像的更新中</li>
+<li>4：数据卷的生命周期一直持续到没有容器使用它为止</li>
+</ul>
+<h1 id="数据卷">数据卷</h1>
+<p> </p>
+<h2 id="直接命令添加">直接命令添加</h2>
+<h3 id="1命令"><strong>1、命令</strong></h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> docker run -it -v /宿主机绝对路径目录:/容器内目录      镜像名
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">docker run -it -v /wei:/wei centos
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="httpimageownittopcsdn20191212104146330png"><img src="http://image.ownit.top/csdn/20191212104146330.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h3>
+<h3 id="2查看数据卷是否挂载成功"><strong>2、查看数据卷是否挂载成功</strong></h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">docker inspect df6f397beedd
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20191212104551815.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="3容器和宿主机之间数据共享"><strong>3、容器和宿主机之间数据共享</strong></h3>
+<p><img src="http://image.ownit.top/csdn/20191212104652698.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="4容器停止退出后主机修改后数据是否同步完全同步"><strong>4、容器停止退出后，主机修改后数据是否同步【完全同步】</strong></h3>
+<p><img src="http://image.ownit.top/csdn/20191212104715515.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="5命令带权限"><strong>5、命令(带权限)</strong></h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> docker run -it -v /宿主机绝对路径目录:/容器内目录:ro 镜像名
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="httpimageownittopcsdn20191212105055534png"><img src="http://image.ownit.top/csdn/20191212105055534.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h3>
+<h2 id="dockerfile添加">DockerFile添加</h2>
+<p><strong>1、根目录下新建mydocker文件夹并进入</strong></p>
+<p><strong>2、可在Dockerfile中使用VOLUME指令来给镜像添加一个或多个数据卷</strong></p>
+<p>VOLUME[&quot;/dataVolumeContainer&quot;,&quot;/dataVolumeContainer2&quot;,&quot;/dataVolumeContainer3&quot;]</p>
+<p>说明：</p>
+<p>出于可移植和分享的考虑，用-v 主机目录:容器目录这种方法不能够直接在Dockerfile中实现。</p>
+<p>由于宿主机目录是依赖于特定宿主机的，并不能够保证在所有的宿主机上都存在这样的特定目录。</p>
+<p><strong>3、File构建</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># volume test</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">FROM centos
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">VOLUME <span class="o">[</span><span class="s2">&#34;/dataVolumeContainer1&#34;</span>,<span class="s2">&#34;/dataVolumeContainer2&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">CMD <span class="nb">echo</span> <span class="s2">&#34;finished,--------success1&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">CMD /bin/bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20191212112407408.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>4、build后生成镜像</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> docker build --f /root/heian -t heian/centos .
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="httpimageownittopcsdn20191212112428988png"><img src="http://image.ownit.top/csdn/20191212112428988.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h3>
+<p><strong>5、run容器</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212112644761.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>6、通过上述步骤，容器内的卷目录地址已经知道对应的主机目录地址哪？？</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212113001978.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="7主机对应默认地址">7、主机对应默认地址</h3>
+<p>数据完全可以同步</p>
+<h3 id="备注">备注</h3>
+<p>Docker挂载主机目录Docker访问出现cannot open directory .: Permission denied</p>
+<p>解决办法：在挂载目录后多加一个&ndash;privileged=true参数即可</p>
+<h1 id="数据卷容器">数据卷容器</h1>
+<h2 id="是什么-1">是什么</h2>
+<p>命名的容器挂载数据卷，其它容器通过挂载这个(父容器)实现数据共享，挂载数据卷的容器，称之为数据卷容器</p>
+<h2 id="总体介绍">总体介绍</h2>
+<p><strong>1、以上一步新建的镜像heian/centos为模板并运行容器dc01/dc02/dc03</strong></p>
+<p><strong>2、它们已经具有容器卷</strong></p>
+<ul>
+<li>/dataVolumeContainer1</li>
+<li>/dataVolumeContainer2</li>
+</ul>
+<h2 id="容器间传递共享--volumes-from">容器间传递共享(&ndash;volumes-from)</h2>
+<p><strong>1、先启动一个父容器dc01，在dataVolumeContainer2新增内容</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212113637576.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>2、dc02/dc03继承自dc01</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">docker run -it --name dc02 --volumes-from dc01 zzyy/centos
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>dc02/dc03分别在dataVolumeContainer2各自新增内容</p>
+<p><img src="http://image.ownit.top/csdn/20191212113748430.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>3、回到dc01可以看到02/03各自添加的都能共享了</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212113847101.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>4、删除dc01，dc02修改后dc03可否访问</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212113914777.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>5、删除dc02后dc03可否访问</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212113937477.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>再进一步</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212113954142.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>6、新建dc04继承dc03后再删除dc03</strong></p>
+<p><img src="http://image.ownit.top/csdn/20191212114012974.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>结论：容器之间配置信息的传递，数据卷的生命周期一直持续到没有容器使用它为止</strong></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE/">数据</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%8D%B7/">数据卷</a>
+        
+            <a href="/tags/%E4%BB%8B%E7%BB%8D/">介绍</a>
+        
+            <a href="/tags/%E5%91%BD%E4%BB%A4/">命令</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/dockerfile%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84%E4%BF%9D%E7%95%99%E5%AD%97%E6%8C%87%E4%BB%A4/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/102.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/102.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">DockerFile体系结构(保留字指令)</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker-%E9%95%9C%E5%83%8F%E4%BB%8B%E7%BB%8D%E5%92%8C%E5%91%BD%E4%BB%A4/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/49.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/49.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker 镜像介绍和命令</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/48.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/48.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker命令总结</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E5%AE%B9%E5%99%A8%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/10.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/10.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker容器常用命令</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E9%95%9C%E5%83%8F%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/63.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/63.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker镜像常用命令</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

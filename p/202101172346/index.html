@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='当主从数据不一致，怎么解决？？？在使用时，有时候会担心，如果主库和备库的数据不一致，怎么办？以前是重新停掉从库，重新做主从，但是耗费时间太多最近找到了一个的工具，，可以实现对多库数据的对比。下面主从原。。。。。。。'>
+<title>当MySQL主从数据不一致，怎么解决？？？</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202101172346/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='当MySQL主从数据不一致，怎么解决？？？'>
+<meta property='og:description' content='当主从数据不一致，怎么解决？？？在使用时，有时候会担心，如果主库和备库的数据不一致，怎么办？以前是重新停掉从库，重新做主从，但是耗费时间太多最近找到了一个的工具，，可以实现对多库数据的对比。下面主从原。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202101172346/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='MySQL' /><meta property='article:tag' content='mysql' /><meta property='article:tag' content='数据库' /><meta property='article:tag' content='linux' /><meta property='article:published_time' content='2021-01-17T23:46:12&#43;00:00'/><meta property='article:modified_time' content='2021-01-17T23:46:12&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/53.jpg' />
+<meta name="twitter:title" content="当MySQL主从数据不一致，怎么解决？？？">
+<meta name="twitter:description" content="当主从数据不一致，怎么解决？？？在使用时，有时候会担心，如果主库和备库的数据不一致，怎么办？以前是重新停掉从库，重新做主从，但是耗费时间太多最近找到了一个的工具，，可以实现对多库数据的对比。下面主从原。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/53.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#当mysql主从数据不一致怎么解决">当MySQL主从数据不一致，怎么解决？？？</a></li>
+    <li><a href="#下面mysql主从原理">下面MySQL主从原理</a></li>
+    <li><a href="#环境构建">环境构建</a></li>
+  </ol>
+
+  <ol>
+    <li><a href="#安装工具">安装工具：</a></li>
+    <li><a href="#停掉主从同步">停掉主从同步</a></li>
+    <li><a href="#修改主库数据">修改主库数据</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202101172346/">
+                
+                    <img src="/../../title_pic/53.jpg" loading="lazy" alt="Featured image of post 当MySQL主从数据不一致，怎么解决？？？" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202101172346/">当MySQL主从数据不一致，怎么解决？？？</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            当主从数据不一致，怎么解决？？？在使用时，有时候会担心，如果主库和备库的数据不一致，怎么办？以前是重新停掉从库，重新做主从，但是耗费时间太多最近找到了一个的工具，，可以实现对多库数据的对比。下面主从原。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jan 17, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="当mysql主从数据不一致怎么解决">当MySQL主从数据不一致，怎么解决？？？</h2>
+<ul>
+<li>
+<p>在使用mysql replication时，有时候会担心，如果主库和备库的数据不一致，怎么办？以前是重新停掉从库，重新做主从，但是耗费时间太多</p>
+</li>
+<li>
+<p>最近找到了一个mysql的工具，<code>mysqldbcompare</code>，可以实现对多库数据的对比。</p>
+</li>
+</ul>
+<h2 id="下面mysql主从原理">下面MySQL主从原理</h2>
+<p>一、主从复制</p>
+<p>MySQL数据库复制操作大致可以分成三个步骤：</p>
+<p>1. 主服务器将数据的改变记录到二进制日志（binary log）中。</p>
+<p>2. 从服务器将主服务器的binary log events 复制到它的中继日志（relay log）中。</p>
+<p>3. 从服务器重做中继日志中的事件，将数据的改变与从服务器保持同步。</p>
+<p>首先，主服务器会记录二进制日志，每个事务更新数据完成之前，主服务器将这些操作的信息记录在二进制日志里面在事件写入二进制日志完成后主服务器通知 存储引擎提交事务。</p>
+<p>准备： 了解binlog日志，MySQL用户-权限 mysql服务器配置复制不难，但是因为场景不同可能会存在一定的差异化，总的来说分为一下几步：</p>
+<p>1. 在服务器上创建复制账号。</p>
+<p>2. 通知备库连接到主库并从主库复制数据。</p>
+<p><img src="/../../image/20191219104313635.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>二、主从一致性问题校验</p>
+<p>在理想情况下，备库和主库的数据应该是完全一样的。但事实上备库可能发生错误并导致数据不一致。即使没有明显的错误，备库同样可能因为MySQL自身的特性导致数据不一致，例如MySQL的Bug感、网络中断、服务器崩溃，非正常关闭或者其他一些错误。 按照我们的经验来看，主备一致应该是一种规范，而不是例外，也就是说，检查你的主备库一致性应该是一个日常工作，特别是当使用备库来做备份时尤为重要，因为肯定不希望从一个已经损坏的备库里获得备份数据。</p>
+<p><strong>产生原因：</strong></p>
+<p>1、网络中断</p>
+<p>2、服务器产生了问题</p>
+<p>3、mysql自带bug</p>
+<p>4、从库进行了非正当的操作（比如从库进行了添加，删除，修改，主库就会断开）</p>
+<h2 id="环境构建">环境构建</h2>
+<p>这边我才用docker来模拟，环境很快构建完成来演示。</p>
+<p>下面是链接，可以参考</p>
+<h1 id="docker安装mysql集群读写分离httpsblogcsdnnetheian_99articledetails103609082"><a class="link" href="https://blog.csdn.net/heian_99/article/details/103609082"  target="_blank" rel="noopener"
+    >Docker安装MySQL集群【读写分离】</a></h1>
+<p><strong>MySQL：5.7</strong></p>
+<p><img src="/../../image/20210117223406449.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="/../../image/20210117230333924.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>环境以及构建完成，下面开始试验吧。</p>
+<h2 id="安装工具">安装工具：</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@db03 ~<span class="o">]</span><span class="c1"># wget  https://downloads.mysql.com/archives/get/p/30/file/mysql-utilities-1.6.5-1.el7.noarch.rpm</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@db03 ~<span class="o">]</span><span class="c1"># wget https://downloads.mysql.com/archives/get/p/29/file/mysql-connector-python-2.1.7-1.el7.x86_64.rpm</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@db03 ~<span class="o">]</span><span class="c1"># yum -y localinstall mysql-connector-python-2.1.7-1.el7.x86_64.rpm</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@db03 ~<span class="o">]</span><span class="c1"># yum -y localinstall mysql-utilities-1.6.5-1.el7.noarch.rpm</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>检查两个实例的数据：</p>
+<p>可以看到mster和salver都有CMS库，可以同步数据。</p>
+<p><img src="/../../image/20210117230712635.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>现在数据都是一致的。现在对比看一下。</p>
+<blockquote>
+<p><code>mysqldbcompare</code>的语法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl">$ mysqldbcompare --server1=user:pass@host:port:socket --server2=user:pass@host:port:socket db1:db2
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>以上参数中：</p>
+<ul>
+<li><code>--server1</code>：MySQL服务器1配置。</li>
+<li><code>--server2</code>：MySQL服务器2配置。如果是同一服务器，<code>--server2</code>可以省略。</li>
+<li><code>db1:db2</code>：要比较的两个数据库。如果比较不同服务器上的同名数据库，可以省略<code>:db2</code>。</li>
+<li><code>--all</code>：比较所有两服务器上所有的同名数据库。<code>--exclude</code>排除无需比较的数据库。</li>
+<li><code>--run-all-tests</code>：运行完整比较，遇到第一次差异时不停止。</li>
+<li><code>--changes-for=</code>：修改对象。例如<code>--changes-for=server2</code>，那么对比以<code>sever1</code>为主，生成的差异的修改也是针对<code>server2</code>的对象的修改。</li>
+<li><code>-d DIFFTYPE</code>,<code>--difftype=DIFFTYPE</code>：差异的信息显示的方式，有<code>[unified|context|differ|sql]</code>，默认是<code>unified</code>。如果使用sql，那么就直接生成差异的SQL，这样非常方便。</li>
+<li><code>--show-reverse</code>：在生成的差异修改里面，同时会包含<code>server2</code>和<code>server1</code>的修改。</li>
+<li><code>--skip-table-options</code>：保持表的选项不变，即对比的差异里面不包括<code>表名</code>、<code>AUTO_INCREMENT</code>、<code>ENGINE</code>、<code>CHARSET</code>等差异。</li>
+<li><code>--skip-diff</code>：跳过对象定义比较检查。所谓对象定义，就是<code>CREATE</code>语句<code>()</code>里面的部分，<code>--skip-table-options</code>是()外面的部分。</li>
+<li><code>--skip-object-compare</code>：默认情况下，先检查两个数据库中相互缺失的对象，再对都存在对象间的差异。这个参数的作用就是，跳过第一步，不检查相互缺失的对象。</li>
+<li><code>--skip-checksum-table</code>：数据一致性验证时跳过<code>CHECKSUM TABLE</code>。</li>
+<li><code>--skip-data-check</code>：跳过数据一致性验证。</li>
+<li><code>--skip-row-count</code>：跳过字段数量检查。</li>
+</ul>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"> mysqldbcompare --server1<span class="o">=</span>root:root@127.0.0.1:3307 --server2<span class="o">=</span>root:root@127.0.0.1:3316 --changes-for<span class="o">=</span>server2 --difftype<span class="o">=</span>sql --run-all-tests --all &gt; mysqldbcompare_diff_2.sql
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/20210117232019824.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="/../../image/20210117232030945.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>检查没有错误</p>
+<h2 id="停掉主从同步">停掉主从同步</h2>
+<p>从库执行</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">stop slave<span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="修改主库数据">修改主库数据</h2>
+<p><img src="/../../image/20210117232844565.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>看这边已经对比出修改的字段了</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">UPDATE <span class="sb">`</span>CMS<span class="sb">`</span>.<span class="sb">`</span>CI_CHANNEL<span class="sb">`</span> SET <span class="sb">`</span>SHORT_NAME<span class="sb">`</span> <span class="o">=</span> <span class="s1">&#39;welcome heian&#39;</span>, <span class="sb">`</span>UPDATE_TIME<span class="sb">`</span> <span class="o">=</span> <span class="s1">&#39;2021-01-14 15:36:59&#39;</span> WHERE <span class="sb">`</span>ID<span class="sb">`</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p> </p>
+<p>我已经在从库执行这条语句</p>
+<p><img src="/../../image/20210117233123762.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="/../../image/20210117233200945.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p>删除大量的数据做对比</p>
+<p><img src="/../../image/20210117234437196.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><img src="/../../image/20210117234500153.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<p>数据就可以恢复了</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/mysql/">mysql</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+            <a href="/tags/linux/">linux</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202101181233/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/19.jpg" loading="lazy" data-key="202101181233" data-hash="/../../title_pic/19.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">当MySQL主从数据不一致，怎么解决？？？（2）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405271605/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202405271605" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MongoDB数据库（10亿条数据）清理策略- 自动化过期数据删除实战</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405241437/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/45.jpg" loading="lazy" data-key="202405241437" data-hash="/../../title_pic/45.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">自动化重置数据库功能的探索与实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404081616/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/66.jpg" loading="lazy" data-key="202404081616" data-hash="/../../title_pic/66.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MongoDB快照（LVM）业务场景应用实战</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202101181952/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202101181952" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL容器部署及数据持久化（主从复制）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

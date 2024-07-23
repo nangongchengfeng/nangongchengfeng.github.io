@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='方案一基于快照进行备份切换介绍数据库本身并不支持快照功能支持因此快照备份是指通过文件系统支持的快照功能对数据库进行备份备份的前提是将所有数据库文件放在同一文件分区中，然后对该分区进行快照操作是系统下对。。。。。。。'>
+<title>“实时数据同步：构建高效的 MySQL 数据同步方案“</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202306011053/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='“实时数据同步：构建高效的 MySQL 数据同步方案“'>
+<meta property='og:description' content='方案一基于快照进行备份切换介绍数据库本身并不支持快照功能支持因此快照备份是指通过文件系统支持的快照功能对数据库进行备份备份的前提是将所有数据库文件放在同一文件分区中，然后对该分区进行快照操作是系统下对。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202306011053/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='mysql' /><meta property='article:tag' content='数据库' /><meta property='article:published_time' content='2023-06-01T10:53:20&#43;00:00'/><meta property='article:modified_time' content='2023-06-01T10:53:20&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/20.jpg' />
+<meta name="twitter:title" content="“实时数据同步：构建高效的 MySQL 数据同步方案“">
+<meta name="twitter:description" content="方案一基于快照进行备份切换介绍数据库本身并不支持快照功能支持因此快照备份是指通过文件系统支持的快照功能对数据库进行备份备份的前提是将所有数据库文件放在同一文件分区中，然后对该分区进行快照操作是系统下对。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/20.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#方案一-基于lvm快照进行备份切换">方案一 基于LVM快照进行备份切换</a>
+      <ol>
+        <li><a href="#介绍">介绍:</a></li>
+        <li><a href="#实战分盘">实战分盘</a></li>
+        <li><a href="#先决条件和配置">先决条件和配置</a></li>
+        <li><a href="#优缺点">优缺点:</a></li>
+        <li><a href="#步骤">步骤</a></li>
+      </ol>
+    </li>
+    <li><a href="#方案二-基于检测binlog来进行数据同步">方案二 基于检测binlog来进行数据同步:</a>
+      <ol>
+        <li><a href="#介绍-1">介绍:</a></li>
+        <li><a href="#原理">原理:</a></li>
+        <li><a href="#优缺点-1">优缺点:</a></li>
+        <li><a href="#关键步骤">关键步骤:</a></li>
+      </ol>
+    </li>
+    <li><a href="#两种方案针对报表业务的解决方案">两种方案针对报表业务的解决方案</a>
+      <ol>
+        <li><a href="#lvm快照备份">lvm快照备份</a></li>
+        <li><a href="#biglog检测增量">biglog检测增量</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202306011053/">
+                
+                    <img src="/../../title_pic/20.jpg" loading="lazy" alt="Featured image of post “实时数据同步：构建高效的 MySQL 数据同步方案“" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/mysql/" >
+                MySQL
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202306011053/">“实时数据同步：构建高效的 MySQL 数据同步方案“</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            方案一基于快照进行备份切换介绍数据库本身并不支持快照功能支持因此快照备份是指通过文件系统支持的快照功能对数据库进行备份备份的前提是将所有数据库文件放在同一文件分区中，然后对该分区进行快照操作是系统下对。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jun 01, 2023</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 6 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="方案一-基于lvm快照进行备份切换">方案一 基于LVM快照进行备份切换</h2>
+<h3 id="介绍">介绍:</h3>
+<p>MySQL数据库本身并不支持快照功能(sqlServer支持) 因此快照备份是指通过文件系统支持的快照功能对数据库进行备份 备份的前提是将所有数据库文件放在同一文件分区中，然后对该分区进行快照操作</p>
+<p>LVM是LINUX系统下对磁盘分区进行管理的一种机制,LVM使用写时复制(copy-on-write)的技术来创建快照——例如，当创建一个快照时，仅复制原始卷中数据的元数据(meta data 注：data block)，并不会有数据的物理操作，因此 快照的创建过程是非常快的.
+<img src="/../../image/725c73b30def40ea9e888c21641573f4.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+以下是关于pvcreate、vgcreate和lvcreate命令的解释和它们在逻辑卷管理过程中的关系图：</p>
+<ul>
+<li>
+<p>pvcreate：pvcreate命令用于创建物理卷（Physical Volume，PV）。物理卷是硬盘或分区的逻辑卷管理（LVM）组件，用于存储数据。pvcreate命令会将指定的硬盘或分区标记为物理卷，并准备其用于逻辑卷的创建。</p>
+</li>
+<li>
+<p>vgcreate：vgcreate命令用于创建卷组（Volume Group，VG）。卷组是物理卷的逻辑分组，它允许将多个物理卷组织在一起以形成一个大容量的存储池。vgcreate命令会将多个物理卷组合成一个卷组，并为该卷组分配一个唯一的名称。</p>
+</li>
+<li>
+<p>lvcreate：lvcreate命令用于创建逻辑卷（Logical Volume，LV）。逻辑卷是卷组中的逻辑存储单元，类似于传统的分区。逻辑卷可以根据需要调整大小，并用于创建文件系统或挂载其他文件系统。lvcreate命令会在指定的卷组中创建一个逻辑卷，并为其分配大小和名称。</p>
+</li>
+</ul>
+<p>下面是它们之间的关系图：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">+------------------------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span>        pvcreate         <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>   <span class="o">(</span>创建物理卷，PV<span class="o">)</span>      <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+-----------<span class="p">|</span>------------+
+</span></span><span class="line"><span class="cl">            <span class="p">|</span>
+</span></span><span class="line"><span class="cl">            v
+</span></span><span class="line"><span class="cl">+------------------------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span>        vgcreate         <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>   <span class="o">(</span>创建卷组，VG<span class="o">)</span>        <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+-----------<span class="p">|</span>------------+
+</span></span><span class="line"><span class="cl">            <span class="p">|</span>
+</span></span><span class="line"><span class="cl">            v
+</span></span><span class="line"><span class="cl">+------------------------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span>        lvcreate         <span class="p">|</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>   <span class="o">(</span>创建逻辑卷，LV<span class="o">)</span>      <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+------------------------+
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="实战分盘">实战分盘</h3>
+<p>假设您要使用一块10TB的磁盘来创建逻辑卷管理（LVM）结构，以下是使用pvcreate、vgcreate和lvcreate的命令和解释：</p>
+<ol>
+<li>pvcreate：创建物理卷（Physical Volume，PV）
+命令：pvcreate /dev/sdX
+解释：使用pvcreate命令创建物理卷时，将/dev/sdX替换为您要使用的实际磁盘设备路径，例如/dev/sda。该命令会将磁盘设备标记为物理卷，以便用于逻辑卷的创建。</li>
+<li>vgcreate：创建卷组（Volume Group，VG）
+命令：vgcreate vg_name /dev/sdX
+解释：使用vgcreate命令创建卷组时，将vg_name替换为您想要为卷组指定的名称，/dev/sdX为已创建物理卷的磁盘设备路径。该命令将一个或多个物理卷组合成一个卷组，以便在其中创建逻辑卷。</li>
+<li>lvcreate：创建逻辑卷（Logical Volume，LV）
+命令：lvcreate -L size -n lv_name vg_name
+解释：使用lvcreate命令创建逻辑卷时，可以使用以下参数：
+-L size：指定逻辑卷的大小，可以使用单位（如G、M、T）来表示大小。
+例如，-L 5G表示创建一个大小为5GB的逻辑卷。
+-n lv_name：指定逻辑卷的名称，替换lv_name为您想要为逻辑卷指定的名称。
+vg_name：指定逻辑卷所属的卷组名称。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">pvcreate /dev/sdX
+</span></span><span class="line"><span class="cl">vgcreate vg_name /dev/sdX
+</span></span><span class="line"><span class="cl">lvcreate -L 5T -n lv_name vg_name
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>当快照创建完成，原始卷上
+有写操作时，快照会跟踪原始卷块的改变，将要改变的数据在改变之前 复制到快照预留的空间里，因此这个原理的实现叫做写时复制</p>
+<p><img src="/../../image/52166d0f66074147bb4854cb9601eaa8.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="先决条件和配置">先决条件和配置</h3>
+<ol>
+<li>所有的InnoDB文件(InnoDB的表空间文件和InnoDB的事务日志)必须是在单个逻辑卷(分区);
+你需要绝对的时间点一致性，LVM不能为多于一个卷做某个时间点一致的快照。(这是LVM的一个限制；其他一些系统没有这个问题。)</li>
+<li>必须在卷组中有足够的空闲空间来创建快照。需要多少取决于负载。当配置系统时，应该留一些未分配的空间以便后面做快照。</li>
+</ol>
+<h3 id="优缺点">优缺点:</h3>
+<blockquote>
+<p>优点：</p>
+<ol>
+<li>几乎是热备 (创建快照前把表上锁，创建完后立即释放)</li>
+<li>支持所有存储引擎</li>
+<li>备份速度快</li>
+<li>无需使用昂贵的商业软件(它是操作系统级别的)</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>无法预计服务停止时间</li>
+<li>数据如果分布在多个卷上比较麻烦 (针对存储级别而言)</li>
+</ol>
+</blockquote>
+<h3 id="步骤">步骤</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">## 创建lvm分区</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 创建LVM逻辑卷组</span>
+</span></span><span class="line"><span class="cl">vgcreate mysql /dev/sdb
+</span></span><span class="line"><span class="cl"><span class="c1"># 创建LV逻辑卷</span>
+</span></span><span class="line"><span class="cl">lvcreate -n lv_mysql -L 4G mysql
+</span></span><span class="line"><span class="cl"><span class="c1"># 格式化lvm分区</span>
+</span></span><span class="line"><span class="cl">mkfs.xfs /dev/mysql/lv_mysql
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">## 将当前数据迁移到逻辑卷上(因为只有逻辑卷上的数据才可以进行快照)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 停止数据库</span>
+</span></span><span class="line"><span class="cl">systemctl stop mysqld
+</span></span><span class="line"><span class="cl"><span class="c1"># 备份所有数据文件到指定的目录文件下</span>
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> /var/lib/mysql
+</span></span><span class="line"><span class="cl">tar czf /backup/mysql/mysql.tar.gz *
+</span></span><span class="line"><span class="cl"><span class="c1"># 挂载逻辑卷到当前mysql的数据目录下</span>
+</span></span><span class="line"><span class="cl">mount /dev/mysql/lv_mysql /var/lib/mysql
+</span></span><span class="line"><span class="cl"><span class="c1"># 将备份的数据解压到数据目录下</span>
+</span></span><span class="line"><span class="cl">tar xf /backup/mysql/mysql.tar.gz -C /var/lib/mysql
+</span></span><span class="line"><span class="cl"><span class="c1"># 修改权限再重新启动</span>
+</span></span><span class="line"><span class="cl">chown mysql.mysql /var/lib/mysql
+</span></span><span class="line"><span class="cl">systemctl start mysqld
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">## 快照备份数据库</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 给数据库加读锁,防止快照时插入数据</span>
+</span></span><span class="line"><span class="cl">mysql&gt;flush table with <span class="nb">read</span> lock<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 给mysql的数据库所在的逻辑卷创建快照</span>
+</span></span><span class="line"><span class="cl">lvcreate -n lv_mysql_s -L 500M -s /dev/mysql/lv_mysql
+</span></span><span class="line"><span class="cl"><span class="c1"># 解锁</span>
+</span></span><span class="line"><span class="cl">mysql&gt; unlock tables<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 将逻辑卷挂载到目录里,这里创建一个临时目录</span>
+</span></span><span class="line"><span class="cl">mkdir /mnt/mysql
+</span></span><span class="line"><span class="cl">mount -o nouuid /dev/mysql/lv_mysql_s /mnt/mysql/
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">## 测试快照备份,此处是直接切换了datadir的路径,也可以将快照数据保存,恢复时直接用快照数据替换原路径数据</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 修改mysql datadir路径</span>
+</span></span><span class="line"><span class="cl">vim /etc/my.cnf
+</span></span><span class="line"><span class="cl"><span class="nv">datadir</span><span class="o">=</span>/mnt/mysql
+</span></span><span class="line"><span class="cl"><span class="c1"># 重启mysql</span>
+</span></span><span class="line"><span class="cl">systemctl restart mysqld
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">## 其他一些查看信息的命令</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看磁盘分区</span>
+</span></span><span class="line"><span class="cl">lsblk
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看挂载信息的命令</span>
+</span></span><span class="line"><span class="cl">df -h
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看逻辑分区信息命令</span>
+</span></span><span class="line"><span class="cl">lvdisplay
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="方案二-基于检测binlog来进行数据同步">方案二 基于检测binlog来进行数据同步:</h2>
+<h3 id="介绍-1">介绍:</h3>
+<p>利用canal进行基于MySQL数据库增量日志(binlog)解析，提供增量数据订阅和消费</p>
+<h3 id="原理">原理:</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">canal 工作原理
+</span></span><span class="line"><span class="cl">1. canal 模拟 MySQL slave 的交互协议，伪装自己为 MySQL slave ，向 MySQL master 发送dump 协议
+</span></span><span class="line"><span class="cl">2. MySQL master 收到 dump 请求，开始推送 binary log 给 slave <span class="o">(</span>即 canal <span class="o">)</span>
+</span></span><span class="line"><span class="cl">3. canal 解析 binary log 对象<span class="o">(</span>原始为 byte 流<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>官网示意图:
+<img src="/../../image/9ce5fb8a2d1847f2b2afd53fcd8892d4.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="优缺点-1">优缺点:</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">优点:
+</span></span><span class="line"><span class="cl">1. 相比于快照备份,不需要对源数据库重启或加锁.可以直接在代码层面实现
+</span></span><span class="line"><span class="cl">3. 与业务完全解耦,面向数据的,方便扩展,后续可以接入多个存储目的地
+</span></span><span class="line"><span class="cl">4. 可以对数据进行处理,可以分别根据DELETE,UPDATE,INSERT分别做不同的操作，并且可以根据biglog时间戳来更准确处理数据
+</span></span><span class="line"><span class="cl">缺点:
+</span></span><span class="line"><span class="cl">1. 需要单独维护<span class="sb">`</span>canal服务<span class="sb">`</span>和<span class="sb">`</span>客户端<span class="sb">`</span>.存在开发与维护成本.并且还需要占用服务器IO,内存,带宽资源
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="关键步骤">关键步骤:</h3>
+<p>确认已开启mysql的binlog,并且选择ROW(行)模式
+show variables like &rsquo;log_bin&rsquo;;
+安装canal(github直接可以下载),下载后根据QuickStart配置参数,运行
+编写客户端代码(不局限于java)</p>
+<ol>
+<li>与canal建立长连接</li>
+<li>循环获取数据，如果获取到则进行处理</li>
+<li>数据处理，可以接入多个目的地</li>
+</ol>
+<h2 id="两种方案针对报表业务的解决方案">两种方案针对报表业务的解决方案</h2>
+<h3 id="lvm快照备份">lvm快照备份</h3>
+<p>将备份切换过程编写为脚本，利用linux中corn定时执行脚本</p>
+<p>缺点：</p>
+<p>因为要锁表甚至重启，可能会影响到生产环境。
+本身对linux不是很通透，可能会出现一些预期之外的问题。</p>
+<h3 id="biglog检测增量">biglog检测增量</h3>
+<p>当天结束整点时，canal客户端根据超过整点后的数据的时间来新建第二天的表，同时将旧表数据复制到新表。这样可以确保每新建的一张表最多包含不大于当天的数据。</p>
+<p>缺点：</p>
+<p>因为表数据是翻倍再递增的，所以数据量比起之前要大很多
+新建表名影响到之前报表业务，之前报表也需要同步修改一下表名
+补充：</p>
+<p><img src="/../../image/cbfdddb817f249bc9426ffc3eb0b97f3.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+理想上来讲,应该是不会存在丢失消息,并且在当日结束后几秒内完成当日数据的隔离</p>
+<p>参考:</p>
+<p><a class="link" href="https://blog.csdn.net/qingsong3333/article/details/77418238"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/qingsong3333/article/details/77418238</a>
+<a class="link" href="https://help.aliyun.com/document_detail/131141.html"  target="_blank" rel="noopener"
+    >https://help.aliyun.com/document_detail/131141.html</a>
+<a class="link" href="https://github.com/alibaba/canal"  target="_blank" rel="noopener"
+    >https://github.com/alibaba/canal</a>
+《高性能MySQL(第3版)》</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/mysql/">mysql</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202205131140/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/02.jpg" loading="lazy" data-key="202205131140" data-hash="/../../title_pic/02.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Mysql主从同步复制（快速构建，基于CP数据备份 恢复）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202111011201/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/38.jpg" loading="lazy" data-key="202111011201" data-hash="/../../title_pic/38.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Xtrabackup工具进行在线主从搭建</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202101181952/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202101181952" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL容器部署及数据持久化（主从复制）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202006091735/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/24.jpg" loading="lazy" data-key="202006091735" data-hash="/../../title_pic/24.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">什么，你还不会Mysql主从复制？？？快来看</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202006091628/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/02.jpg" loading="lazy" data-key="202006091628" data-hash="/../../title_pic/02.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">MySQL二进制安装（版本：5.7.26）</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

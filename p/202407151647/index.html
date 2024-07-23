@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='、引言在当今数字化时代，网络安全已成为企业和个人用户关注的焦点。黑白名单作为一种有效的网络安全策略，允许我们精确控制对资源的访问权限。通过白名单，我们可以确保只有可信的地址能够访问敏感资源；而黑名单则。。。。。。。'>
+<title>使用Nginx OpenResty与Redis实现高效IP黑白名单管理</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202407151647/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='使用Nginx OpenResty与Redis实现高效IP黑白名单管理'>
+<meta property='og:description' content='、引言在当今数字化时代，网络安全已成为企业和个人用户关注的焦点。黑白名单作为一种有效的网络安全策略，允许我们精确控制对资源的访问权限。通过白名单，我们可以确保只有可信的地址能够访问敏感资源；而黑名单则。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202407151647/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='nginx' /><meta property='article:tag' content='openresty' /><meta property='article:tag' content='redis' /><meta property='article:published_time' content='2024-07-15T16:47:03&#43;00:00'/><meta property='article:modified_time' content='2024-07-15T16:47:03&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/18.jpg' />
+<meta name="twitter:title" content="使用Nginx OpenResty与Redis实现高效IP黑白名单管理">
+<meta name="twitter:description" content="、引言在当今数字化时代，网络安全已成为企业和个人用户关注的焦点。黑白名单作为一种有效的网络安全策略，允许我们精确控制对资源的访问权限。通过白名单，我们可以确保只有可信的地址能够访问敏感资源；而黑名单则。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/18.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1引言">1、引言</a></li>
+    <li><a href="#2简介">2、简介</a>
+      <ol>
+        <li><a href="#1什么是openresty">1、什么是OpenResty？</a></li>
+        <li><a href="#2openresty与nginx的关系">2、OpenResty与Nginx的关系</a></li>
+      </ol>
+    </li>
+    <li><a href="#3环境安装">3、环境安装</a>
+      <ol>
+        <li><a href="#1环境版本">1、环境版本</a></li>
+        <li><a href="#2环境安装">2、环境安装</a></li>
+      </ol>
+    </li>
+    <li><a href="#4白名单实现">4、白名单实现</a>
+      <ol>
+        <li><a href="#图例说明">图例说明：</a>
+          <ol>
+            <li><a href="#交互流程">交互流程：</a></li>
+          </ol>
+        </li>
+        <li><a href="#定义白名单的作用与重要性">定义白名单的作用与重要性</a></li>
+        <li><a href="#通过openresty-lua脚本实现白名单逻辑">通过OpenResty Lua脚本实现白名单逻辑</a></li>
+        <li><a href="#lua脚本实现步骤">Lua脚本实现步骤：</a></li>
+        <li><a href="#案例演示">案例演示</a></li>
+        <li><a href="#思路">思路</a></li>
+        <li><a href="#详细解释">详细解释</a></li>
+        <li><a href="#在nginx中配置lua脚本">在Nginx中配置Lua脚本</a></li>
+      </ol>
+    </li>
+    <li><a href="#5黑名单实现">5、黑名单实现</a>
+      <ol>
+        <li><a href="#黑名单的作用与场景">黑名单的作用与场景</a></li>
+        <li><a href="#使用lua脚本与redis实现动态ip封禁">使用Lua脚本与Redis实现动态IP封禁</a></li>
+        <li><a href="#案例演示-1">案例演示</a></li>
+        <li><a href="#思路-1">思路</a></li>
+        <li><a href="#nginx-配置文件">Nginx 配置文件</a>
+          <ol>
+            <li></li>
+          </ol>
+        </li>
+        <li><a href="#lua脚本-rulelua">Lua脚本 (rule.lua)</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202407151647/">
+                
+                    <img src="/../../title_pic/18.jpg" loading="lazy" alt="Featured image of post 使用Nginx OpenResty与Redis实现高效IP黑白名单管理" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/nginx/" >
+                Nginx
+            </a>
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202407151647/">使用Nginx OpenResty与Redis实现高效IP黑白名单管理</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            、引言在当今数字化时代，网络安全已成为企业和个人用户关注的焦点。黑白名单作为一种有效的网络安全策略，允许我们精确控制对资源的访问权限。通过白名单，我们可以确保只有可信的地址能够访问敏感资源；而黑名单则。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jul 15, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 12 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="1引言">1、引言</h2>
+<p>在当今数字化时代，网络安全已成为企业和个人用户关注的焦点。IP黑白名单作为一种有效的网络安全策略，允许我们精确控制对Web资源的访问权限。通过白名单，我们可以确保只有可信的IP地址能够访问敏感资源；而黑名单则可以阻止恶意IP的访问，从而减少安全风险。</p>
+<p>选择Nginx OpenResty与Redis作为实现黑白名单的解决方案，是基于以下几个原因：</p>
+<ul>
+<li><strong>高性能</strong>：Nginx以其轻量级和高性能著称，适合处理高并发请求。</li>
+<li><strong>灵活性</strong>：OpenResty通过集成Lua脚本，提供了强大的定制能力。</li>
+<li><strong>可扩展性</strong>：Redis作为一个内存数据结构存储，支持数据的快速读写，适合实现动态的黑白名单管理。</li>
+</ul>
+<h2 id="2简介">2、简介</h2>
+<h3 id="1什么是openresty">1、什么是OpenResty？</h3>
+<p>OpenResty是一个基于Nginx的全功能Web平台，它集成了一系列精心设计的Lua库、第三方模块和一个基于LuaJIT的轻量级Web框架。OpenResty的核心是Nginx，但它通过Lua语言扩展了Nginx的功能，使其能够构建能够处理超高并发的动态Web应用。</p>
+<h3 id="2openresty与nginx的关系">2、OpenResty与Nginx的关系</h3>
+<p>OpenResty是在Nginx的基础上构建的，它保留了Nginx的所有功能，并通过Lua语言扩展了其能力。这意味着你可以使用OpenResty来实现Nginx的所有功能，同时还能够利用Lua脚本来实现更复杂的业务逻辑。</p>
+<h2 id="3环境安装">3、环境安装</h2>
+<h3 id="1环境版本">1、环境版本</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">centos <span class="m">7</span> 
+</span></span><span class="line"><span class="cl">redis 7.2
+</span></span><span class="line"><span class="cl">nginx version: openresty/1.25.3.1
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2环境安装">2、环境安装</h3>
+<p>1、添加OpenResty仓库</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 由于公共库中找不到openresty，所以需要添加openresty的源仓库</span>
+</span></span><span class="line"><span class="cl">yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 注意，如果上面命令提示不存在,那就先安装一下</span>
+</span></span><span class="line"><span class="cl">yum install -y yum-utils
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol start="2">
+<li>安装OpenResty</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 安装openresty</span>
+</span></span><span class="line"><span class="cl">yum install -y openresty
+</span></span><span class="line"><span class="cl"><span class="c1"># 安装OpenResty管理工具，帮助我们安装第三方的Lua模块</span>
+</span></span><span class="line"><span class="cl">yum install -y openresty-opm
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>3、目录结构
+​ 默认安装在/usr/local/openresty
+<img src="/../../image/527f59876e9a41f0b055f08da40ff9d2.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+看到里面有一个nginx目录，进去可以看到跟我们平常用的nginx是一模一样的，OpenResty就是在Nginx基础上集成了一些Lua模块</p>
+<p>到这里我们就安装好了</p>
+<p>4、启动和运行
+OpenResty底层是基于Nginx的，查看OpenResty目录的nginx目录，结构与windows中安装的nginx基本一致</p>
+<p>5、安装配置redis</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo yum install redis -y
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Redis配置主要包括设置持久化选项、网络配置、安全性设置等。以下是一个基本的配置示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># redis.conf</span>
+</span></span><span class="line"><span class="cl">port <span class="m">6379</span>
+</span></span><span class="line"><span class="cl"><span class="nb">bind</span> 127.0.0.1
+</span></span><span class="line"><span class="cl">protected-mode yes
+</span></span><span class="line"><span class="cl">requirepass <span class="s2">&#34;yourpassword&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4白名单实现">4、白名单实现</h2>
+<p><img src="/../../image/8454272694fe4cbf98d5e3c36d3524ff.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="图例说明">图例说明：</h3>
+<ul>
+<li><strong>客户端</strong>：发送HTTP请求的用户或应用。</li>
+<li><strong>Nginx (OpenResty)</strong>：处理和管理HTTP请求，执行Lua脚本进行访问控制。</li>
+<li><strong>Lua脚本</strong>：在Nginx中运行，负责从Redis获取白名单并进行IP检查。</li>
+<li><strong>Redis</strong>：存储白名单数据，用于快速查询。</li>
+</ul>
+<h4 id="交互流程">交互流程：</h4>
+<ol>
+<li>客户端发送请求到Nginx。</li>
+<li>Nginx调用Lua脚本进行访问控制。</li>
+<li>Lua脚本连接Redis，并查询IP是否在白名单中。</li>
+<li>Lua脚本返回查询结果给Nginx。</li>
+<li>Nginx根据结果决定是否允许请求，并返回响应给客户端</li>
+</ol>
+<h3 id="定义白名单的作用与重要性">定义白名单的作用与重要性</h3>
+<p>白名单是一种安全策略，用于定义一组被信任的IP地址或实体，它们被允许访问特定的资源或服务。在Web应用中，白名单的作用尤为显著：</p>
+<ul>
+<li><strong>安全性增强</strong>：限制访问权限，仅允许特定的IP地址访问敏感资源。</li>
+<li><strong>防止滥用</strong>：减少恶意用户或爬虫对服务的滥用。</li>
+<li><strong>流量管理</strong>：通过控制访问源，更有效地管理网络流量。</li>
+</ul>
+<h3 id="通过openresty-lua脚本实现白名单逻辑">通过OpenResty Lua脚本实现白名单逻辑</h3>
+<p>在OpenResty中，我们可以使用Lua脚本来实现白名单逻辑。Lua脚本可以在Nginx的配置文件中直接编写，或者存储在外部文件中，并在配置文件中引用。</p>
+<h3 id="lua脚本实现步骤">Lua脚本实现步骤：</h3>
+<ol>
+<li><strong>定义白名单</strong>：在Redis中存储白名单IP地址。</li>
+<li><strong>访问控制</strong>：在Nginx配置中使用<code>access_by_lua_block</code>或<code>access_by_lua_file</code>指令调用Lua脚本。</li>
+<li><strong>脚本逻辑</strong>：检查请求的IP地址是否在白名单中，如果不在，则拒绝访问。</li>
+</ol>
+<h3 id="案例演示">案例演示</h3>
+<p><code>jenkins.ownit.top.conf </code>
+这个是nginx的配置文件
+最主要内容:<code>access_by_lua_file /opt/nginx/lua_script/white.lua;</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">upstream jenkins-uat <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        server 192.168.102.20:91<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        listen       80<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        server_name  jenkins.ownit.top<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#白名单 或者 黑名单</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#include /opt/nginx/whitelist/corporation.conf;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            rewrite ^/<span class="o">(</span>.*<span class="o">)</span>$ https://<span class="nv">$host</span>/<span class="nv">$1</span> permanent<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    access_log  /www/wwwlogs/dns.ownit.top.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    error_log  /www/wwwlogs/dns.ownit.top.error.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        listen       <span class="m">443</span> ssl<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        server_name  jenkins.ownit.top<span class="p">;</span>
+</span></span><span class="line"><span class="cl">         <span class="c1">#白名单 或者 黑名单</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#include /opt/nginx/whitelist/corporation.conf;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">#ssl                   on;</span>
+</span></span><span class="line"><span class="cl">        ssl_certificate      /opt/nginx/ssl/ownit.top.crt<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        ssl_certificate_key  /opt/nginx/ssl/ownit.top.key<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        include ssl.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            access_by_lua_file /opt/nginx/lua_script/white.lua<span class="p">;</span> <span class="c1"># nginx的lua脚本</span>
+</span></span><span class="line"><span class="cl">            proxy_pass  http://jenkins-uat<span class="p">;</span>
+</span></span><span class="line"><span class="cl">            include https_proxy.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    access_log  /www/wwwlogs/dns.ownit.top.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    error_log  /www/wwwlogs/dns.ownit.top.error.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>white.lua</code>文件</p>
+<p>通过使用Lua脚本，在接收到HTTP请求时检查请求的IP地址是否在Redis存储的白名单中。如果IP不在白名单中，则拒绝访问。</p>
+<h3 id="思路">思路</h3>
+<ol>
+<li><strong>获取客户端IP和请求路径</strong>：在Lua脚本中获取客户端的IP地址和请求路径。</li>
+<li><strong>连接Redis</strong>：使用<code>resty.redis</code>模块连接Redis数据库。</li>
+<li><strong>权限校验</strong>：对连接的Redis进行认证。</li>
+<li><strong>检查IP是否在白名单中</strong>：从Redis中检查IP是否存在于白名单集合中。</li>
+<li><strong>返回结果</strong>：如果IP在白名单中，允许访问；否则，返回403 Forbidden状态码，拒绝访问。</li>
+<li><strong>释放Redis连接</strong>：将Redis连接返回到连接池中，以便复用。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">-- 获取客户端IP和请求路径
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> <span class="nv">client_ip</span> <span class="o">=</span> ngx.var.remote_addr
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> <span class="nv">path</span> <span class="o">=</span> ngx.var.uri
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-- Redis相关配置
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> <span class="nv">redis_key_white_list</span> <span class="o">=</span> <span class="s2">&#34;map_request_white_list&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-- 连接Redis
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> <span class="nv">redis</span> <span class="o">=</span> require <span class="s2">&#34;resty.redis&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> <span class="nv">red</span> <span class="o">=</span> redis:new<span class="o">()</span>
+</span></span><span class="line"><span class="cl">red:set_timeout<span class="o">(</span>1000<span class="o">)</span> -- 设置超时（毫秒）
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> ok, <span class="nv">err</span> <span class="o">=</span> red:connect<span class="o">(</span><span class="s2">&#34;127.0.0.1&#34;</span>, 6379<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> not ok <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    ngx.log<span class="o">(</span>ngx.ERR, <span class="s2">&#34;Redis连接失败: &#34;</span>, err<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> ngx.exit<span class="o">(</span>500<span class="o">)</span>
+</span></span><span class="line"><span class="cl">end
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-- 权限校验
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> res, <span class="nv">err</span> <span class="o">=</span> red:auth<span class="o">(</span><span class="s2">&#34;123456&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> not res <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    ngx.say<span class="o">(</span><span class="s2">&#34;failed to authenticate: &#34;</span>, err<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span>
+</span></span><span class="line"><span class="cl">end
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-- 检查IP是否在白名单中
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> is_in_whitelist, <span class="nv">err</span> <span class="o">=</span> red:sismember<span class="o">(</span>redis_key_white_list, client_ip<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nv">is_in_whitelist</span> <span class="o">==</span> <span class="m">1</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    ngx.log<span class="o">(</span>ngx.INFO, <span class="s2">&#34;IP在白名单中: &#34;</span>, client_ip<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">else</span>
+</span></span><span class="line"><span class="cl">    ngx.status <span class="o">=</span> ngx.HTTP_FORBIDDEN
+</span></span><span class="line"><span class="cl">    ngx.say<span class="o">(</span><span class="s2">&#34;Access Denied&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> ngx.exit<span class="o">(</span>ngx.HTTP_FORBIDDEN<span class="o">)</span>
+</span></span><span class="line"><span class="cl">end
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">-- 返还redis连接到连接池
+</span></span><span class="line"><span class="cl"><span class="nb">local</span> ok, <span class="nv">err</span> <span class="o">=</span> red:set_keepalive<span class="o">(</span>10000, 100<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> not ok <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    ngx.log<span class="o">(</span>ngx.ERR, <span class="s2">&#34;设置keepalive失败: &#34;</span>, err<span class="o">)</span>
+</span></span><span class="line"><span class="cl">end
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="详细解释">详细解释</h3>
+<ol>
+<li>
+<p><strong>获取客户端IP和请求路径</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">client_ip</span> <span class="o">=</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">remote_addr</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">path</span> <span class="o">=</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">uri</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这两行代码从Nginx变量中获取客户端的IP地址和请求路径，<code>client_ip</code>用于后续的白名单检查。</p>
+</li>
+<li>
+<p><strong>Redis相关配置</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis_key_white_list</span> <span class="o">=</span> <span class="s2">&#34;map_request_white_list&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>定义存储白名单的Redis键。</p>
+</li>
+<li>
+<p><strong>连接Redis</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis</span> <span class="o">=</span> <span class="n">require</span> <span class="s2">&#34;resty.redis&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">red</span> <span class="o">=</span> <span class="n">redis</span><span class="p">:</span><span class="n">new</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="n">red</span><span class="p">:</span><span class="n">set_timeout</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span> <span class="c1">-- 设置超时（毫秒）</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ok</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">red</span><span class="p">:</span><span class="n">connect</span><span class="p">(</span><span class="s2">&#34;127.0.0.1&#34;</span><span class="p">,</span> <span class="mi">6379</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.log</span><span class="p">(</span><span class="n">ngx.ERR</span><span class="p">,</span> <span class="s2">&#34;Redis连接失败: &#34;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">return</span> <span class="n">ngx.exit</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用<code>resty.redis</code>模块创建Redis连接对象，并设置连接超时时间。尝试连接到Redis服务器，如果连接失败，记录错误日志并返回500错误。</p>
+</li>
+<li>
+<p><strong>权限校验</strong></p>
+</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">res</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">red</span><span class="p">:</span><span class="n">auth</span><span class="p">(</span><span class="s2">&#34;123456&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="ow">not</span> <span class="n">res</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;failed to authenticate: &#34;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">return</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>对Redis进行认证，如果认证失败，输出错误信息并停止执行。</p>
+<ol start="5">
+<li><strong>检查IP是否在白名单中</strong></li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">is_in_whitelist</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">red</span><span class="p">:</span><span class="n">sismember</span><span class="p">(</span><span class="n">redis_key_white_list</span><span class="p">,</span> <span class="n">client_ip</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="n">is_in_whitelist</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.log</span><span class="p">(</span><span class="n">ngx.INFO</span><span class="p">,</span> <span class="s2">&#34;IP在白名单中: &#34;</span><span class="p">,</span> <span class="n">client_ip</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">else</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.status</span> <span class="o">=</span> <span class="n">ngx.HTTP_FORBIDDEN</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;Access Denied&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">return</span> <span class="n">ngx.exit</span><span class="p">(</span><span class="n">ngx.HTTP_FORBIDDEN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用<code>SISMEMBER</code>命令检查IP是否在Redis的白名单集合中。如果IP在白名单中，记录信息日志；否则，返回403 Forbidden状态码并拒绝访问。</p>
+<ol start="6">
+<li><strong>释放Redis连接</strong></li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ok</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">red</span><span class="p">:</span><span class="n">set_keepalive</span><span class="p">(</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.log</span><span class="p">(</span><span class="n">ngx.ERR</span><span class="p">,</span> <span class="s2">&#34;设置keepalive失败: &#34;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>将Redis连接返回到连接池中，以便后续请求复用该连接。如果设置失败，记录错误日志。</p>
+<h3 id="在nginx中配置lua脚本">在Nginx中配置Lua脚本</h3>
+<p>在Nginx的<code>location</code>配置中，使用<code>access_by_lua_file</code>指令来调用上述Lua脚本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">http {
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">​```lua
+</span></span><span class="line"><span class="cl">http {
+</span></span><span class="line"><span class="cl">    server {
+</span></span><span class="line"><span class="cl">        listen 80;
+</span></span><span class="line"><span class="cl">        server_name example.com;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        location / {
+</span></span><span class="line"><span class="cl">            access_by_lua_file /opt/nginx/lua_script/white.lua;
+</span></span><span class="line"><span class="cl">            proxy_pass http://backend;
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl">    }
+</span></span><span class="line"><span class="cl">}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上述配置在接收到HTTP请求时，会首先执行<code>/opt/nginx/lua_script/white.lua</code>脚本进行白名单检查。如果通过检查，则继续将请求转发到后端服务器。</p>
+<p><img src="/../../image/94ff705723444036af32efa94c21a068.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+成功访问：
+<img src="/../../image/502c54e94a7a4ae796a38d1530eebaf7.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+禁止访问：
+<img src="/../../image/8c42197780744b10b11c19a03436f08c.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="5黑名单实现">5、黑名单实现</h2>
+<h3 id="黑名单的作用与场景">黑名单的作用与场景</h3>
+<p>黑名单是一种网络安全机制，用于识别并阻止恶意IP地址对服务器资源的访问。它在多种场景中发挥着重要作用：</p>
+<ul>
+<li><strong>防止恶意攻击</strong>：通过封禁已知的攻击者IP，减少服务器遭受的恶意攻击。</li>
+<li><strong>打击爬虫滥用</strong>：限制爬虫对网站资源的过度访问，保护数据不被滥用。</li>
+<li><strong>减轻服务器负载</strong>：通过限制特定IP的访问频率，减轻服务器压力，提高服务稳定性。</li>
+<li><strong>DDoS防御</strong>：快速响应DDoS攻击，封禁攻击源IP，保护服务可用性。</li>
+</ul>
+<h3 id="使用lua脚本与redis实现动态ip封禁">使用Lua脚本与Redis实现动态IP封禁</h3>
+<p>OpenResty结合Redis可以实现一个高效的动态IP封禁系统。以下是实现的关键步骤：</p>
+<ol>
+<li>环境配置：确保Nginx OpenResty和Redis环境准备就绪。</li>
+<li>Lua脚本编写：编写Lua脚本来动态查询和更新Redis中的黑名单状态。</li>
+<li>Nginx配置整合：在Nginx配置文件中集成Lua脚本，实现访问控制。</li>
+</ol>
+<p><img src="/../../image/b96394be65064e5fa44511998fe06e51.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="案例演示-1">案例演示</h3>
+<p>通过使用Lua脚本，在接收到HTTP请求时检查请求的IP地址是否在黑名单中，或控制IP的访问频率，并进行相应的处理。</p>
+<h3 id="思路-1">思路</h3>
+<ol>
+<li><strong>获取客户端IP</strong>：在Lua脚本中获取客户端的IP地址。</li>
+<li><strong>连接Redis</strong>：使用<code>resty.redis</code>模块连接Redis数据库。</li>
+<li><strong>权限校验</strong>：对连接的Redis进行认证。</li>
+<li><strong>检查IP是否在黑名单中</strong>：从Redis中检查IP是否存在于黑名单集合中。</li>
+<li><strong>访问频次控制</strong>：对每个IP的访问频次进行限制，如果超过指定的频次，则将IP加入黑名单。</li>
+<li><strong>返回结果</strong>：如果IP在黑名单中，返回403 Forbidden状态码，拒绝访问；否则，允许请求继续。</li>
+</ol>
+<h3 id="nginx-配置文件">Nginx 配置文件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">upstream jms-uat <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    server 192.168.82.105:81<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    listen 80<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    server_name jms.ownit.top<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 白名单 或者 黑名单</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># include /opt/nginx/whitelist/corporation.conf;</span>
+</span></span><span class="line"><span class="cl">    rewrite ^/<span class="o">(</span>.*<span class="o">)</span>$ https://<span class="nv">$host</span>/<span class="nv">$1</span> permanent<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    access_log /www/wwwlogs/dns.ownit.top.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    error_log /www/wwwlogs/dns.ownit.top.error.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    listen <span class="m">443</span> ssl<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    server_name jms.ownit.top<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 白名单 或者 黑名单</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># include /opt/nginx/whitelist/corporation.conf;</span>
+</span></span><span class="line"><span class="cl">    ssl_certificate /opt/nginx/ssl/ownit.top.crt<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    ssl_certificate_key /opt/nginx/ssl/ownit.top.key<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    include ssl.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="nv">location</span> <span class="o">=</span> /core/auth/login/ <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        access_by_lua_file /opt/nginx/lua_script/login.lua<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        proxy_pass http://jms-uat<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        proxy_set_header Upgrade <span class="nv">$http_upgrade</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        proxy_set_header Connection <span class="s2">&#34;upgrade&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="o">(</span><span class="nv">$request_uri</span> !~ <span class="se">\.</span><span class="o">(</span>html<span class="p">|</span>htm<span class="p">|</span>jpg<span class="p">|</span>png<span class="p">|</span>ico<span class="p">|</span>js<span class="p">|</span>css<span class="o">)</span>$<span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            access_by_lua_file /opt/nginx/lua_script/rule.lua<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">        proxy_set_header Upgrade <span class="nv">$http_upgrade</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        proxy_set_header Connection <span class="s2">&#34;upgrade&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        proxy_pass http://jms-uat<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        include https_proxy.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">        client_max_body_size 0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    access_log /www/wwwlogs/dns.ownit.top.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    error_log /www/wwwlogs/dns.ownit.top.error.log<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>location = /core/auth/login/</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">location</span> <span class="o">=</span> /core/auth/login/ <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    access_by_lua_file /opt/nginx/lua_script/login.lua<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_pass http://jms-uat<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_set_header Upgrade <span class="nv">$http_upgrade</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_set_header Connection <span class="s2">&#34;upgrade&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h5 id="解释">解释</h5>
+<ul>
+<li><strong><code>location = /core/auth/login/</code></strong>：
+<ul>
+<li>这是一个精确匹配的<code>location</code>块，仅对请求路径严格等于<code>/core/auth/login/</code>的请求生效。</li>
+</ul>
+</li>
+<li><strong><code>access_by_lua_file /opt/nginx/lua_script/login.lua;</code></strong>：
+<ul>
+<li>使用OpenResty的Lua模块，指定在访问控制阶段执行<code>/opt/nginx/lua_script/login.lua</code>脚本。这个脚本通常用于执行认证、权限检查或其他预处理逻辑。</li>
+</ul>
+</li>
+<li><strong><code>proxy_pass http://jms-uat;</code></strong>：
+<ul>
+<li>将匹配到的请求代理到上游服务器<code>http://jms-uat</code>。</li>
+</ul>
+</li>
+<li><strong><code>proxy_set_header Upgrade $http_upgrade;</code></strong>：
+<ul>
+<li>设置<code>Upgrade</code>请求头，支持WebSocket等协议升级。<code>$http_upgrade</code>变量包含原始请求中的<code>Upgrade</code>头字段的值。</li>
+</ul>
+</li>
+<li><strong><code>proxy_set_header Connection &quot;upgrade&quot;;</code></strong>：
+<ul>
+<li>设置<code>Connection</code>请求头为<code>upgrade</code>，通常与<code>Upgrade</code>头一起使用，以确保连接升级。</li>
+</ul>
+</li>
+</ul>
+<p><code>location /</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 如果该location 下存在静态资源文件可以做一个判断 </span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">(</span><span class="nv">$request_uri</span> !~ <span class="se">\.</span><span class="o">(</span>html<span class="p">|</span>htm<span class="p">|</span>jpg<span class="p">|</span>png<span class="p">|</span>ico<span class="p">|</span>js<span class="p">|</span>css<span class="o">)</span>$<span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        access_by_lua_file /opt/nginx/lua_script/rule.lua<span class="p">;</span> 加上了这条配置，则会根据 rule.lua 的规则进行限流
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    proxy_set_header Upgrade <span class="nv">$http_upgrade</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_set_header Connection <span class="s2">&#34;upgrade&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_pass http://jms-uat<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    include https_proxy.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    client_max_body_size 0<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h5 id="解释-1">解释</h5>
+<ul>
+<li><strong><code>location /</code></strong>：
+<ul>
+<li>这是一个通配符匹配的<code>location</code>块，表示所有路径的请求都会匹配到这个块，除非有其他更精确的匹配块。</li>
+</ul>
+</li>
+<li><strong><code>if ($request_uri !~ \.(html|htm|jpg|png|ico|js|css)$)</code></strong>：
+<ul>
+<li>使用<code>if</code>指令对请求路径进行检查。仅在请求路径不匹配指定的静态资源文件扩展名（如<code>.html</code>, <code>.htm</code>, <code>.jpg</code>, <code>.png</code>, <code>.ico</code>, <code>.js</code>, <code>.css</code>）时，执行后续的Lua脚本。这种检查有助于将动态资源与静态资源区分开来。</li>
+</ul>
+</li>
+<li><strong><code>access_by_lua_file /opt/nginx/lua_script/rule.lua;</code></strong>：
+<ul>
+<li>使用OpenResty的Lua模块，指定在访问控制阶段执行<code>/opt/nginx/lua_script/rule.lua</code>脚本。这个脚本通常用于实现限流、防火墙或其他动态访问控制逻辑。</li>
+</ul>
+</li>
+<li><strong><code>proxy_set_header Upgrade $http_upgrade;</code></strong>：
+<ul>
+<li>设置<code>Upgrade</code>请求头，支持WebSocket等协议升级。<code>$http_upgrade</code>变量包含原始请求中的<code>Upgrade</code>头字段的值。</li>
+</ul>
+</li>
+<li><strong><code>proxy_set_header Connection &quot;upgrade&quot;;</code></strong>：
+<ul>
+<li>设置<code>Connection</code>请求头为<code>upgrade</code>，通常与<code>Upgrade</code>头一起使用，以确保连接升级。</li>
+</ul>
+</li>
+<li><strong><code>proxy_pass http://jms-uat;</code></strong>：
+<ul>
+<li>将匹配到的请求代理到上游服务器<code>http://jms-uat</code>。</li>
+</ul>
+</li>
+<li><strong><code>include https_proxy.conf;</code></strong>：
+<ul>
+<li>包含额外的配置文件<code>https_proxy.conf</code>，该文件可能包含HTTPS代理相关的其他配置项。</li>
+</ul>
+</li>
+<li><strong><code>client_max_body_size 0;</code></strong>：
+<ul>
+<li>设置客户端请求体的最大大小为0，表示不限制请求体的大小。</li>
+</ul>
+</li>
+</ul>
+<p>这两个location块主要用于处理不同路径的请求，并在访问控制阶段使用Lua脚本进行相应的逻辑处理。精确匹配的/core/auth/login/路径专用于特定的认证或预处理，而通配符匹配的/路径则处理所有其他请求，并进行动态访问控制逻辑。两者共同确保了Nginx服务器的灵活性和安全性。</p>
+<h3 id="lua脚本-rulelua">Lua脚本 (rule.lua)</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-lua" data-lang="lua"><span class="line"><span class="cl"><span class="c1">-- 连接池超时回收毫秒</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">pool_max_idle_time</span> <span class="o">=</span> <span class="mi">10000</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 连接池大小</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">pool_size</span> <span class="o">=</span> <span class="mi">100</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- redis 连接超时时间</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis_connection_timeout</span> <span class="o">=</span> <span class="mi">100</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- redis host</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis_host</span> <span class="o">=</span> <span class="s2">&#34;192.168.102.20&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- redis port</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis_port</span> <span class="o">=</span> <span class="s2">&#34;6379&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- redis auth</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis_auth</span> <span class="o">=</span> <span class="s2">&#34;123456&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 封禁IP时间（秒）</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ip_block_time</span> <span class="o">=</span> <span class="mi">120</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 指定ip访问频率时间段（秒）</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ip_time_out</span> <span class="o">=</span> <span class="mi">10</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 指定ip访问频率计数最大值（次）</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ip_max_count</span> <span class="o">=</span> <span class="mi">60</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">-- 错误日志记录</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="kr">function</span> <span class="nf">errlog</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.log</span><span class="p">(</span><span class="n">ngx.ERR</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">-- 释放连接池</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="kr">function</span> <span class="nf">close_redis</span><span class="p">(</span><span class="n">red</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">if</span> <span class="ow">not</span> <span class="n">red</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">        <span class="kr">return</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">end</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">local</span> <span class="n">ok</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">red</span><span class="p">:</span><span class="n">set_keepalive</span><span class="p">(</span><span class="n">pool_max_idle_time</span><span class="p">,</span> <span class="n">pool_size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;redis connct err:&#34;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="kr">return</span> <span class="n">red</span><span class="p">:</span><span class="n">close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">end</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">-- 连接redis</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">redis</span> <span class="o">=</span> <span class="n">require</span> <span class="s2">&#34;resty.redis&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">client</span> <span class="o">=</span> <span class="n">redis</span><span class="p">:</span><span class="n">new</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ok</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">client</span><span class="p">:</span><span class="n">connect</span><span class="p">(</span><span class="n">redis_host</span><span class="p">,</span> <span class="n">redis_port</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 连接失败返回服务器错误</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">return</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 设置超时时间</span>
+</span></span><span class="line"><span class="cl"><span class="n">client</span><span class="p">:</span><span class="n">set_timeout</span><span class="p">(</span><span class="n">redis_connection_timeout</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">-- 优化验证密码操作</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">connCount</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">client</span><span class="p">:</span><span class="n">get_reused_times</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 新建连接，需要认证密码</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">connCount</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">local</span> <span class="n">ok</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">client</span><span class="p">:</span><span class="n">auth</span><span class="p">(</span><span class="n">redis_auth</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">if</span> <span class="ow">not</span> <span class="n">ok</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">        <span class="n">errlog</span><span class="p">(</span><span class="s2">&#34;failed to auth: &#34;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="kr">return</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">end</span>
+</span></span><span class="line"><span class="cl"><span class="kr">elseif</span> <span class="n">err</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">errlog</span><span class="p">(</span><span class="s2">&#34;failed to get reused times: &#34;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">return</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">-- 获取请求ip</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="kr">function</span> <span class="nf">getIp</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">local</span> <span class="n">clientIP</span> <span class="o">=</span> <span class="n">ngx.req</span><span class="p">.</span><span class="n">get_headers</span><span class="p">()[</span><span class="s2">&#34;X-Real-IP&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">if</span> <span class="n">clientIP</span> <span class="o">==</span> <span class="kc">nil</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">        <span class="n">clientIP</span> <span class="o">=</span> <span class="n">ngx.req</span><span class="p">.</span><span class="n">get_headers</span><span class="p">()[</span><span class="s2">&#34;x_forwarded_for&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">end</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">if</span> <span class="n">clientIP</span> <span class="o">==</span> <span class="kc">nil</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">        <span class="n">clientIP</span> <span class="o">=</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">remote_addr</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">end</span>
+</span></span><span class="line"><span class="cl">    <span class="kr">return</span> <span class="n">clientIP</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">clientIp</span> <span class="o">=</span> <span class="n">getIp</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">incrKey</span> <span class="o">=</span> <span class="s2">&#34;limit:all:count:&#34;</span> <span class="o">..</span> <span class="n">clientIp</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">blockKey</span> <span class="o">=</span> <span class="s2">&#34;limit:all:block:&#34;</span> <span class="o">..</span> <span class="n">clientIp</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">-- 查询ip是否被禁止访问，如果存在则返回403错误代码</span>
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">is_block</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">client</span><span class="p">:</span><span class="n">get</span><span class="p">(</span><span class="n">blockKey</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="n">tonumber</span><span class="p">(</span><span class="n">is_block</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ngx.exit</span><span class="p">(</span><span class="n">ngx.HTTP_FORBIDDEN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">close_redis</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">local</span> <span class="n">ip_count</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">client</span><span class="p">:</span><span class="n">incr</span><span class="p">(</span><span class="n">incrKey</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="n">tonumber</span><span class="p">(</span><span class="n">ip_count</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span><span class="p">:</span><span class="n">expire</span><span class="p">(</span><span class="n">incrKey</span><span class="p">,</span> <span class="n">ip_time_out</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl"><span class="c1">-- 如果超过单位时间限制的访问次数，则添加限制访问标识，限制时间为ip_block_time</span>
+</span></span><span class="line"><span class="cl"><span class="kr">if</span> <span class="n">tonumber</span><span class="p">(</span><span class="n">ip_count</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">tonumber</span><span class="p">(</span><span class="n">ip_max_count</span><span class="p">)</span> <span class="kr">then</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span><span class="p">:</span><span class="n">set</span><span class="p">(</span><span class="n">blockKey</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span><span class="p">:</span><span class="n">expire</span><span class="p">(</span><span class="n">blockKey</span><span class="p">,</span> <span class="n">ip_block_time</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kr">end</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">close_redis</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/79250e60c11d4c738a46b454febd8749.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+成功访问：
+<img src="/../../image/c7c7e1444b6b453b8a303c75b307e977.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>失败访问：
+<img src="/../../image/ba971e9547374129996c3a0957f020b1.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>参考文档：
+<a class="link" href="https://www.cnblogs.com/KingArmy/p/18019489"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/KingArmy/p/18019489</a>
+<a class="link" href="https://blog.csdn.net/qq_45503196/article/details/134648292"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/qq_45503196/article/details/134648292</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/nginx/">Nginx</a>
+        
+            <a href="/tags/openresty/">openresty</a>
+        
+            <a href="/tags/redis/">redis</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202404101725/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/67.jpg" loading="lazy" data-key="202404101725" data-hash="/../../title_pic/67.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx日志格式化和追踪</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404021613/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202404021613" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx在Kubernetes集群中的进阶应用</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202304121053/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202304121053" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python批量导出阿里云ECS和Redis实例的监控数据到Excel</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202304101429/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/24.jpg" loading="lazy" data-key="202304101429" data-hash="/../../title_pic/24.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx模板自动化</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407181155/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202407181155" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">处理.git文件夹过大出现臃肿问题</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

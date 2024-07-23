@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='一个上会运行若干容器，每个容器都需要、内存和资源。对于、等虚拟化技术，用户可以控制分配多少、内存资源给每个虚拟机。对于容器，也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个的性能。内。。。。。。。'>
+<title>Docker的资源限制（内存、CPU、IO）详细篇</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/docker%E7%9A%84%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6%E5%86%85%E5%AD%98cpuio%E8%AF%A6%E7%BB%86%E7%AF%87/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Docker的资源限制（内存、CPU、IO）详细篇'>
+<meta property='og:description' content='一个上会运行若干容器，每个容器都需要、内存和资源。对于、等虚拟化技术，用户可以控制分配多少、内存资源给每个虚拟机。对于容器，也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个的性能。内。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/docker%E7%9A%84%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6%E5%86%85%E5%AD%98cpuio%E8%AF%A6%E7%BB%86%E7%AF%87/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='docker' /><meta property='article:tag' content='内存' /><meta property='article:tag' content='硬盘' /><meta property='article:tag' content='io' /><meta property='article:tag' content='资源限制' /><meta property='article:published_time' content='2020-03-16T17:43:53&#43;00:00'/><meta property='article:modified_time' content='2020-03-16T17:43:53&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/28.jpg' />
+<meta name="twitter:title" content="Docker的资源限制（内存、CPU、IO）详细篇">
+<meta name="twitter:description" content="一个上会运行若干容器，每个容器都需要、内存和资源。对于、等虚拟化技术，用户可以控制分配多少、内存资源给每个虚拟机。对于容器，也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个的性能。内。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/28.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#一个docker-host-上会运行若干容器每个容器都需要cpu内存和i0资源对于kvmvmware-等虚拟化技术用户可以控制分配多少cpu内存资源给每个虚拟机对于容器docker-也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个host">**一个docker host. 上会运行若干容器，每个容器都需要CPU、内存和I0资源。对于KVM、VMware 等虚拟化技术，用户可以控制分配多少CPU、内存资源给每个虚拟机。对于容器，Docker 也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个host</a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li><a href="#cpu限额">CPU限额</a>
+      <ol>
+        <li><a href="#heading"></a></li>
+        <li><a href="#2启动container_b-cpu-share为512">(2)启动(container_B, cpu share为512</a></li>
+        <li><a href="#3在host中执行top-查看容器对cpu的使用情况">(3)在host中执行top, 查看容器对CPU的使用情况，</a></li>
+        <li><a href="#containera消耗的cpu是containerb-的两倍"><strong>containerA消耗的CPU是containerB 的两倍。</strong></a></li>
+        <li><a href="#4现在暂停container-a">(4)现在暂停container. A</a></li>
+        <li><a href="#httpimageownittopcsdn20200316172530957png"><img src="http://image.ownit.top/csdn/20200316172530957.png" alt=""></a></li>
+        <li><a href="#5-top-显示containerb在containera空闲的情况下能够用满整颗cpu">(5) top 显示containerB在containerA空闲的情况下能够用满整颗CPU</a></li>
+        <li><a href="#httpimageownittopcsdn20200316172546902png"><img src="http://image.ownit.top/csdn/20200316172546902.png" alt=""></a></li>
+      </ol>
+    </li>
+  </ol>
+
+  <ol>
+    <li>
+      <ol>
+        <li><a href="#限制bps和iops">限制bps和iops</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/docker%E7%9A%84%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6%E5%86%85%E5%AD%98cpuio%E8%AF%A6%E7%BB%86%E7%AF%87/">
+                
+                    <img src="http://image.ownit.top/4kdongman/28.jpg" loading="lazy" alt="Featured image of post Docker的资源限制（内存、CPU、IO）详细篇" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/docker/" >
+                Docker
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/docker%E7%9A%84%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6%E5%86%85%E5%AD%98cpuio%E8%AF%A6%E7%BB%86%E7%AF%87/">Docker的资源限制（内存、CPU、IO）详细篇</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            一个上会运行若干容器，每个容器都需要、内存和资源。对于、等虚拟化技术，用户可以控制分配多少、内存资源给每个虚拟机。对于容器，也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个的性能。内。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 16, 2020</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h3 id="一个docker-host-上会运行若干容器每个容器都需要cpu内存和i0资源对于kvmvmware-等虚拟化技术用户可以控制分配多少cpu内存资源给每个虚拟机对于容器docker-也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个host">**一个docker host. 上会运行若干容器，每个容器都需要CPU、内存和I0资源。对于KVM、VMware 等虚拟化技术，用户可以控制分配多少CPU、内存资源给每个虚拟机。对于容器，Docker 也提供了类似的机制避免某个容器因占用太多资源而影响其他容器乃至整个host</h3>
+<p>的性能。**<br>
+ </p>
+<h1 id="内存限额">内存限额</h1>
+<p>与操作系统类似，容器可以使用的内存包括两部分：物理内存和Swap。</p>
+<p>Docker通过下面两组参数来控制容器内存的使用量</p>
+<p>（1）-m 或 --memory ：设置内存的使用限额，例如100MB，2GB</p>
+<p>（2）&ndash;memory-swap：设置内存+swawp的使用限额</p>
+<p> </p>
+<p>当我们执行如下的命令时</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -m 200M --memory-swap<span class="o">=</span>300M ubuntu
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其含义是允许该容器最多使用200MB的内存和100MB 的swap。默认情况下，上面两组参数为-1, 即对容器内存和swap的使用没有限制。</p>
+<p>下面我们将使用progrium/stress 镜像来学习如何为容器分配内存。该镜像可用于对容器执行压力测试。执行如下命令:<br>
+ </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it -m 200M --memory-swap<span class="o">=</span>300M progrium/stress --vm <span class="m">1</span> --vm-bytes 208M
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>--vm1:启动1个内存工作线程。</li>
+<li>--vm-bytes 280M:每个线程分配280MB内存。</li>
+</ul>
+<p> </p>
+<p><strong>运行如下图结果</strong></p>
+<p><img src="http://image.ownit.top/csdn/2020031616300042.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>因为280MB在可分配的范围(300MB) 内，所以工作线程能够正常工作，其过程是:<br>
+(1)分配280MB内存。<br>
+(2)释放280MB内存。<br>
+(3)再分配280MB内存。<br>
+(4)再释放280MB内存。<br>
+(5)一-直循环&hellip;..<br>
+如果让工作线程分配的内存超过300MB,结果如图</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it -m 200M --memory-swap<span class="o">=</span>300M progrium/stress --vm <span class="m">1</span> --vm-bytes 310M
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20200316165917983.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>分配的内存超过限额，stress 线程报错，容器退出。<br>
+如果在启动容器时只指定-m而不指定-memoryswap, 那么-memory-swap 默认为-m的两倍，比如:<br>
+ </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">docker run -it -m 200M ubuntu
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>容器最多使用200M绒里内存和200swap</p>
+<h2 id="cpu限额">CPU限额</h2>
+<p><strong>默认设置下，所有容器可以平等地使用host CPU资源并且没有限制</strong>。</p>
+<p><strong>Docker可以通过-c或-pu-shares设置容器使用CPU的权重。如果不指定，默认值为1024。</strong><br>
+与内存限额不同，通过-c设置的cpu share 并不是CPU资源的绝对数量，而是一个相对的权重值。某个容器最终能分配到的CPU资源取决于它的cpu share占所有容器cpu share总和的比例。<br>
+换句话说:通过cpu share可以设置容器使用CPU的优先级。</p>
+<p>比如在host中启动了两个容器:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run --name <span class="s2">&#34;cont_A&#34;</span> -c <span class="m">1024</span> ubuntu docker run --name <span class="s2">&#34;cont_B&#34;</span> -c <span class="m">512</span> ubuntu
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>containerA的cpu share 1024， 是containerB 的两倍。当两个容器都需要CPU资源时，containerA可以得到的CPU是containerB 的两倍。<br>
+需要特别注意的是，这种按权重分配CPU只会发生在CPU资源紧张的情况下。如果containerA处于空闲状态，这时，为了充分利用CPU资源，containerB 也可以分配到全部可用的CPU.</strong></p>
+<p>下面我们继续用progrium/stress 做实验。</p>
+<h3 id="heading"></h3>
+<p>(1)启动(container_ A, cpu share为1024<br>
+ </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run --name <span class="s2">&#34;cont_A&#34;</span> -it -c <span class="m">1024</span>  progrium/stress --cpu <span class="m">1</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20200316170953506.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>--cpu用来设置工作线程的数量。因为当前host 只有1颗CPU,所以一个工作线程就能将CPU压满。如果host有多颗CPU,则需要相应增加&ndash;cpu的数量。<br>
+ </p>
+<h3 id="2启动container_b-cpu-share为512">(2)启动(container_B, cpu share为512</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run --name <span class="s2">&#34;cont_B&#34;</span> -it -c <span class="m">512</span>  progrium/stress --cpu <span class="m">1</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20200316171149233.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="3在host中执行top-查看容器对cpu的使用情况">(3)在host中执行top, 查看容器对CPU的使用情况，</h3>
+<p> </p>
+<p><img src="http://image.ownit.top/csdn/20200316171249683.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ps aux<span class="p">|</span>head -1<span class="p">;</span>ps aux<span class="p">|</span>sort -k3nr <span class="p">|</span>head -4
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="http://image.ownit.top/csdn/20200316171752731.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h3 id="containera消耗的cpu是containerb-的两倍"><strong>containerA消耗的CPU是containerB 的两倍。</strong></h3>
+<p> </p>
+<h3 id="4现在暂停container-a">(4)现在暂停container. A</h3>
+<h3 id="httpimageownittopcsdn20200316172530957png"><img src="http://image.ownit.top/csdn/20200316172530957.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h3>
+<h3 id="5-top-显示containerb在containera空闲的情况下能够用满整颗cpu">(5) top 显示containerB在containerA空闲的情况下能够用满整颗CPU</h3>
+<h3 id="httpimageownittopcsdn20200316172546902png"><img src="http://image.ownit.top/csdn/20200316172546902.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></h3>
+<h1 id="block-io-带宽限额">Block IO 带宽限额</h1>
+<p>Block 10是另一种可以限制容器使用的资源。Block I0指的是磁盘的读写，docker 可通过设置权重、限制bps和iops 的方式控制容器读写磁盘的带宽，下 面分别讨论。<br>
+<strong>注:目前Block I0限额只对direct IO (不使用文件缓存)有效。</strong><br>
+Block IO权重<br>
+默认情况下，所有容器能平等地读写磁盘，可以通过设置**-blkio-weight**参数来改变容器block Io的优先级。<br>
+<strong>-blkio-weight</strong>与&ndash;cpu-shares 类似，设置的是相对权重值，默认为500。 在下面的例子中，containerA 读写磁盘的带宽是containerB 的两倍。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it --name cont_A --blkip-weight <span class="m">600</span> ubuntu
+</span></span><span class="line"><span class="cl">docker run -it --name cont_B --blkip-weight <span class="m">300</span> ubuntu
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="限制bps和iops">限制bps和iops</h3>
+<p>bps是 byte per second ，每秒读写的数量</p>
+<p>iops是 io per second ，每秒IO的次数</p>
+<p>可以同过下面的参数控制容器的bps和iops；</p>
+<ul>
+<li>--device-read-bps:限制读某个设备的bps.</li>
+<li>--devce-write-bps:限制写某个设备的bps.</li>
+<li>--device- read-iops:限制读某个设备的iops.</li>
+<li>--device-write-iops: 限制写某个设备的iops。<br>
+ </li>
+</ul>
+<p>下面这个例子限制容器写/dev/sda 的速率为30 MB/s:<br>
+ </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@kvm ~<span class="o">]</span><span class="c1"># docker run -it --device-write-bps /dev/sda:30MB ubuntu</span>
+</span></span><span class="line"><span class="cl">root@10845a98036e:/# <span class="nb">time</span> dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span>test.out <span class="nv">bs</span><span class="o">=</span>1M <span class="nv">count</span><span class="o">=</span><span class="m">800</span> <span class="nv">oflag</span><span class="o">=</span>direct
+</span></span><span class="line"><span class="cl">800+0 records in
+</span></span><span class="line"><span class="cl">800+0 records out
+</span></span><span class="line"><span class="cl"><span class="m">838860800</span> bytes <span class="o">(</span><span class="m">839</span> MB, <span class="m">800</span> MiB<span class="o">)</span> copied, 26.6211 s, 31.5 MB/s
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">real	0m26.623s
+</span></span><span class="line"><span class="cl">user	0m0.000s
+</span></span><span class="line"><span class="cl">sys	0m0.106s
+</span></span><span class="line"><span class="cl">root@10845a98036e:/# 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it --device-write-bps /dev/sda:30MB ubuntu
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>有限制</strong></p>
+<p><img src="http://image.ownit.top/csdn/2020031617393618.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p><strong>没有限制</strong></p>
+<p><img src="http://image.ownit.top/csdn/20200316174047490.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>通过dd测试在容器中写磁盘的速度。因为容器的文件系统是在host /dev/sda. 上的，在容器中写文件相当于对host /dev/sda 进行写操作。另外，oflag= -direct指定用direct I0方式写文件，这样&ndash;device-write-bps才能生效。<br>
+ </p>
+<p>看到，没有限速的话，速度很快，</p>
+<p>其他参数，大家也可以试试</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/docker/">Docker</a>
+        
+            <a href="/tags/%E5%86%85%E5%AD%98/">内存</a>
+        
+            <a href="/tags/%E7%A1%AC%E7%9B%98/">硬盘</a>
+        
+            <a href="/tags/io/">io</a>
+        
+            <a href="/tags/%E8%B5%84%E6%BA%90%E9%99%90%E5%88%B6/">资源限制</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/%E4%BC%81%E4%B8%9A%E7%BA%A7-%E7%BA%AF%E5%86%85%E7%BD%91%E6%9E%84%E5%BB%BAharbor-https%E8%AE%A4%E8%AF%81/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/01.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/01.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">企业级-纯内网构建Harbor （HTTPS认证）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/%E4%BC%81%E4%B8%9A%E7%BA%AF%E5%86%85%E7%BD%91%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%8C%E7%BE%8E%E9%83%A8%E7%BD%B2docker20.10.7%E7%89%88%E6%9C%AC/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/37.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/37.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">企业纯内网二进制完美部署Docker（20.10.7版本）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E9%9B%86%E7%BE%A4%E5%8F%AF%E8%A7%86%E5%8C%96%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0portainer/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/59.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/59.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker集群可视化管理平台（Portainer）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E4%B8%80%E9%94%AE%E9%83%A8%E7%BD%B2gitlab-jenkins%E6%9C%AC%E5%9C%B0%E6%8C%81%E4%B9%85%E5%8C%96/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/101.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/101.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker一键部署GitLab&#43;Jenkins【本地持久化】</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/docker%E6%B5%8B%E8%AF%95%E4%B8%80%E4%B8%AA%E9%9D%99%E6%80%81%E7%BD%91%E7%AB%99/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/44.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/44.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Docker测试一个静态网站</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

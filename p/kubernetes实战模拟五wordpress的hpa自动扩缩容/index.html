@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：实战模拟四，已经构建的更新升级策略，确保后期升级时，系统能够稳定的提供业务，不被升级带来影响版本思路：类似是静态。。。。。。。'>
+<title>Kubernetes实战模拟五（wordpress的HPA自动扩缩容）</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%94wordpress%E7%9A%84hpa%E8%87%AA%E5%8A%A8%E6%89%A9%E7%BC%A9%E5%AE%B9/'>
+
+<link rel="stylesheet" href="/scss/style.min.8191399262444ab68b72a18c97392f5349be20a1615d77445be51e974c144cff.css"><meta property='og:title' content='Kubernetes实战模拟五（wordpress的HPA自动扩缩容）'>
+<meta property='og:description' content='实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：实战模拟四，已经构建的更新升级策略，确保后期升级时，系统能够稳定的提供业务，不被升级带来影响版本思路：类似是静态。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%94wordpress%E7%9A%84hpa%E8%87%AA%E5%8A%A8%E6%89%A9%E7%BC%A9%E5%AE%B9/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='Kubernetes' /><meta property='article:tag' content='kubernetes' /><meta property='article:tag' content='数据库' /><meta property='article:tag' content='docker' /><meta property='article:published_time' content='2021-04-07T11:17:25&#43;00:00'/><meta property='article:modified_time' content='2021-04-07T11:17:25&#43;00:00'/><meta property='og:image' content='http://image.ownit.top/4kdongman/09.jpg' />
+<meta name="twitter:title" content="Kubernetes实战模拟五（wordpress的HPA自动扩缩容）">
+<meta name="twitter:description" content="实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：实战模拟四，已经构建的更新升级策略，确保后期升级时，系统能够稳定的提供业务，不被升级带来影响版本思路：类似是静态。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='http://image.ownit.top/4kdongman/09.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%85%B3%E4%BA%8E/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/%E5%8F%8B%E9%93%BE/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%94wordpress%E7%9A%84hpa%E8%87%AA%E5%8A%A8%E6%89%A9%E7%BC%A9%E5%AE%B9/">
+                
+                    <img src="http://image.ownit.top/4kdongman/09.jpg" loading="lazy" alt="Featured image of post Kubernetes实战模拟五（wordpress的HPA自动扩缩容）" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%94wordpress%E7%9A%84hpa%E8%87%AA%E5%8A%A8%E6%89%A9%E7%BC%A9%E5%AE%B9/">Kubernetes实战模拟五（wordpress的HPA自动扩缩容）</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            实战模拟一基础版实战模拟二高可用实战模拟三健康检查和服务质量实战模拟四升级更新源码地址：实战模拟四，已经构建的更新升级策略，确保后期升级时，系统能够稳定的提供业务，不被升级带来影响版本思路：类似是静态。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 07, 2021</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 2 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h1 id="kubernetes实战模拟一wordpress基础版httpsblogcsdnnetheian_99articledetails115422455"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115422455"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟一（wordpress基础版）</a></h1>
+<h1 id="kubernetes实战模拟二wordpress高可用httpsblogcsdnnetheian_99articledetails115422781"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115422781"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟二（wordpress高可用）</a></h1>
+<h1 id="kubernetes实战模拟三wordpress健康检查和服务质量qoshttpsblogcsdnnetheian_99articledetails115433372"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115433372"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟三（wordpress健康检查和服务质量QoS）</a></h1>
+<h1 id="kubernetes实战模拟四wordpress升级更新httpsblogcsdnnetheian_99articledetails115468779"><a class="link" href="https://blog.csdn.net/heian_99/article/details/115468779"  target="_blank" rel="noopener"
+    >Kubernetes实战模拟四（wordpress升级更新）</a></h1>
+<p>源码地址：<a class="link" href="https://github.com/nangongchengfeng/Kubernetes/tree/main/wordpress-example"  target="_blank" rel="noopener"
+    >https://github.com/nangongchengfeng/Kubernetes/tree/main/wordpress-example</a></p>
+<p><strong>Kubernetes实战模拟四，已经构建wordpress的更新升级策略，确保后期升级时，系统能够稳定的提供业务，不被升级带来影响</strong></p>
+<p> </p>
+<h1 id="版本5">版本5</h1>
+<p><strong>思路：类似wordpress是静态服务，当数据访问过大时，内存和cpu都会上升，这时，我们可以通过提高pod的数量，来分解压力。我们有不可能实时监控数据，手动扩缩容、所有我们采用HPA的自动扩缩容来实现动态控制。</strong></p>
+<p> </p>
+<p>HPA是kubernetes里面pod弹性伸缩的实现,它能根据设置的监控阀值进行pod的弹性扩缩容，目前默认HPA只能支持cpu和内存的阀值检测扩缩容，但也可以通过custom metric api 调用prometheus实现自定义metric 来更加灵活的监控指标实现弹性伸缩。但hpa不能用于伸缩一些无法进行缩放的控制器如DaemonSet。这里我们用的是resource metric api.</p>
+<p><img src="http://image.ownit.top/csdn/20190828094044124.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p> </p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: autoscaling/v2beta2
+</span></span><span class="line"><span class="cl">kind: HorizontalPodAutoscaler
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: php-apache
+</span></span><span class="line"><span class="cl">  namespace: default
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  <span class="c1"># HPA的伸缩对象描述，HPA会动态修改该对象的pod数量</span>
+</span></span><span class="line"><span class="cl">  scaleTargetRef:
+</span></span><span class="line"><span class="cl">    apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">    kind: Deployment
+</span></span><span class="line"><span class="cl">    name: php-apache
+</span></span><span class="line"><span class="cl">  <span class="c1"># HPA的最小pod数量和最大pod数量</span>
+</span></span><span class="line"><span class="cl">  minReplicas: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">  maxReplicas: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># 监控的指标数组，支持多种类型的指标共存</span>
+</span></span><span class="line"><span class="cl">  metrics:
+</span></span><span class="line"><span class="cl">  <span class="c1"># Object类型的指标</span>
+</span></span><span class="line"><span class="cl">  - type: Object
+</span></span><span class="line"><span class="cl">    object:
+</span></span><span class="line"><span class="cl">      metric:
+</span></span><span class="line"><span class="cl">        <span class="c1"># 指标名称</span>
+</span></span><span class="line"><span class="cl">        name: requests-per-second
+</span></span><span class="line"><span class="cl">      <span class="c1"># 监控指标的对象描述，指标数据来源于该对象</span>
+</span></span><span class="line"><span class="cl">      describedObject:
+</span></span><span class="line"><span class="cl">        apiVersion: networking.k8s.io/v1beta1
+</span></span><span class="line"><span class="cl">        kind: Ingress
+</span></span><span class="line"><span class="cl">        name: main-route
+</span></span><span class="line"><span class="cl">      <span class="c1"># Value类型的目标值，Object类型的指标只支持Value和AverageValue类型的目标值</span>
+</span></span><span class="line"><span class="cl">      target:
+</span></span><span class="line"><span class="cl">        type: Value
+</span></span><span class="line"><span class="cl">        value: 10k
+</span></span><span class="line"><span class="cl">  <span class="c1"># Resource类型的指标</span>
+</span></span><span class="line"><span class="cl">  - type: Resource
+</span></span><span class="line"><span class="cl">    resource:
+</span></span><span class="line"><span class="cl">      name: cpu
+</span></span><span class="line"><span class="cl">      <span class="c1"># Utilization类型的目标值，Resource类型的指标只支持Utilization和AverageValue类型的目标值</span>
+</span></span><span class="line"><span class="cl">      target:
+</span></span><span class="line"><span class="cl">        type: Utilization
+</span></span><span class="line"><span class="cl">        averageUtilization: <span class="m">50</span>
+</span></span><span class="line"><span class="cl">  <span class="c1"># Pods类型的指标</span>
+</span></span><span class="line"><span class="cl">  - type: Pods
+</span></span><span class="line"><span class="cl">    pods:
+</span></span><span class="line"><span class="cl">      metric:
+</span></span><span class="line"><span class="cl">        name: packets-per-second
+</span></span><span class="line"><span class="cl">      <span class="c1"># AverageValue类型的目标值，Pods指标类型下只支持AverageValue类型的目标值</span>
+</span></span><span class="line"><span class="cl">      target:
+</span></span><span class="line"><span class="cl">        type: AverageValue
+</span></span><span class="line"><span class="cl">        averageValue: 1k
+</span></span><span class="line"><span class="cl">  <span class="c1"># External类型的指标</span>
+</span></span><span class="line"><span class="cl">  - type: External
+</span></span><span class="line"><span class="cl">    external:
+</span></span><span class="line"><span class="cl">      metric:
+</span></span><span class="line"><span class="cl">        name: queue_messages_ready
+</span></span><span class="line"><span class="cl">        <span class="c1"># 该字段与第三方的指标标签相关联，（此处官方文档有问题，正确的写法如下）</span>
+</span></span><span class="line"><span class="cl">        selector:
+</span></span><span class="line"><span class="cl">          matchLabels:
+</span></span><span class="line"><span class="cl">            env: <span class="s2">&#34;stage&#34;</span>
+</span></span><span class="line"><span class="cl">            app: <span class="s2">&#34;myapp&#34;</span>
+</span></span><span class="line"><span class="cl">      <span class="c1"># External指标类型下只支持Value和AverageValue类型的目标值</span>
+</span></span><span class="line"><span class="cl">      target:
+</span></span><span class="line"><span class="cl">        type: AverageValue
+</span></span><span class="line"><span class="cl">        averageValue: <span class="m">30</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<ul>
+<li><code>autoscaling/v1</code>版本将metrics字段放在了annotation中进行处理。<br>
+target共有3种类型：Utilization、Value、AverageValue。Utilization表示平均使用率；Value表示裸值；AverageValue表示平均值。<br>
+metrics中的type字段有四种类型的值：Object、Pods、Resource、External。<br>
+Resource指的是当前伸缩对象下的pod的cpu和memory指标，只支持Utilization和AverageValue类型的目标值。<br>
+Object指的是指定k8s内部对象的指标，数据需要第三方adapter提供，只支持Value和AverageValue类型的目标值。<br>
+Pods指的是伸缩对象（statefulSet、replicaController、replicaSet）底下的Pods的指标，数据需要第三方的adapter提供，并且只允许AverageValue类型的目标值。<br>
+External指的是k8s外部的指标，数据同样需要第三方的adapter提供，只支持Value和AverageValue类型的目标值。</li>
+<li><strong>HPA动态伸缩的原理</strong><br>
+HPA在k8s中也由一个controller控制，controller会间隔循环HPA，检查每个HPA中监控的指标是否触发伸缩条件，默认的间隔时间为15s。一旦触发伸缩条件，controller会向k8s发送请求，修改伸缩对象（statefulSet、replicaController、replicaSet）子对象scale中控制pod数量的字段。k8s响应请求，修改scale结构体，然后会刷新一次伸缩对象的pod数量。伸缩对象被修改后，自然会通过<code>list/watch</code>机制增加或减少pod数量，达到动态伸缩的目的。</li>
+<li><strong>HPA伸缩过程叙述</strong><br>
+HPA的伸缩主要流程如下：</li>
+</ul>
+<ol>
+<li>判断当前pod数量是否在HPA设定的pod数量区间中，如果不在，过小返回最小值，过大返回最大值，结束伸缩。</li>
+<li>判断指标的类型，并向api server发送对应的请求，拿到设定的监控指标。一般来说指标会根据预先设定的指标从以下三个<code>aggregated APIs</code>中获取：<code>metrics.k8s.io</code>、<code>custom.metrics.k8s.io</code>、 <code>external.metrics.k8s.io</code>。其中<code>metrics.k8s.io</code>一般由k8s自带的metrics-server来提供，主要是cpu，memory使用率指标，另外两种需要第三方的adapter来提供。<code>custom.metrics.k8s.io</code>提供自定义指标数据，一般跟k8s集群有关，比如跟特定的pod相关。<code>external.metrics.k8s.io</code>同样提供自定义指标数据，但一般跟k8s集群无关。许多知名的第三方监控平台提供了adapter实现了上述api（如prometheus），可以将监控和adapter一同部署在k8s集群中提供服务，甚至能够替换原来的metrics-server来提供上述三类api指标，达到深度定制监控数据的目的。</li>
+<li>根据获得的指标，应用相应的算法算出一个伸缩系数，并乘以目前pod数量获得期望pod数量。系数是指标的期望值与目前值的比值，如果大于1表示扩容，小于1表示缩容。指标数值有平均值（AverageValue）、平均使用率（Utilization）、裸值（Value）三种类型，每种类型的数值都有对应的算法。以下几点值得注意：如果系数有小数点，统一进一；系数如果未达到某个容忍值，HPA认为变化太小，会忽略这次变化，容忍值默认为0.1。<br>
+HPA扩容算法是一个非常保守的算法。如果出现获取不到指标的情况，扩容时算最小值，缩容时算最大值；如果需要计算平均值，出现pod没准备好的情况，平均数的分母不计入该pod。<br>
+一个HPA支持多个指标的监控，HPA会循环获取所有的指标，并计算期望的pod数量，并从期望结果中获得最大的pod数量作为最终的伸缩的pod数量。一个伸缩对象在k8s中允许对应多个HPA，但是只是k8s不会报错而已，事实上HPA彼此不知道自己监控的是同一个伸缩对象，在这个伸缩对象中的pod会被多个HPA无意义地来回修改pod数量，给系统增加消耗，如果想要指定多个监控指标，可以如上述所说，在一个HPA中添加多个监控指标。</li>
+<li>检查最终的pod数量是否在HPA设定的pod数量范围的区间，如果超过最大值或不足最小值都会修改为最大值或最小值。然后向k8s发出请求，修改伸缩对象的子对象scale的pod数量，结束一个HPA的检查，获取下一个HPA，完成一个伸缩流程。</li>
+</ol>
+</blockquote>
+<p>参照博客:<a class="link" href="https://www.cnblogs.com/yuhaohao/p/14109787.html"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/yuhaohao/p/14109787.html</a></p>
+<p>               <a class="link" href="https://zhuanlan.zhihu.com/p/89453704"  target="_blank" rel="noopener"
+    >https://zhuanlan.zhihu.com/p/89453704</a></p>
+<p> </p>
+<p> </p>
+<h1 id="hpa">HPA</h1>
+<p>现在应用是固定的3个副本，但是往往在生产环境流量是不可控的，很有可能一次活动就会有大量的流量，3个副本很有可能抗不住大量的用户请求，这个时候我们就希望能够自动对 Pod 进行伸缩，直接使用前面我们学习的 HPA 这个资源对象就可以满足我们的需求了。</p>
+<p>直接使用<code>kubectl autoscale</code>命令来创建一个 <code>HPA</code> 对象</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 ~<span class="o">]</span><span class="c1"># kubectl autoscale deployment wordpress --namespace kube-example --cpu-percent=60 --min=3 --max=6   # cpu超过60%会扩容副本</span>
+</span></span><span class="line"><span class="cl">horizontalpodautoscaler.autoscaling/wordpress autoscaled
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@k8s-master1 ~<span class="o">]</span><span class="c1"># kubectl get hpa -n kube-example </span>
+</span></span><span class="line"><span class="cl">NAME        REFERENCE              TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+</span></span><span class="line"><span class="cl">wordpress   Deployment/wordpress   1%/60%    <span class="m">3</span>         <span class="m">6</span>         <span class="m">4</span>          20s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>hpa.yaml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">apiVersion: autoscaling/v1
+</span></span><span class="line"><span class="cl">kind: HorizontalPodAutoscaler
+</span></span><span class="line"><span class="cl">metadata:
+</span></span><span class="line"><span class="cl">  name: wordpress
+</span></span><span class="line"><span class="cl">  namespace: kube-example
+</span></span><span class="line"><span class="cl">spec:
+</span></span><span class="line"><span class="cl">  maxReplicas: <span class="m">6</span>
+</span></span><span class="line"><span class="cl">  minReplicas: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">  scaleTargetRef:  <span class="c1"># 目标作用对象</span>
+</span></span><span class="line"><span class="cl">    apiVersion: apps/v1
+</span></span><span class="line"><span class="cl">    kind: Deployment
+</span></span><span class="line"><span class="cl">    name: wordpress
+</span></span><span class="line"><span class="cl">  targetCPUUtilizationPercentage: <span class="m">60</span>  <span class="c1">#该使用率基于Pod设置的CPU Request值进行计算</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>scaleTargetRef</strong>：目标作用对象，可以是Deployment、ReplicationController或ReplicaSet。<br>
+<strong>targetCPUUtilizationPercentage</strong>：期望每个Pod的CPU使用率都为50%，该使用率基于Pod设置的CPU Request值进行计算，例如该值为200m，那么系统将维持Pod的实际CPU使用值为100m。<br>
+<strong>minReplicas</strong>和<strong>maxReplicas：Pod</strong>副本数量的最小值和最大值，系统将在这个范围内进行自动扩缩容操作， 并维持每个Pod的CPU使用率为50%。<br>
+为了使用autoscaling/v1版本的HorizontalPodAutoscaler，需要预先安装Heapster组件或Metrics Server，用于采集Pod的CPU使用率。</p>
+<p> </p>
+<p>此命令创建了一个关联资源 wordpress 的 HPA，最小的 Pod 副本数为3，最大为6。HPA 会根据设定的 cpu 使用率（60%）动态的增加或者减少 Pod 数量。同样，使用上面的 Fortio 工具来进行压测一次，看下能否进行自动的扩缩容：</p>
+<h1 id="测试">测试</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> fortio load -a -c 8 -qps 1000 -t 60s &#34;http://wordpress.heian.com/&#34;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在压测的过程中我们可以看到 HPA 的状态变化以及 Pod 数量也变成了6个：</p>
+<p><img src="http://image.ownit.top/csdn/20210407102326886.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<p>当压测停止以后正常5分钟后就会自动进行缩容，变成最小的3个 Pod 副本。 </p>
+<p><img src="http://image.ownit.top/csdn/20210407110956943.png"
+	
+	
+	
+	loading="lazy"
+	
+	
+></p>
+<h1 id="问题">问题</h1>
+<p>（1）数据持久化</p>
+<p>（2）mysql账号密码注入等</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes/">Kubernetes</a>
+        
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+        
+            <a href="/tags/docker/">Docker</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E5%9B%9Bwordpress%E5%8D%87%E7%BA%A7%E6%9B%B4%E6%96%B0/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/56.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/56.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟四（wordpress升级更新）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%B8%89wordpress%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E5%92%8C%E6%9C%8D%E5%8A%A1%E8%B4%A8%E9%87%8Fqos/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/07.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/07.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟三（wordpress健康检查和服务质量QoS）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%BA%8Cwordpress%E9%AB%98%E5%8F%AF%E7%94%A8/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/68.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/68.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟二（wordpress高可用）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E5%AE%9E%E6%88%98%E6%A8%A1%E6%8B%9F%E4%B8%80wordpress%E5%9F%BA%E7%A1%80%E7%89%88/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/83.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/83.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes实战模拟一（wordpress基础版）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/kubernetes%E9%AB%98%E6%95%88%E6%94%B6%E9%9B%86%E7%94%9F%E4%BA%A7%E6%97%A5%E5%BF%97/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="http://image.ownit.top/4kdongman/62.jpg" loading="lazy" data-key="" data-hash="http://image.ownit.top/4kdongman/62.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes高效收集生产日志</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2023 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
