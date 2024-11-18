@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='本文将基于一个典型的云原生环境，介绍如何使用 Velero 进行 Kubernetes 集群的备份与迁移支持的版本列表Velero 组件一共分两部分，分别是服务端和客户端。服务端：运行在你 Kubernetes 的集群中客户端：是一些运行在本地的命令行的工具，需要已配置好 kubectl 及集群 kubeconfig 的机器上。'>
+<title>云原生时代的数据守护者：Velero 备份与迁移实战</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202408161519/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='云原生时代的数据守护者：Velero 备份与迁移实战'>
+<meta property='og:description' content='本文将基于一个典型的云原生环境，介绍如何使用 Velero 进行 Kubernetes 集群的备份与迁移支持的版本列表Velero 组件一共分两部分，分别是服务端和客户端。服务端：运行在你 Kubernetes 的集群中客户端：是一些运行在本地的命令行的工具，需要已配置好 kubectl 及集群 kubeconfig 的机器上。'>
+<meta property='og:url' content='https://www.ownit.top/p/202408161519/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='云原生,kubernetes,备份' /><meta property='article:published_time' content='2024-08-16T15:19:11&#43;00:00'/><meta property='article:modified_time' content='2024-08-16T15:19:11&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/60.jpg' />
+<meta name="twitter:title" content="云原生时代的数据守护者：Velero 备份与迁移实战">
+<meta name="twitter:description" content="本文将基于一个典型的云原生环境，介绍如何使用 Velero 进行 Kubernetes 集群的备份与迁移支持的版本列表Velero 组件一共分两部分，分别是服务端和客户端。服务端：运行在你 Kubernetes 的集群中客户端：是一些运行在本地的命令行的工具，需要已配置好 kubectl 及集群 kubeconfig 的机器上。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/60.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#项目背景">项目背景</a></li>
+    <li><a href="#环境介绍">环境介绍</a></li>
+    <li><a href="#组件介绍">组件介绍</a>
+      <ol>
+        <li><a href="#velero组件">Velero组件</a></li>
+        <li><a href="#velero备份流程">velero备份流程</a></li>
+        <li><a href="#velero-后端存储">Velero 后端存储</a></li>
+      </ol>
+    </li>
+    <li><a href="#velero客户端">velero客户端</a>
+      <ol>
+        <li><a href="#安装velero客户端">安装velero客户端</a></li>
+        <li><a href="#安装minio">安装minio</a></li>
+        <li><a href="#创建minio应用">创建minio应用</a></li>
+      </ol>
+    </li>
+    <li><a href="#velero-服务端">velero 服务端</a>
+      <ol>
+        <li><a href="#创建密钥">创建密钥</a></li>
+        <li><a href="#安装velero到k8s集群">安装velero到k8s集群</a></li>
+        <li><a href="#卸载velero">卸载velero</a></li>
+      </ol>
+    </li>
+    <li><a href="#备份与恢复">备份与恢复</a>
+      <ol>
+        <li><a href="#使用官方案例创建测试应用">使用官方案例创建测试应用</a></li>
+        <li><a href="#备份测试应用">备份测试应用</a></li>
+        <li><a href="#查看备份列表">查看备份列表</a></li>
+        <li><a href="#定时备份指南">定时备份指南</a></li>
+        <li><a href="#恢复">恢复</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202408161519/">
+                
+                    <img src="/../../title_pic/60.jpg" loading="lazy" alt="Featured image of post 云原生时代的数据守护者：Velero 备份与迁移实战" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/kubernetes%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                Kubernetes项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202408161519/">云原生时代的数据守护者：Velero 备份与迁移实战</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            本文将基于一个典型的云原生环境，介绍如何使用 Velero 进行 Kubernetes 集群的备份与迁移支持的版本列表Velero 组件一共分两部分，分别是服务端和客户端。服务端：运行在你 Kubernetes 的集群中客户端：是一些运行在本地的命令行的工具，需要已配置好 kubectl 及集群 kubeconfig 的机器上。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Aug 16, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 8 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="项目背景">项目背景</h2>
+<p>在云计算和容器技术飞速发展的今天，Kubernetes 已经成为容器编排和管理的事实标准。然而，随着业务的不断扩展，如何在云原生环境下保护和迁移 Kubernetes 集群资源，成为了摆在运维人员面前的一大挑战。Velero，作为一款云原生的灾难恢复和迁移工具，以其强大的功能和灵活的使用方式，为 Kubernetes 集群的数据安全提供了坚实的保障。</p>
+<h2 id="环境介绍">环境介绍</h2>
+<p>本文将基于一个典型的云原生环境，介绍如何使用 Velero 进行 Kubernetes 集群的备份与迁移</p>
+<ul>
+<li>Kubernetes：v1.23.1</li>
+<li>Velero：1.11</li>
+</ul>
+<p>开源地址：<a class="link" href="https://github.com/vmware-tanzu/velero"  target="_blank" rel="noopener"
+    >https://github.com/vmware-tanzu/velero</a>
+官方文档：<a class="link" href="https://velero.io/docs/v1.11/"  target="_blank" rel="noopener"
+    >https://velero.io/docs/v1.11/</a></p>
+<p>支持的版本列表
+<img src="/../../image/d1a724a24df14242a6487bbcb95c66cf.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="组件介绍">组件介绍</h2>
+<h3 id="velero组件">Velero组件</h3>
+<p>Velero 组件一共分两部分，分别是服务端和客户端。</p>
+<ul>
+<li>服务端：运行在你 Kubernetes 的集群中</li>
+<li>客户端：是一些运行在本地的命令行的工具，需要已配置好 kubectl 及集群 kubeconfig 的机器上</li>
+</ul>
+<h3 id="velero备份流程">velero备份流程</h3>
+<ol>
+<li><strong>Velero 客户端</strong>
+发送 API 请求至 Kubernetes API Server，创建备份任务。</li>
+<li><strong>Kubernetes API Server</strong>
+接收并处理 Velero 客户端的请求，创建备份任务，同时通过 Watch 机制通知相关的控制器。</li>
+<li><strong>Backup 控制器</strong>
+通过 Watch 机制监听 API Server，获取备份任务后，向 API Server 请求需要备份的数据。</li>
+<li><strong>对象存储服务器</strong>
+Backup 控制器将从 API Server 获取的数据备份至指定的对象存储服务器。</li>
+</ol>
+<p><img src="/../../image/1cd67cf7e3564c0ea92111e3e7d1d709.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><img src="/../../image/3a948d1e7b43433d883df35f01d6f75f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="velero-后端存储">Velero 后端存储</h3>
+<p>Velero 支持两种用于配置后端存储的自定义资源定义 (CRD)，分别是 <code>BackupStorageLocation</code> 和 <code>VolumeSnapshotLocation</code>。</p>
+<p><strong>BackupStorageLocation</strong>
+<code>BackupStorageLocation</code> 主要用于定义 Kubernetes 集群资源的备份存储位置，针对的是集群对象数据，而非持久化卷 (PVC) 的数据。该存储通常是 S3 兼容的对象存储，如 MinIO、阿里云 OSS 等。</p>
+<p><strong>VolumeSnapshotLocation</strong>
+<code>VolumeSnapshotLocation</code> 主要用于对持久化卷 (PV) 进行快照备份，这要求云提供商提供相应的插件。阿里云已经提供了该插件，用户可以通过 CSI (容器存储接口) 等存储机制来进行 PV 的快照备份。此外，用户还可以使用专门的备份工具 <strong>Restic</strong>，将 PV 的数据备份到阿里云 OSS（安装 Velero 时可以选择自定义该选项）。</p>
+<blockquote>
+<p>Restic 是一款 GO 语言开发的数据加密备份工具，顾名思义，可以将本地数据加密后传输到指定的仓库。支持的仓库有 Local、SFTP、Aws S3、Minio、OpenStack Swift、Backblaze B2、Azure BS、Google Cloud storage、Rest Server。</p>
+</blockquote>
+<h2 id="velero客户端">velero客户端</h2>
+<p>在 <a class="link" href="https://github.com/vmware-tanzu/velero/releases"  target="_blank" rel="noopener"
+    >Github Release 页面</a>下载指定的 velero 二进制客户端安装包，比如这里我们下载我们k8s集群对应的版本为 <code>v1.11.1</code>
+<img src="/../../image/c4db5520afea4d5887b30ce0493a490d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>版本列表：https://github.com/vmware-tanzu/velero/releases</p>
+<h3 id="安装velero客户端">安装velero客户端</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ wget https://github.com/vmware-tanzu/velero/releases/download/v1.11.1/velero-v1.11.1-linux-amd64.tar.gz
+</span></span><span class="line"><span class="cl">$ tar zxf velero-v1.11.1-linux-amd64.tar.gz
+</span></span><span class="line"><span class="cl">$ mv velero-v1.11.1-linux-amd64/velero /usr/bin/
+</span></span><span class="line"><span class="cl">$ velero -h
+</span></span><span class="line"><span class="cl"><span class="c1"># 启用命令补全</span>
+</span></span><span class="line"><span class="cl">$ <span class="nb">source</span> &lt;<span class="o">(</span>velero completion bash<span class="o">)</span>
+</span></span><span class="line"><span class="cl">$ velero completion bash &gt; /etc/bash_completion.d/velero
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="安装minio">安装minio</h3>
+<p>Velero支持很多种存储插件，可查看：<a class="link" href="https://velero.io/docs/v1.13/supported-providers/"  target="_blank" rel="noopener"
+    >Velero Docs - Providers</a>获取插件信息，我们这里使用minio作为S3兼容的对象存储提供程序。您也可以在任意地方部署Minio对象存储，只需要保证K8S集群可以访问到即可。
+<code>minio.yaml</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Namespace</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">velero</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">velero</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">component</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">Recreate</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">component</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">component</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">storage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">minio/minio:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">/storage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">config-dir=/config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- --<span class="l">console-address=:9001</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">env</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">MINIO_ACCESS_KEY</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;minio&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">MINIO_SECRET_KEY</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;minio123&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">storage</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/storage&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/config&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Service</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">velero</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">component</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ClusterIP is recommended for production environments.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># Change to NodePort if needed per documentation,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># but only if you run Minio in a test/trial environment, for example with Minikube.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">NodePort</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">api</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="m">9000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">nodePort</span><span class="p">:</span><span class="w"> </span><span class="m">32000</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">console</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">9001</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="m">9001</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">nodePort</span><span class="p">:</span><span class="w"> </span><span class="m">32001</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">component</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nn">---</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">batch/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Job</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">velero</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">minio-setup</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">component</span><span class="p">:</span><span class="w"> </span><span class="l">minio</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">minio-setup</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">OnFailure</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">mc</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">minio/mc:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">command</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="l">/bin/sh</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- -<span class="l">c</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="s2">&#34;mc --config-dir=/config config host add velero http://minio:9000 minio minio123 &amp;&amp; mc --config-dir=/config mb -p velero/velero&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;/config&#34;</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="创建minio应用">创建minio应用</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 创建velero命名空间</span>
+</span></span><span class="line"><span class="cl">$ kubectl create namespace velero
+</span></span><span class="line"><span class="cl"><span class="c1"># 创建minio资源</span>
+</span></span><span class="line"><span class="cl">$  kubectl apply -f  minio.yaml
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看部署状态</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt velero<span class="o">]</span><span class="c1"># kubectl get sts,pod,svc -n velero</span>
+</span></span><span class="line"><span class="cl">NAME                          READY   STATUS      RESTARTS   AGE
+</span></span><span class="line"><span class="cl">pod/minio-78f994f86c-4t9lw    1/1     Running     <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">pod/minio-setup-d7vbl         0/1     Completed   <span class="m">4</span>          27h
+</span></span><span class="line"><span class="cl">pod/node-agent-6z5mn          1/1     Running     <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">pod/node-agent-8kjcm          1/1     Running     <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">pod/node-agent-k8zbk          1/1     Running     <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">pod/velero-85dd87c457-mz5jm   1/1     Running     <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME            TYPE       CLUSTER-IP     EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>                         AGE
+</span></span><span class="line"><span class="cl">service/minio   NodePort   172.21.25.69   &lt;none&gt;        9000:32000/TCP,9001:32001/TCP   27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 开放NodePort端口</span>
+</span></span><span class="line"><span class="cl">$ kubectl patch svc minio -n velero -p <span class="s1">&#39;{&#34;spec&#34;: {&#34;type&#34;: &#34;NodePort&#34;}}&#39;</span>
+</span></span><span class="line"><span class="cl">$ kubectl patch svc minio -n velero --type<span class="o">=</span><span class="s1">&#39;json&#39;</span> -p<span class="o">=</span><span class="s1">&#39;[{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/ports/0/nodePort&#34;, &#34;value&#34;:9000},{&#34;op&#34;: &#34;replace&#34;, &#34;path&#34;: &#34;/spec/ports/1/nodePort&#34;, &#34;value&#34;:9001}]&#39;</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@bt velero<span class="o">]</span><span class="c1">#  kubectl get svc -n velero  </span>
+</span></span><span class="line"><span class="cl">NAME    TYPE       CLUSTER-IP     EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>                         AGE
+</span></span><span class="line"><span class="cl">minio   NodePort   172.21.25.69   &lt;none&gt;        9000:32000/TCP,9001:32001/TCP   27h
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过浏览器访问服务器IP:30282，并使用账号minio密码minio123登入验证。
+<img src="/../../image/cfd824198d614b679305e903cc1918b2.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="velero-服务端">velero 服务端</h2>
+<p>我们可以使用 velero 客户端来安装服务端，也可以使用 Helm Chart 来进行安装，比如这里我们用客户端来安装，velero 命令默认读取 kubectl 配置的集群上下文，所以前提是 velero 客户端所在的节点有可访问集群的 kubeconfig 配置。</p>
+<h3 id="创建密钥">创建密钥</h3>
+<p>首先准备密钥文件，在当前目录建立一个空白文本文件，内容如下所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ cat &gt; credentials-velero <span class="s">&lt;&lt;EOF
+</span></span></span><span class="line"><span class="cl"><span class="s">[default]
+</span></span></span><span class="line"><span class="cl"><span class="s">aws_access_key_id = minio
+</span></span></span><span class="line"><span class="cl"><span class="s">aws_secret_access_key = minio123
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="安装velero到k8s集群">安装velero到k8s集群</h3>
+<p>替换为之前步骤中 minio 的对应 access key id 和 secret access key如果 minio 安装在 kubernetes 集群内时按照如下命令安装 velero 服务端:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ velero install <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --provider aws <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --image velero/velero:v1.11.1 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --plugins velero/velero-plugin-for-aws:v1.7.1 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --bucket velero <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --secret-file ./credentials-velero <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --use-node-agent <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --use-volume-snapshots<span class="o">=</span><span class="nb">false</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --namespace velero <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --backup-location-config <span class="nv">region</span><span class="o">=</span>minio,s3ForcePathStyle<span class="o">=</span><span class="s2">&#34;true&#34;</span>,s3Url<span class="o">=</span>http://minio:9000 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --wait
+</span></span><span class="line"><span class="cl"><span class="c1"># 执行install命令后会创建一系列清单，包括CustomResourceDefinition、Namespace、Deployment等。</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># velero install .... --dry-run -o yaml &gt; velero_deploy.yaml 如果为私仓，可以通过--dry-run 导出 YAML 文件调整在应用。</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 可使用如下命令查看运行日志</span>
+</span></span><span class="line"><span class="cl">$ kubectl logs deployment/velero -n velero
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看velero创建的api对象</span>
+</span></span><span class="line"><span class="cl">$ kubectl api-versions <span class="p">|</span> grep velero
+</span></span><span class="line"><span class="cl">velero.io/v1
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看备份位置</span>
+</span></span><span class="line"><span class="cl">$ velero backup-location get
+</span></span><span class="line"><span class="cl">NAME      PROVIDER   BUCKET/PREFIX   PHASE       LAST VALIDATED                  ACCESS MODE   DEFAULT
+</span></span><span class="line"><span class="cl">default   aws        velero          Available   2024-08-16 14:42:38 +0800 CST   ReadWrite     <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#卸载命令</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># velero uninstall --namespace velero</span>
+</span></span><span class="line"><span class="cl">You are about to uninstall Velero.
+</span></span><span class="line"><span class="cl">Are you sure you want to <span class="k">continue</span> <span class="o">(</span>Y/N<span class="o">)</span>? y
+</span></span><span class="line"><span class="cl">Waiting <span class="k">for</span> velero namespace <span class="s2">&#34;velero&#34;</span> to be deleted
+</span></span><span class="line"><span class="cl">............................................................................................................................................................................................
+</span></span><span class="line"><span class="cl">Velero namespace <span class="s2">&#34;velero&#34;</span> deleted
+</span></span><span class="line"><span class="cl">Velero uninstalled ⛵
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>选项说明：</code></p>
+<ol>
+<li><code>--kubeconfig</code>(可选)：指定<code>kubeconfig</code>认证文件，默认使用<code>.kube/config</code>；</li>
+<li><code>--provider</code>：定义插件提供方；</li>
+<li><code>--image</code>：定义运行velero的镜像，默认与velero客户端一致；</li>
+<li><code>--plugins</code>：指定使用aws s3兼容的插件镜像；</li>
+<li><code>--bucket</code>：指定对象存储Bucket桶名称；</li>
+<li><code>--secret-file</code>：指定对象存储认证文件；</li>
+<li><code>--use-node-agent</code>：创建Velero Node Agent守护进程，托管FSB模块；</li>
+<li><code>--use-volume-snapshots</code>：是否启使用快照；</li>
+<li><code>--namespace</code>：指定部署的namespace名称，默认为velero；</li>
+<li><code>--backup-location-config</code>：指定对象存储地址信息；</li>
+</ol>
+<p>aws插件与velero版本对应关系：
+<img src="/../../image/b8118f58e446476c8edeeb2410e30684.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="卸载velero">卸载velero</h3>
+<p>如果您想从集群中完全卸载Velero，则以下命令将删除由velero install创建的所有资源:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl delete namespace/velero clusterrolebinding/velero
+</span></span><span class="line"><span class="cl">kubectl delete crds -l <span class="nv">component</span><span class="o">=</span>velero
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="备份与恢复">备份与恢复</h2>
+<p>备份命令：<code>velero create backup NAME [flags]</code>
+<strong>backup选项：</strong></p>
+<ul>
+<li><code>--exclude-namespaces stringArray</code> : 要从备份中排除的名称空间</li>
+<li><code>--exclude-resources stringArray</code>: 要从备份中排除的资源，如<code>storageclasses.storage.k8s.io</code></li>
+<li><code>--include-cluster-resources optionalBool[=true]</code>: 包含集群资源类型</li>
+<li><code>--include-namespaces stringArray</code>: 要包含在备份中的名称空间(默认&rsquo;*')</li>
+<li><code>--include-resources stringArray</code>: 备份中要包括的资源</li>
+<li><code>--labels mapStringString</code>: 给这个备份加上标签</li>
+<li><code>-o, --output string</code>: 指定输出格式，支持&rsquo;table&rsquo;、&lsquo;json&rsquo;和&rsquo;yaml&rsquo;；</li>
+<li><code>-l, --selector labelSelector</code>: 对指定标签的资源进行备份</li>
+<li><code>--snapshot-volumes optionalBool[=true]</code>: 对 PV 创建快照</li>
+<li><code>--storage-location string</code>: 指定备份的位置</li>
+<li><code>--ttl duration</code>: 备份数据多久删掉</li>
+<li><code>--volume-snapshot-locations strings</code>: 指定快照的位置，也就是哪一个公有云驱动</li>
+</ul>
+<h3 id="使用官方案例创建测试应用">使用官方案例创建测试应用</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ kubectl apply -f examples/nginx-app/base.yaml 
+</span></span><span class="line"><span class="cl">namespace/nginx-example created
+</span></span><span class="line"><span class="cl">deployment.apps/nginx-deployment created
+</span></span><span class="line"><span class="cl">service/my-nginx created
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看资源清单</span>
+</span></span><span class="line"><span class="cl">$ kubectl get all -n nginx-example
+</span></span><span class="line"><span class="cl">NAME                                    READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">pod/nginx-deployment-5c844b66c8-t5l9z   1/1     Running   <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">pod/nginx-deployment-5c844b66c8-vlkqj   1/1     Running   <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME               TYPE           CLUSTER-IP      EXTERNAL-IP      PORT<span class="o">(</span>S<span class="o">)</span>        AGE
+</span></span><span class="line"><span class="cl">service/my-nginx   LoadBalancer   172.21.18.168   192.168.102.51   80:31831/TCP   27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+</span></span><span class="line"><span class="cl">deployment.apps/nginx-deployment   2/2     <span class="m">2</span>            <span class="m">2</span>           27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                                          DESIRED   CURRENT   READY   AGE
+</span></span><span class="line"><span class="cl">replicaset.apps/nginx-deployment-5c844b66c8   <span class="m">2</span>         <span class="m">2</span>         <span class="m">2</span>       27h
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="备份测试应用">备份测试应用</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ velero backup create nginx-backup --include-namespaces nginx-example
+</span></span><span class="line"><span class="cl">Backup request <span class="s2">&#34;nginx-backup&#34;</span> submitted successfully.
+</span></span><span class="line"><span class="cl">Run <span class="sb">`</span>velero backup describe nginx-backup<span class="sb">`</span> or <span class="sb">`</span>velero backup logs nginx-backup<span class="sb">`</span> <span class="k">for</span> more details.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>选项：</p>
+<ul>
+<li><code>--include-namespaces</code>：指定命名空间</li>
+<li><code>--selector</code>：标签选择器，如app=nginx</li>
+</ul>
+<h3 id="查看备份列表">查看备份列表</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ velero backup get
+</span></span><span class="line"><span class="cl">NAME           STATUS      ERRORS   WARNINGS   CREATED                         EXPIRES   STORAGE LOCATION   SELECTOR
+</span></span><span class="line"><span class="cl">nginx-backup   Completed   <span class="m">0</span>        <span class="m">0</span>          2024-08-15 11:17:18 +0800 CST   28d       default            &lt;none&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看备份详细信息</span>
+</span></span><span class="line"><span class="cl">$ velero backup describe nginx-backup
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看备份日志</span>
+</span></span><span class="line"><span class="cl">$ velero backup logs nginx-backup
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>登入minio控制台查看备份内容
+<img src="/../../image/31ef2668779748f7aed7a01792598a27.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="定时备份指南">定时备份指南</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 使用cron表达式备份</span>
+</span></span><span class="line"><span class="cl">$ velero schedule create nginx-daily --schedule<span class="o">=</span><span class="s2">&#34;0 1 * * *&#34;</span> --include-namespaces nginx-example
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用一些非标准的速记 cron 表达式</span>
+</span></span><span class="line"><span class="cl">$ velero schedule create nginx-daily --schedule<span class="o">=</span><span class="s2">&#34;@daily&#34;</span> --include-namespaces nginx-example
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 手动触发定时任务</span>
+</span></span><span class="line"><span class="cl">$ velero backup create --from-schedule nginx-daily
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>更多cron示例请参考：<a class="link" href="https://pkg.go.dev/github.com/robfig/cron#hdr-Predefined_schedules"  target="_blank" rel="noopener"
+    >cron package’s documentation</a></p>
+<h3 id="恢复">恢复</h3>
+<p>模拟灾难</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 删除nginx-example命名空间和资源</span>
+</span></span><span class="line"><span class="cl">$ kubectl delete namespace nginx-example
+</span></span><span class="line"><span class="cl"><span class="c1"># 检查是否删除</span>
+</span></span><span class="line"><span class="cl">$ kubectl get all -n nginx-example
+</span></span><span class="line"><span class="cl">No resources found in nginx-example namespace.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>恢复资源</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ velero backup get
+</span></span><span class="line"><span class="cl">NAME           STATUS      ERRORS   WARNINGS   CREATED                         EXPIRES   STORAGE LOCATION   SELECTOR
+</span></span><span class="line"><span class="cl">nginx-backup   Completed   <span class="m">0</span>        <span class="m">0</span>          2024-04-06 21:47:16 +0800 CST   29d       default            &lt;none&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ velero restore create --from-backup nginx-backup
+</span></span><span class="line"><span class="cl">Restore request <span class="s2">&#34;nginx-backup-20240406215611&#34;</span> submitted successfully.
+</span></span><span class="line"><span class="cl">Run <span class="sb">`</span>velero restore describe nginx-backup-20240406215611<span class="sb">`</span> or <span class="sb">`</span>velero restore logs nginx-backup-20240406215611<span class="sb">`</span> <span class="k">for</span> more details.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>检查恢复的资源</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ velero restore get
+</span></span><span class="line"><span class="cl">NAME                          BACKUP         STATUS      STARTED                         COMPLETED                       ERRORS   WARNINGS   CREATED                         SELECTOR
+</span></span><span class="line"><span class="cl">nginx-backup-20240406215611   nginx-backup   Completed   2024-04-06 21:56:11 +0800 CST   2024-04-06 21:56:12 +0800 CST   <span class="m">0</span>        <span class="m">2</span>          2024-04-06 21:56:11 +0800 CST   &lt;none&gt;
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 查看详细信息</span>
+</span></span><span class="line"><span class="cl">$ velero restore describe nginx-backup-20240406215611
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="c1"># 检查资源状态</span>
+</span></span><span class="line"><span class="cl">$ kubectl get all -n nginx-example
+</span></span><span class="line"><span class="cl">NAME                                    READY   STATUS    RESTARTS   AGE
+</span></span><span class="line"><span class="cl">pod/nginx-deployment-5c844b66c8-t5l9z   1/1     Running   <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">pod/nginx-deployment-5c844b66c8-vlkqj   1/1     Running   <span class="m">0</span>          27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME               TYPE           CLUSTER-IP      EXTERNAL-IP      PORT<span class="o">(</span>S<span class="o">)</span>        AGE
+</span></span><span class="line"><span class="cl">service/my-nginx   LoadBalancer   172.21.18.168   192.168.102.51   80:31831/TCP   27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+</span></span><span class="line"><span class="cl">deployment.apps/nginx-deployment   2/2     <span class="m">2</span>            <span class="m">2</span>           27h
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME                                          DESIRED   CURRENT   READY   AGE
+</span></span><span class="line"><span class="cl">replicaset.apps/nginx-deployment-5c844b66c8   <span class="m">2</span>         <span class="m">2</span>         <span class="m">2</span>       27h
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>参考:
+<a class="link" href="https://www.cnblogs.com/nf01/p/18118159"  target="_blank" rel="noopener"
+    >https://www.cnblogs.com/nf01/p/18118159</a>
+<a class="link" href="https://github.com/vmware-tanzu/velero"  target="_blank" rel="noopener"
+    >https://github.com/vmware-tanzu/velero</a>
+<a class="link" href="https://velero.io/docs/v1.11/"  target="_blank" rel="noopener"
+    >https://velero.io/docs/v1.11/</a></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9Fkubernetes%E5%A4%87%E4%BB%BD/">云原生,kubernetes,备份</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202409091543/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/48.jpg" loading="lazy" data-key="202409091543" data-hash="/../../title_pic/48.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kubernetes部署(haproxy&#43;keepalived)高可用环境和办公网络打通</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404111830/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/73.jpg" loading="lazy" data-key="202404111830" data-hash="/../../title_pic/73.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Ingress配置优化和追踪</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404021613/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202404021613" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx在Kubernetes集群中的进阶应用</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202401191019/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/49.jpg" loading="lazy" data-key="202401191019" data-hash="/../../title_pic/49.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 监控Ingress实战</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202401180912/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/13.jpg" loading="lazy" data-key="202401180912" data-hash="/../../title_pic/13.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Kube-Prometheus 手动部署</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

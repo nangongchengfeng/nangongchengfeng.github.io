@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='环境介绍源环境：OpenStack 版本（适用于其他版本，但步骤可能略有不同）目标环境：阿里云ECS操作系统：以Centos7 为例（其他Linux发行版的操作可能类似）必要工具：qemu-img（用于转换镜像格式）将OpenStack环境中的虚拟机镜像成功迁移到阿里云ECS。这个过程不仅增强了云资源的可移植性，而且为企业提供了更多的灵活性和选择权。无论是为了成本优化、性能提升还是遵循合规性要求，这种迁移策略都是现代云基础设施管理不可或缺的一部分。'>
+<title>OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202410231844/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云'>
+<meta property='og:description' content='环境介绍源环境：OpenStack 版本（适用于其他版本，但步骤可能略有不同）目标环境：阿里云ECS操作系统：以Centos7 为例（其他Linux发行版的操作可能类似）必要工具：qemu-img（用于转换镜像格式）将OpenStack环境中的虚拟机镜像成功迁移到阿里云ECS。这个过程不仅增强了云资源的可移植性，而且为企业提供了更多的灵活性和选择权。无论是为了成本优化、性能提升还是遵循合规性要求，这种迁移策略都是现代云基础设施管理不可或缺的一部分。'>
+<meta property='og:url' content='https://www.ownit.top/p/202410231844/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='openstack,阿里云,云计算' /><meta property='article:published_time' content='2024-10-23T18:44:38&#43;00:00'/><meta property='article:modified_time' content='2024-10-23T18:44:38&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/77.jpg' />
+<meta name="twitter:title" content="OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云">
+<meta name="twitter:description" content="环境介绍源环境：OpenStack 版本（适用于其他版本，但步骤可能略有不同）目标环境：阿里云ECS操作系统：以Centos7 为例（其他Linux发行版的操作可能类似）必要工具：qemu-img（用于转换镜像格式）将OpenStack环境中的虚拟机镜像成功迁移到阿里云ECS。这个过程不仅增强了云资源的可移植性，而且为企业提供了更多的灵活性和选择权。无论是为了成本优化、性能提升还是遵循合规性要求，这种迁移策略都是现代云基础设施管理不可或缺的一部分。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/77.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#项目背景">项目背景</a></li>
+    <li><a href="#需求">需求</a></li>
+    <li><a href="#环境介绍">环境介绍</a></li>
+    <li><a href="#准备工作">准备工作</a></li>
+    <li><a href="#导出openstack虚拟机镜像">导出OpenStack虚拟机镜像</a></li>
+    <li><a href="#传镜像到阿里云oss">传镜像到阿里云OSS</a></li>
+    <li><a href="#导入镜像到阿里云ecs">导入镜像到阿里云ECS</a></li>
+    <li><a href="#创建ecs实例">创建ECS实例</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202410231844/">
+                
+                    <img src="/../../title_pic/77.jpg" loading="lazy" alt="Featured image of post OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202410231844/">OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            环境介绍源环境：OpenStack 版本（适用于其他版本，但步骤可能略有不同）目标环境：阿里云ECS操作系统：以Centos7 为例（其他Linux发行版的操作可能类似）必要工具：qemu-img（用于转换镜像格式）将OpenStack环境中的虚拟机镜像成功迁移到阿里云ECS。这个过程不仅增强了云资源的可移植性，而且为企业提供了更多的灵活性和选择权。无论是为了成本优化、性能提升还是遵循合规性要求，这种迁移策略都是现代云基础设施管理不可或缺的一部分。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Oct 23, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="项目背景">项目背景</h2>
+<p>OpenStack，作为一个开源的云计算平台，经常被用于构建私有云和公有云服务。然而，随着业务的发展和扩展，企业可能会面临将在OpenStack上运行的虚拟机迁移到其他云服务供应商的需求</p>
+<h2 id="需求">需求</h2>
+<p>因为运营团队在本地机房有一台 OpenStack中的虚拟机业务，负责邮件发送，跑定时任务等等。但是由于机房迁移，会导致机房服务中断。但由于考虑业务继续跑，需要把这台机器 迁移到阿里云的环境。但是由于依赖和环境众多，差异性太大，需要有个简便的方式完成迁移。</p>
+<h2 id="环境介绍">环境介绍</h2>
+<p>环境介绍</p>
+<ul>
+<li>源环境：OpenStack 版本（适用于其他版本，但步骤可能略有不同）</li>
+<li>目标环境：阿里云ECS</li>
+<li>操作系统：以Centos7 为例（其他Linux发行版的操作可能类似）</li>
+<li>必要工具：qemu-img（用于转换镜像格式）</li>
+</ul>
+<h2 id="准备工作">准备工作</h2>
+<p>在开始之前，确保您有以下准备：</p>
+<ol>
+<li>确认您有足够的权限来访问OpenStack环境和阿里云账户。</li>
+<li>安装qemu-img工具，这通常可以在Linux发行版的官方仓库中找到。</li>
+<li>确保有足够的本地存储空间来保存导出的QCOW2镜像文件。</li>
+</ol>
+<h2 id="导出openstack虚拟机镜像">导出OpenStack虚拟机镜像</h2>
+<p>首先排查这台机器虚拟机在那台OpenStack宿主机上，
+比如我这台OpenStack虚拟机在 compute4.openstack.fjf，
+虚拟机id：e7c5b097-e842-4db1-849b-fd4af3cb9380
+<img src="/../../image/f1df32dd423d40ab8c3e3b619d86ee0d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>进入工作目录</strong>
+进入compute4.openstack.fjf 这台OpenStack 的node节点，在进入下方目录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">cd</span> /var/lib/nova/instaces/<span class="nv">$your_instance_id</span>$
+</span></span><span class="line"><span class="cl">这个是我的
+</span></span><span class="line"><span class="cl"> <span class="nb">cd</span> /var/lib/nova/instances/e7c5b097-e842-4db1-849b-fd4af3cb9380/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>导出运行的镜像</strong>
+使用qemu-img工具将OpenStack的QCOW2镜像转换为适合阿里云的格式：</p>
+<p>如果保存，请关闭虚拟机在试试</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>dev<span class="o">][</span>root@compute4-192.168.81.14 e7c5b097-e842-4db1-849b-fd4af3cb9380<span class="o">]</span><span class="c1"># qemu-img convert -c -O qcow2 disk test.qcow2</span>
+</span></span><span class="line"><span class="cl">qemu-img: Could not open <span class="s1">&#39;disk&#39;</span>: Failed to get shared <span class="s2">&#34;write&#34;</span> lock
+</span></span><span class="line"><span class="cl">Is another process using the image <span class="o">[</span>disk<span class="o">]</span>?
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#这个正常的</span>
+</span></span><span class="line"><span class="cl">qemu-img convert -c -O qcow2 disk test.qcow2
+</span></span><span class="line"><span class="cl"><span class="c1">#这个命令会创建一个新的压缩的QCOW2镜像文件</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/2f255b2401f44d37a73423c1b14d5122.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="传镜像到阿里云oss">传镜像到阿里云OSS</h2>
+<p>在导入镜像到阿里云ECS之前，您需要先将镜像上传到阿里云的对象存储服务（OSS）。</p>
+<ol>
+<li>登录到阿里云控制台。</li>
+<li>创建一个OSS Bucket。</li>
+<li>使用OSS的上传功能或者OSS提供的命令行工具ossutil上传您的QCOW2镜像文件。</li>
+</ol>
+<p><img src="/../../image/627af3f90b0a4ff8965b93dc5b1cf8fb.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/9a7a17f8a5744a079743dafefecba63b.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="导入镜像到阿里云ecs">导入镜像到阿里云ECS</h2>
+<p>一旦镜像上传到OSS，您可以通过阿里云ECS控制台导入镜像：</p>
+<ol>
+<li>在ECS控制台中，找到“镜像和模板”部分。</li>
+<li>选择“导入镜像”。</li>
+<li>提供OSS中镜像的URL，以及其他必要的信息。</li>
+<li>启动导入任务。
+阿里云会处理镜像的导入过程，这可能需要一些时间。</li>
+</ol>
+<p><img src="/../../image/8365b4780a374c7b92c0060cecdfb022.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/75dce2b210004c96815302fc98402f41.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/905b458908404304a3535521959a5b62.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/3c9e5e417e1845d9818898e24b49bc5b.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/d41524a3690c4794af19ca6c6c2c5b07.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="创建ecs实例">创建ECS实例</h2>
+<p>导入镜像完成后，您可以使用该镜像创建新的ECS实例：</p>
+<ol>
+<li>在ECS控制台中，选择“实例”。</li>
+<li>点击“创建实例”。</li>
+<li>在创建向导中，选择您刚刚导入的镜像作为基础。</li>
+<li>完成实例的配置，包括选择实例类型、配置网络和安全组等。</li>
+<li>启动实例。
+<img src="/../../image/2799bd9a782944f8ba72e58811d431d2.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/ccf324ee2c894747968d89501a4d0fb2.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></li>
+</ol>
+<h2 id="总结">总结</h2>
+<p>将OpenStack环境中的虚拟机镜像成功迁移到阿里云ECS。这个过程不仅增强了云资源的可移植性，而且为企业提供了更多的灵活性和选择权。无论是为了成本优化、性能提升还是遵循合规性要求，这种迁移策略都是现代云基础设施管理不可或缺的一部分。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/openstack%E9%98%BF%E9%87%8C%E4%BA%91%E4%BA%91%E8%AE%A1%E7%AE%97/">openstack,阿里云,云计算</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202410251628/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/01.jpg" loading="lazy" data-key="202410251628" data-hash="/../../title_pic/01.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">机房私有云OpenStack搭建详细步骤流程</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407302222/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/11.jpg" loading="lazy" data-key="202407302222" data-hash="/../../title_pic/11.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Openvpn打通北京和深圳两地办公室网络</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407290930/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/76.jpg" loading="lazy" data-key="202407290930" data-hash="/../../title_pic/76.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">高可用openvpn全局单向A访问B区的网络</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407281721/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/68.jpg" loading="lazy" data-key="202407281721" data-hash="/../../title_pic/68.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">PowerDNS架构解析与安装部署指南</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407181155/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202407181155" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">处理.git文件夹过大出现臃肿问题</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

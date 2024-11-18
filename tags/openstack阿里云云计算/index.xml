@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>openstack,阿里云,云计算 on 南宫乘风</title>
+        <link>https://www.ownit.top/tags/openstack%E9%98%BF%E9%87%8C%E4%BA%91%E4%BA%91%E8%AE%A1%E7%AE%97/</link>
+        <description>Recent content in openstack,阿里云,云计算 on 南宫乘风</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Wed, 23 Oct 2024 18:44:38 +0000</lastBuildDate><atom:link href="https://www.ownit.top/tags/openstack%E9%98%BF%E9%87%8C%E4%BA%91%E4%BA%91%E8%AE%A1%E7%AE%97/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云</title>
+        <link>https://www.ownit.top/p/202410231844/</link>
+        <pubDate>Wed, 23 Oct 2024 18:44:38 +0000</pubDate>
+        
+        <guid>https://www.ownit.top/p/202410231844/</guid>
+        <description>&lt;img src="https://www.ownit.top/title_pic/77.jpg" alt="Featured image of post OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云" /&gt;&lt;h2 id=&#34;项目背景&#34;&gt;项目背景&lt;/h2&gt;
+&lt;p&gt;OpenStack，作为一个开源的云计算平台，经常被用于构建私有云和公有云服务。然而，随着业务的发展和扩展，企业可能会面临将在OpenStack上运行的虚拟机迁移到其他云服务供应商的需求&lt;/p&gt;
+&lt;h2 id=&#34;需求&#34;&gt;需求&lt;/h2&gt;
+&lt;p&gt;因为运营团队在本地机房有一台 OpenStack中的虚拟机业务，负责邮件发送，跑定时任务等等。但是由于机房迁移，会导致机房服务中断。但由于考虑业务继续跑，需要把这台机器 迁移到阿里云的环境。但是由于依赖和环境众多，差异性太大，需要有个简便的方式完成迁移。&lt;/p&gt;
+&lt;h2 id=&#34;环境介绍&#34;&gt;环境介绍&lt;/h2&gt;
+&lt;p&gt;环境介绍&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;源环境：OpenStack 版本（适用于其他版本，但步骤可能略有不同）&lt;/li&gt;
+&lt;li&gt;目标环境：阿里云ECS&lt;/li&gt;
+&lt;li&gt;操作系统：以Centos7 为例（其他Linux发行版的操作可能类似）&lt;/li&gt;
+&lt;li&gt;必要工具：qemu-img（用于转换镜像格式）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;准备工作&#34;&gt;准备工作&lt;/h2&gt;
+&lt;p&gt;在开始之前，确保您有以下准备：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;确认您有足够的权限来访问OpenStack环境和阿里云账户。&lt;/li&gt;
+&lt;li&gt;安装qemu-img工具，这通常可以在Linux发行版的官方仓库中找到。&lt;/li&gt;
+&lt;li&gt;确保有足够的本地存储空间来保存导出的QCOW2镜像文件。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;导出openstack虚拟机镜像&#34;&gt;导出OpenStack虚拟机镜像&lt;/h2&gt;
+&lt;p&gt;首先排查这台机器虚拟机在那台OpenStack宿主机上，
+比如我这台OpenStack虚拟机在 compute4.openstack.fjf，
+虚拟机id：e7c5b097-e842-4db1-849b-fd4af3cb9380
+&lt;img src=&#34;https://www.ownit.top/../../image/f1df32dd423d40ab8c3e3b619d86ee0d.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;strong&gt;进入工作目录&lt;/strong&gt;
+进入compute4.openstack.fjf 这台OpenStack 的node节点，在进入下方目录&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;cd&lt;/span&gt; /var/lib/nova/instaces/&lt;span class=&#34;nv&#34;&gt;$your_instance_id&lt;/span&gt;$
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;这个是我的
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt; &lt;span class=&#34;nb&#34;&gt;cd&lt;/span&gt; /var/lib/nova/instances/e7c5b097-e842-4db1-849b-fd4af3cb9380/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;导出运行的镜像&lt;/strong&gt;
+使用qemu-img工具将OpenStack的QCOW2镜像转换为适合阿里云的格式：&lt;/p&gt;
+&lt;p&gt;如果保存，请关闭虚拟机在试试&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;dev&lt;span class=&#34;o&#34;&gt;][&lt;/span&gt;root@compute4-192.168.81.14 e7c5b097-e842-4db1-849b-fd4af3cb9380&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;# qemu-img convert -c -O qcow2 disk test.qcow2&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;qemu-img: Could not open &lt;span class=&#34;s1&#34;&gt;&amp;#39;disk&amp;#39;&lt;/span&gt;: Failed to get shared &lt;span class=&#34;s2&#34;&gt;&amp;#34;write&amp;#34;&lt;/span&gt; lock
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Is another process using the image &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;disk&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;?
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#这个正常的&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;qemu-img convert -c -O qcow2 disk test.qcow2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;#这个命令会创建一个新的压缩的QCOW2镜像文件&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/2f255b2401f44d37a73423c1b14d5122.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;传镜像到阿里云oss&#34;&gt;传镜像到阿里云OSS&lt;/h2&gt;
+&lt;p&gt;在导入镜像到阿里云ECS之前，您需要先将镜像上传到阿里云的对象存储服务（OSS）。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;登录到阿里云控制台。&lt;/li&gt;
+&lt;li&gt;创建一个OSS Bucket。&lt;/li&gt;
+&lt;li&gt;使用OSS的上传功能或者OSS提供的命令行工具ossutil上传您的QCOW2镜像文件。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/627af3f90b0a4ff8965b93dc5b1cf8fb.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;img src=&#34;https://www.ownit.top/../../image/9a7a17f8a5744a079743dafefecba63b.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;导入镜像到阿里云ecs&#34;&gt;导入镜像到阿里云ECS&lt;/h2&gt;
+&lt;p&gt;一旦镜像上传到OSS，您可以通过阿里云ECS控制台导入镜像：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在ECS控制台中，找到“镜像和模板”部分。&lt;/li&gt;
+&lt;li&gt;选择“导入镜像”。&lt;/li&gt;
+&lt;li&gt;提供OSS中镜像的URL，以及其他必要的信息。&lt;/li&gt;
+&lt;li&gt;启动导入任务。
+阿里云会处理镜像的导入过程，这可能需要一些时间。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;https://www.ownit.top/../../image/8365b4780a374c7b92c0060cecdfb022.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;img src=&#34;https://www.ownit.top/../../image/75dce2b210004c96815302fc98402f41.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;img src=&#34;https://www.ownit.top/../../image/905b458908404304a3535521959a5b62.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;img src=&#34;https://www.ownit.top/../../image/3c9e5e417e1845d9818898e24b49bc5b.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;img src=&#34;https://www.ownit.top/../../image/d41524a3690c4794af19ca6c6c2c5b07.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;创建ecs实例&#34;&gt;创建ECS实例&lt;/h2&gt;
+&lt;p&gt;导入镜像完成后，您可以使用该镜像创建新的ECS实例：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在ECS控制台中，选择“实例”。&lt;/li&gt;
+&lt;li&gt;点击“创建实例”。&lt;/li&gt;
+&lt;li&gt;在创建向导中，选择您刚刚导入的镜像作为基础。&lt;/li&gt;
+&lt;li&gt;完成实例的配置，包括选择实例类型、配置网络和安全组等。&lt;/li&gt;
+&lt;li&gt;启动实例。
+&lt;img src=&#34;https://www.ownit.top/../../image/2799bd9a782944f8ba72e58811d431d2.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;
+&lt;img src=&#34;https://www.ownit.top/../../image/ccf324ee2c894747968d89501a4d0fb2.png&#34;
+	
+	
+	
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;在这里插入图片描述&#34;
+	
+	
+&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;将OpenStack环境中的虚拟机镜像成功迁移到阿里云ECS。这个过程不仅增强了云资源的可移植性，而且为企业提供了更多的灵活性和选择权。无论是为了成本优化、性能提升还是遵循合规性要求，这种迁移策略都是现代云基础设施管理不可或缺的一部分。&lt;/p&gt;</description>
+        </item>
+        
+    </channel>
+</rss>

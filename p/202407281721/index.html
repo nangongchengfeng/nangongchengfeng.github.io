@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='背景介绍目前公司使用进行管理，但由于采用的是单节点架构，存在不可用的风险。为提升系统的稳定性和可靠性，我们计划对现有架构进行重构。通过引入高可用性设计，我们将优化系统架。。。。。。。'>
+<title>PowerDNS架构解析与安装部署指南</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202407281721/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='PowerDNS架构解析与安装部署指南'>
+<meta property='og:description' content='背景介绍目前公司使用进行管理，但由于采用的是单节点架构，存在不可用的风险。为提升系统的稳定性和可靠性，我们计划对现有架构进行重构。通过引入高可用性设计，我们将优化系统架。。。。。。。'>
+<meta property='og:url' content='https://www.ownit.top/p/202407281721/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='dns' /><meta property='article:published_time' content='2024-07-28T17:21:50&#43;00:00'/><meta property='article:modified_time' content='2024-07-28T17:21:50&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/68.jpg' />
+<meta name="twitter:title" content="PowerDNS架构解析与安装部署指南">
+<meta name="twitter:description" content="背景介绍目前公司使用进行管理，但由于采用的是单节点架构，存在不可用的风险。为提升系统的稳定性和可靠性，我们计划对现有架构进行重构。通过引入高可用性设计，我们将优化系统架。。。。。。。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/68.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1背景介绍">1、背景介绍</a></li>
+    <li><a href="#2环境介绍">2、环境介绍</a></li>
+    <li><a href="#3组件介绍">3、组件介绍</a></li>
+    <li><a href="#4mysql安装">4、MySQL安装</a>
+      <ol>
+        <li><a href="#mysql主从同步">MySQL主从同步</a>
+          <ol>
+            <li><a href="#master创建账号">master创建账号</a></li>
+            <li><a href="#slave库同步">slave库同步</a></li>
+            <li><a href="#创建powerdns数据库">创建<strong>powerdns</strong>数据库</a></li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+    <li><a href="#5powerdns-authoritative-server安装">5、PowerDNS Authoritative Server安装</a>
+      <ol>
+        <li><a href="#修改配置文件">修改配置文件</a></li>
+        <li><a href="#启动pdns服务">启动Pdns服务</a></li>
+      </ol>
+    </li>
+    <li><a href="#6powerdns-recursor安装">6、PowerDNS Recursor安装</a>
+      <ol>
+        <li><a href="#修改配置文件-1">修改配置文件</a></li>
+        <li><a href="#创建forward-和hosts-文件">创建forward 和hosts 文件</a>
+          <ol>
+            <li><a href="#1-forward-配置">1. Forward 配置</a></li>
+            <li><a href="#2-hosts-文件">2. Hosts 文件</a></li>
+            <li><a href="#总结">总结</a></li>
+          </ol>
+        </li>
+        <li><a href="#启动pdns-recursor">启动Pdns-recursor</a></li>
+      </ol>
+    </li>
+    <li><a href="#7poweradmin安装">7、PowerAdmin安装</a>
+      <ol>
+        <li><a href="#添加主域名">添加主域名</a></li>
+        <li><a href="#添加子域名">添加子域名</a></li>
+      </ol>
+    </li>
+    <li><a href="#8成功测试">8、成功测试</a></li>
+    <li><a href="#9备服务器同上步骤">9、备服务器同上步骤</a></li>
+    <li><a href="#10nginx负载均衡">10、nginx负载均衡</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202407281721/">
+                
+                    <img src="/../../title_pic/68.jpg" loading="lazy" alt="Featured image of post PowerDNS架构解析与安装部署指南" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202407281721/">PowerDNS架构解析与安装部署指南</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            背景介绍目前公司使用进行管理，但由于采用的是单节点架构，存在不可用的风险。为提升系统的稳定性和可靠性，我们计划对现有架构进行重构。通过引入高可用性设计，我们将优化系统架。。。。。。。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jul 28, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 8 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="1背景介绍">1、背景介绍</h2>
+<p>目前公司使用PowerDNS进行DNS管理，但由于采用的是单节点架构，存在不可用的风险。为提升系统的稳定性和可靠性，我们计划对现有架构进行重构。通过引入高可用性设计，我们将优化系统架构，使其能够在故障情况下依然保持服务的连续性和高效性，从而提升整体的业务稳定性。</p>
+<h2 id="2环境介绍">2、环境介绍</h2>
+<p>系统：Cnetos7
+软件：
+pdns-4.1.8-1.el7.MIND.x86_64
+pdns-recursor-4.1.11-1.el7.MIND.x86_64
+（相关信息已经脱敏）</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>ip</th>
+<th>组件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>matser</td>
+<td>172.17.20.20</td>
+<td>nginx，mysql，PowerDNS Authoritative ，PowerDNS Recursor   （主）</td>
+</tr>
+<tr>
+<td>slave</td>
+<td>172.17.20.21</td>
+<td>nginx，mysql，PowerDNS Authoritative ，PowerDNS Recursor      (备)</td>
+</tr>
+</tbody>
+</table></div>
+<p>nginx（53）：作为upstream 代理 53 端口</p>
+<p>mysql（3306）：作为PowerDNS的后端存储</p>
+<p>PowerDNS Authoritative（5300）：用于管理企业私有域名</p>
+<p>PowerDNS Recursor（5301）： 用于DNS解析转发、缓存</p>
+<p><img src="/../../image/7ac48b5ce4034594a614e1fa76266ac6.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="3组件介绍">3、组件介绍</h2>
+<p>PowerDNS全家桶中包含PowerDNS Authoritative、Recursor、DNSList（暂不使用）三个组件。</p>
+<ul>
+<li>PowerDNS Authoritative：DNS权威服务器，用于提供企业私有域名的管理和解析；</li>
+<li>PowerDNS Recursor：DNS递归服务器，用于接受客户端DNS查询请求，并根据目标域转发配置转发到不同的上游DNS服务器进行解析，并对DNS解析记录进行缓存；</li>
+<li>PowerDNS-Admin：DNS权威服务器的Web管理页面；</li>
+<li>PowerDNS-Monitor：使用Grafana提供权威服务器和递归服务器的监控页面</li>
+</ul>
+<p>PowerDNS权威服务器支持多种复制模式，本架构采用MySQL作为后端存储，并通过MySQL复制实现主备数据同步。</p>
+<p>PowerDNS（PDNS）成立于20世纪90年代末，是开源DNS软件、服务和支持的主要供应商，它们提供的<strong>权威认证DNS服务器</strong>和<strong>递归认证DNS服务器</strong>都是100%开源的软件，同时也和红帽等开源方案提供商一样提供了付费的技术支持版本。同时官方表示为了避免和软件使用者出现竞争，他们只提供服务支持而不提供DNS托管服务。</p>
+<p>熟悉DNS工作原理的同学可以大致地将DNS记录的查询分为两种：<strong>查询本地缓存</strong>和<strong>向上递归查询</strong>。和其他的如BIND、dnsmasq等将这些功能集成到一起的DNS软件不同，PowerDNS将其一分为二，分为了<code>PowerDNS Authoritative Server</code>和<code>PowerDNS Recursor</code>，分别对应这两种主要的需求，而我们常说的<code>pdns</code>指的就是<code>PowerDNS Authoritative Server (后面简称PDNS Auth)</code>，主要用途就是作为<strong>权威域名服务器</strong>，当然也可以作为普通的DNS服务器提供DNS查询功能。</p>
+<p>对于PowerDNS-Recursor，PowerDNS官网介绍其是一个<strong>内置脚本能力</strong>的高性能的<strong>DNS递归查询</strong>服务器，并且已经为一亿五千万个互联网连接提供支持。
+<img src="/../../image/a37b97ccff3e4f32995266159db67265.jpeg"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="4mysql安装">4、MySQL安装</h2>
+<p>可参照博客安装 ：  <a class="link" href="https://blog.csdn.net/heian_99/article/details/106644755"  target="_blank" rel="noopener"
+    >https://blog.csdn.net/heian_99/article/details/106644755</a></p>
+<h3 id="mysql主从同步">MySQL主从同步</h3>
+<h4 id="master创建账号">master创建账号</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">grant replication slave  on *.* to repl@<span class="s1">&#39;172.17.20.%&#39;</span> identified by <span class="s1">&#39;123&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">flush privileges<span class="p">;</span>
+</span></span><span class="line"><span class="cl">show master status<span class="p">;</span> <span class="c1">#查询master的状态 ，进行同步</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/247cf37487994935b17a9621e53e621c.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h4 id="slave库同步">slave库同步</h4>
+<p>注意：主从库的server_id 不能设置一样，auto.cnf 设置也不能一样，不满会出现mysql主从同步失败的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mysql&gt; change master to <span class="nv">master_host</span><span class="o">=</span><span class="s1">&#39;172.17.20.20′,master_user=&#39;</span>repl<span class="s1">&#39;,master_password=&#39;</span>123<span class="s1">&#39;,master_log_file=&#39;</span>mysql-bin.000006′,master_log_pos<span class="o">=</span>407<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">CHANGE MASTER TO
+</span></span><span class="line"><span class="cl"><span class="nv">MASTER_HOST</span><span class="o">=</span><span class="s1">&#39;172.17.20.20&#39;</span>,
+</span></span><span class="line"><span class="cl"><span class="nv">MASTER_PORT</span><span class="o">=</span>3306,
+</span></span><span class="line"><span class="cl"><span class="nv">MASTER_USER</span><span class="o">=</span><span class="s1">&#39;repl&#39;</span>,
+</span></span><span class="line"><span class="cl"><span class="nv">MASTER_PASSWORD</span><span class="o">=</span><span class="s1">&#39;123&#39;</span>,
+</span></span><span class="line"><span class="cl"><span class="nv">MASTER_LOG_FILE</span><span class="o">=</span><span class="s1">&#39;mysql-bin.000006&#39;</span>,
+</span></span><span class="line"><span class="cl"><span class="nv">MASTER_LOG_POS</span><span class="o">=</span>407<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">mysql&gt; start slave<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">mysql&gt; show slave status<span class="se">\G</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/7b0271af28654650a2350f4b872a9390.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h4 id="创建powerdns数据库">创建<strong>powerdns</strong>数据库</h4>
+<p>需要在主从配置完成后创建</p>
+<p>在主库执行以下命令</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mysql -uroot -p
+</span></span><span class="line"><span class="cl">CREATE DATABASE powerdns<span class="p">;</span>
+</span></span><span class="line"><span class="cl">GRANT ALL ON powerdns.* TO <span class="s1">&#39;powerdns&#39;</span>@<span class="s1">&#39;localhost&#39;</span> IDENTIFIED BY <span class="s1">&#39;VMware1!&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">FLUSH PRIVILEGES<span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/05d49e35b8ad43379338ac995ecbeb85.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+导入PowerDNS 的数据库</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">domains</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">id</span><span class="w">                    </span><span class="nb">INT</span><span class="w"> </span><span class="n">AUTO_INCREMENT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">name</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">master</span><span class="w">                </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">last_check</span><span class="w">            </span><span class="nb">INT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">type</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">notified_serial</span><span class="w">       </span><span class="nb">INT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">account</span><span class="w">               </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;utf8&#39;</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">UNIQUE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">name_index</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">domains</span><span class="p">(</span><span class="n">name</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">id</span><span class="w">                    </span><span class="nb">BIGINT</span><span class="w"> </span><span class="n">AUTO_INCREMENT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">domain_id</span><span class="w">             </span><span class="nb">INT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">name</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">type</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">content</span><span class="w">               </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">64000</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">ttl</span><span class="w">                   </span><span class="nb">INT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">prio</span><span class="w">                  </span><span class="nb">INT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">change_date</span><span class="w">           </span><span class="nb">INT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">disabled</span><span class="w">              </span><span class="n">TINYINT</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">ordername</span><span class="w">             </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="nb">BINARY</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">auth</span><span class="w">                  </span><span class="n">TINYINT</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">nametype_index</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">records</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="k">type</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">domain_id</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">records</span><span class="p">(</span><span class="n">domain_id</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">ordername</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="p">(</span><span class="n">ordername</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">supermasters</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">ip</span><span class="w">                    </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">nameserver</span><span class="w">            </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">account</span><span class="w">               </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;utf8&#39;</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">ip</span><span class="p">,</span><span class="w"> </span><span class="n">nameserver</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">comments</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">id</span><span class="w">                    </span><span class="nb">INT</span><span class="w"> </span><span class="n">AUTO_INCREMENT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">domain_id</span><span class="w">             </span><span class="nb">INT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">name</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">type</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">modified_at</span><span class="w">           </span><span class="nb">INT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">account</span><span class="w">               </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;utf8&#39;</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">comment</span><span class="w">               </span><span class="nb">TEXT</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;utf8&#39;</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">comments_name_type_idx</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">comments</span><span class="w"> </span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="k">type</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">comments_order_idx</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">comments</span><span class="w"> </span><span class="p">(</span><span class="n">domain_id</span><span class="p">,</span><span class="w"> </span><span class="n">modified_at</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">domainmetadata</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">id</span><span class="w">                    </span><span class="nb">INT</span><span class="w"> </span><span class="n">AUTO_INCREMENT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">domain_id</span><span class="w">             </span><span class="nb">INT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">kind</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">content</span><span class="w">               </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">domainmetadata_idx</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">domainmetadata</span><span class="w"> </span><span class="p">(</span><span class="n">domain_id</span><span class="p">,</span><span class="w"> </span><span class="n">kind</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">cryptokeys</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">id</span><span class="w">                    </span><span class="nb">INT</span><span class="w"> </span><span class="n">AUTO_INCREMENT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">domain_id</span><span class="w">             </span><span class="nb">INT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">flags</span><span class="w">                 </span><span class="nb">INT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">active</span><span class="w">                </span><span class="n">BOOL</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">content</span><span class="w">               </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">domainidindex</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">cryptokeys</span><span class="p">(</span><span class="n">domain_id</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">tsigkeys</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">id</span><span class="w">                    </span><span class="nb">INT</span><span class="w"> </span><span class="n">AUTO_INCREMENT</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">name</span><span class="w">                  </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">algorithm</span><span class="w">             </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="n">secret</span><span class="w">                </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">)</span><span class="w"> </span><span class="n">Engine</span><span class="o">=</span><span class="n">InnoDB</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="s1">&#39;latin1&#39;</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="k">CREATE</span><span class="w"> </span><span class="k">UNIQUE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">namealgoindex</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">tsigkeys</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">algorithm</span><span class="p">);</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>创建文件导入数据库</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">touch /opt/schema.mysql.sql
+</span></span><span class="line"><span class="cl">把mysql的内容写到这个文件里面
+</span></span><span class="line"><span class="cl">mysql&gt; use powerdns
+</span></span><span class="line"><span class="cl">Database changed
+</span></span><span class="line"><span class="cl">mysql&gt; <span class="nb">source</span> /opt/schema.mysql.sql
+</span></span><span class="line"><span class="cl">Query OK, <span class="m">0</span> rows affected <span class="o">(</span>0.01 sec<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/67cd31b12c634c51a38566efcecf0cbc.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="5powerdns-authoritative-server安装">5、PowerDNS Authoritative Server安装</h2>
+<ul>
+<li>参考官网文档：<a class="link" href="https://www.dqzboy.com/go.php?url=https://doc.powerdns.com/authoritative/installation.html"  target="_blank" rel="noopener"
+    >https://doc.powerdns.com/authorit文章来源(Source)：https://www.dqzboy.comative/installation.html</a></li>
+<li>PowerDNS已经集成到<code>epel</code>源中，所以我们首先需要安装<code>elel源</code></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@localhost ~<span class="o">]</span><span class="c1"># wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@localhost ~<span class="o">]</span><span class="c1"># rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@localhost ~<span class="o">]</span><span class="c1"># yum clean all </span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@localhost ~<span class="o">]</span><span class="c1"># yum makecache</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@localhost ~<span class="o">]</span><span class="c1"># yum install -y pdns pdns-backend-mysql</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/575ecca4163945cbaf4c69a7c18dcfd5.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="修改配置文件">修改配置文件</h3>
+<p><code>/etc/pdns/pdns.conf </code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master ~<span class="o">]</span><span class="c1"># cp /etc/pdns/pdns.conf /etc/pdns/pdns.conf_`date &#39;+%Y_%m_%d&#39;`</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master ~<span class="o">]</span><span class="c1"># tree /etc/pdns/</span>
+</span></span><span class="line"><span class="cl">/etc/pdns/
+</span></span><span class="line"><span class="cl">└── pdns.conf
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="m">0</span> directories, <span class="m">1</span> file
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master ~<span class="o">]</span><span class="c1"># cat /etc/pdns/pdns.conf |  grep -Ev &#34;^#|^$&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">launch</span><span class="o">=</span><span class="nb">bind</span>
+</span></span><span class="line"><span class="cl"><span class="nv">setgid</span><span class="o">=</span>pdns
+</span></span><span class="line"><span class="cl"><span class="nv">setuid</span><span class="o">=</span>pdns
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">添加配置 生产环境如下
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">###############</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">cache-ttl<span class="o">=</span><span class="m">60</span>
+</span></span><span class="line"><span class="cl">config-dir<span class="o">=</span>/etc/pdns
+</span></span><span class="line"><span class="cl">disable-axfr<span class="o">=</span>yes
+</span></span><span class="line"><span class="cl">distributor-threads<span class="o">=</span><span class="m">3</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#数据库的连接信息</span>
+</span></span><span class="line"><span class="cl">gmysql-dbname<span class="o">=</span>powerdns
+</span></span><span class="line"><span class="cl">gmysql-host<span class="o">=</span>127.0.0.1
+</span></span><span class="line"><span class="cl">gmysql-password<span class="o">=</span>VMware1!
+</span></span><span class="line"><span class="cl">gmysql-user<span class="o">=</span>powerdns
+</span></span><span class="line"><span class="cl"><span class="nv">guardian</span><span class="o">=</span>no
+</span></span><span class="line"><span class="cl"><span class="nv">launch</span><span class="o">=</span>gmysql
+</span></span><span class="line"><span class="cl"><span class="c1">## pdns config 本地地址和启动端口</span>
+</span></span><span class="line"><span class="cl">local-address<span class="o">=</span>127.0.0.1
+</span></span><span class="line"><span class="cl">local-port<span class="o">=</span><span class="m">5300</span>
+</span></span><span class="line"><span class="cl">log-dns-details<span class="o">=</span>no
+</span></span><span class="line"><span class="cl">disable-syslog<span class="o">=</span>no
+</span></span><span class="line"><span class="cl">negquery-cache-ttl<span class="o">=</span><span class="m">60</span>
+</span></span><span class="line"><span class="cl">query-cache-ttl<span class="o">=</span><span class="m">60</span>
+</span></span><span class="line"><span class="cl">query-logging<span class="o">=</span>no
+</span></span><span class="line"><span class="cl">receiver-threads<span class="o">=</span><span class="m">12</span>
+</span></span><span class="line"><span class="cl">cache-ttl<span class="o">=</span><span class="m">0</span>
+</span></span><span class="line"><span class="cl"><span class="nv">setuid</span><span class="o">=</span>pdns
+</span></span><span class="line"><span class="cl"><span class="nv">setgid</span><span class="o">=</span>pdns
+</span></span><span class="line"><span class="cl"><span class="c1">## pdns API   激活 API 服务</span>
+</span></span><span class="line"><span class="cl">api-key<span class="o">=</span>3jEkItlrSHfuqJbr
+</span></span><span class="line"><span class="cl"><span class="nv">api</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl"><span class="c1">#web页面也信息</span>
+</span></span><span class="line"><span class="cl">webserver-address<span class="o">=</span>0.0.0.0
+</span></span><span class="line"><span class="cl">webserver-password<span class="o">=</span>bdata.pdns
+</span></span><span class="line"><span class="cl"><span class="c1"># webserver-allow-from指定允许访问webserver和API的IP白名单，多个IP可以使用英文逗号隔开</span>
+</span></span><span class="line"><span class="cl">webserver-allow-from<span class="o">=</span>0.0.0.0/0
+</span></span><span class="line"><span class="cl">webserver-port<span class="o">=</span><span class="m">8281</span>
+</span></span><span class="line"><span class="cl"><span class="nv">webserver</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl"><span class="nv">loglevel</span><span class="o">=</span><span class="m">9</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="启动pdns服务">启动Pdns服务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># systemctl enable pdns</span>
+</span></span><span class="line"><span class="cl">Created symlink from /etc/systemd/system/multi-user.target.wants/pdns.service to /usr/lib/systemd/system/pdns.service.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># systemctl start pdns.service</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># systemctl status pdns.service</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/a2b861cc1ef843ca9631728c1e6ed3fe.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="6powerdns-recursor安装">6、PowerDNS Recursor安装</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># yum install pdns-recursor -y</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="修改配置文件-1">修改配置文件</h3>
+<p><code>/etc/pdns-recursor/recursor.conf</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># tree /etc/pdns-recursor/</span>
+</span></span><span class="line"><span class="cl">/etc/pdns-recursor/
+</span></span><span class="line"><span class="cl">└── recursor.conf
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># cp /etc/pdns-recursor/recursor.conf /etc/pdns-recursor/recursor.conf_`date &#39;+%Y_%m_%d&#39;`</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns<span class="o">]</span><span class="c1"># cat /etc/pdns-recursor/recursor.conf | grep  -Ev &#34;^#|^$&#34;</span>
+</span></span><span class="line"><span class="cl">security-poll-suffix<span class="o">=</span>
+</span></span><span class="line"><span class="cl"><span class="nv">setgid</span><span class="o">=</span>pdns-recursor
+</span></span><span class="line"><span class="cl"><span class="nv">setuid</span><span class="o">=</span>pdns-recursor
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">添加配置 生产环境如下
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">###############</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#允许所有用户端请求</span>
+</span></span><span class="line"><span class="cl">allow-from<span class="o">=</span>0.0.0.0/0,::/0
+</span></span><span class="line"><span class="cl"><span class="c1">## pdns-re API   激活 API 服务</span>
+</span></span><span class="line"><span class="cl">api-key<span class="o">=</span>3jEkItlrSHfuqJbr
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">disable-packetcache<span class="o">=</span>no
+</span></span><span class="line"><span class="cl">export-etc-hosts<span class="o">=</span>yes
+</span></span><span class="line"><span class="cl"><span class="c1">#用户解析的自定义配置文件   与forward-zones相同，从文件中解析</span>
+</span></span><span class="line"><span class="cl">forward-zones-file<span class="o">=</span>/etc/pdns-recursor/forward
+</span></span><span class="line"><span class="cl"><span class="c1">#/etc/hosts 文件的路径或等效文件。该文件可用于使用export-etc-hosts权威地提供数据。</span>
+</span></span><span class="line"><span class="cl">etc-hosts-file<span class="o">=</span>/etc/pdns-recursor/hosts
+</span></span><span class="line"><span class="cl"><span class="c1">#本地监听地址</span>
+</span></span><span class="line"><span class="cl">local-address<span class="o">=</span>0.0.0.0
+</span></span><span class="line"><span class="cl">local-port<span class="o">=</span><span class="m">5301</span>
+</span></span><span class="line"><span class="cl">max-cache-entries<span class="o">=</span><span class="m">1000000</span>
+</span></span><span class="line"><span class="cl">max-cache-ttl<span class="o">=</span><span class="m">60</span>
+</span></span><span class="line"><span class="cl">max-mthreads<span class="o">=</span><span class="m">1024</span>
+</span></span><span class="line"><span class="cl">max-packetcache-entries<span class="o">=</span><span class="m">500000</span>
+</span></span><span class="line"><span class="cl">packetcache-servfail-ttl<span class="o">=</span><span class="m">0</span>
+</span></span><span class="line"><span class="cl">packetcache-ttl<span class="o">=</span><span class="m">0</span>
+</span></span><span class="line"><span class="cl"><span class="nv">quiet</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl"><span class="nv">setgid</span><span class="o">=</span>pdns-recursor
+</span></span><span class="line"><span class="cl"><span class="nv">setuid</span><span class="o">=</span>pdns-recursor
+</span></span><span class="line"><span class="cl"><span class="nv">threads</span><span class="o">=</span><span class="m">6</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#web页面也信息</span>
+</span></span><span class="line"><span class="cl">webserver-address<span class="o">=</span>0.0.0.0
+</span></span><span class="line"><span class="cl">webserver-password<span class="o">=</span>bdata.pdns
+</span></span><span class="line"><span class="cl">webserver-port<span class="o">=</span><span class="m">8282</span>
+</span></span><span class="line"><span class="cl">webserver-allow-from<span class="o">=</span>172.17.0.0/16
+</span></span><span class="line"><span class="cl"><span class="nv">webserver</span><span class="o">=</span>yes
+</span></span><span class="line"><span class="cl"><span class="nv">loglevel</span><span class="o">=</span><span class="m">9</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="创建forward-和hosts-文件">创建forward 和hosts 文件</h3>
+<h4 id="1-forward-配置">1. Forward 配置</h4>
+<p><code>forward</code> 配置用于指定 PowerDNS 在无法解析某个 DNS 请求时，将请求转发给其他上游 DNS 服务器进行解析。这在多种情况下都很有用，比如公司内部网络中的 DNS 服务器需要解析外部互联网域名时。</p>
+<p>主要用途：</p>
+<ul>
+<li><strong>外部解析</strong>：如果本地 DNS 服务器没有相应的记录，可以通过 forward 配置将请求转发给公共 DNS 服务器，如 Google DNS（8.8.8.8）。</li>
+<li><strong>负载均衡和冗余</strong>：可以配置多个上游 DNS 服务器，提高解析请求的成功率和响应速度。</li>
+</ul>
+<p>配置示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-plaintext" data-lang="plaintext"><span class="line"><span class="cl">forward-zones=.=8.8.8.8;8.8.4.4
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面的示例表示将所有（<code>.</code> 代表所有域名）未解析的请求转发给 Google 的 DNS 服务器。</p>
+<h4 id="2-hosts-文件">2. Hosts 文件</h4>
+<p><code>hosts</code> 文件是一个静态的 DNS 记录文件，用于手动定义特定域名的 IP 地址。这类似于传统的 <code>/etc/hosts</code> 文件，用于快速、本地化地解析一些常用或特定的域名，而无需通过外部 DNS 服务器。</p>
+<p>主要用途：</p>
+<ul>
+<li><strong>本地解析</strong>：快速解析常用域名，避免每次都去查询外部 DNS。</li>
+<li><strong>自定义解析</strong>：为本地网络设备或特定服务自定义域名解析记录。</li>
+<li><strong>简化开发和测试</strong>：开发和测试环境中，直接在 hosts 文件中添加记录，方便快捷。</li>
+</ul>
+<p>配置示例：</p>
+<p>假设 <code>hosts</code> 文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-plaintext" data-lang="plaintext"><span class="line"><span class="cl">192.168.1.1   server1.local
+</span></span><span class="line"><span class="cl">192.168.1.2   server2.local
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这表示将 <code>server1.local</code> 解析为 <code>192.168.1.1</code>，将 <code>server2.local</code> 解析为 <code>192.168.1.2</code>。</p>
+<h4 id="总结">总结</h4>
+<ul>
+<li><strong>Forward 配置</strong>：用于指定 PowerDNS 在无法解析请求时，将请求转发给其他上游 DNS 服务器，确保解析的成功率和速度。</li>
+<li><strong>Hosts 文件</strong>：用于手动定义特定域名的 IP 地址，实现本地化、静态的 DNS 解析。</li>
+</ul>
+<p>通过合理配置和使用 <code>forward</code> 和 <code>hosts</code> 文件，可以大大提升 PowerDNS 系统的灵活性和解析效率，满足各种不同的网络需求。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">touch <span class="o">{</span>forward,hosts<span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/51758a743ea4400ba452377dec6453b9.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+借鉴配置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@prometheus-server pdns-recursor<span class="o">]</span><span class="c1"># cat forward </span>
+</span></span><span class="line"><span class="cl">+fjf.com<span class="o">=</span>127.0.0.1:5300
+</span></span><span class="line"><span class="cl">+sit.com<span class="o">=</span>127.0.0.1:5300
+</span></span><span class="line"><span class="cl">+fjf<span class="o">=</span>127.0.0.1:5300
+</span></span><span class="line"><span class="cl">+cloudcs.fjf<span class="o">=</span>172.31.0.10
+</span></span><span class="line"><span class="cl">+168.192.in-addr.arpa<span class="o">=</span>127.0.0.1:5300
+</span></span><span class="line"><span class="cl">+30.172.in-addr.arpa<span class="o">=</span>172.31.0.10
+</span></span><span class="line"><span class="cl">+31.172.in-addr.arpa<span class="o">=</span>172.31.0.10
+</span></span><span class="line"><span class="cl">+.<span class="o">=</span>223.5.5.5,223.6.6.6,119.29.29.29
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@prometheus-server pdns-recursor<span class="o">]</span><span class="c1"># cat hosts </span>
+</span></span><span class="line"><span class="cl">192.168.82.22   mvn.test.com
+</span></span><span class="line"><span class="cl">192.168.84.47   gitlab.test.com
+</span></span><span class="line"><span class="cl">192.168.81.11   mirrors.test.cn
+</span></span><span class="line"><span class="cl">192.168.82.22   img.test.cn 
+</span></span><span class="line"><span class="cl">192.168.82.22  test.xxx.com
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="启动pdns-recursor">启动Pdns-recursor</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># systemctl enable pdns-recursor.service</span>
+</span></span><span class="line"><span class="cl">Created symlink from /etc/systemd/system/multi-user.target.wants/pdns-recursor.service to /usr/lib/systemd/system/pdns-recursor.service.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># systemctl start  pdns-recursor</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># systemctl status pdns-recursor.service </span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/caa8830216094784befb1bc79c596cb3.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="7poweradmin安装">7、PowerAdmin安装</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">wget https://nchc.dl.sourceforge.net/project/poweradmin/poweradmin-2.1.7.tgz
+</span></span><span class="line"><span class="cl">yum -y install php56u php56u-fpm php56u-fpm  tengine php56u-mcrypt php56u-pdo  php56u-soap  php56u-mysqlnd 
+</span></span><span class="line"><span class="cl">https://linux.cn/article-5623-2.html        <span class="c1">#跟随此连接安装即可</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>安装步骤</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">打开浏览器 ，打开页面
+</span></span><span class="line"><span class="cl">http://172.17.20.20:90/install/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/c4cbecd71c0844a1882c08479cfbf2e0.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/67eb9fcef6bc464686cc0a02771ed51e.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/ad3d702cfe00420bbc44a63e1227db8c.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/a23a3a4ad55743128d3c2cc2b77121ea.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/39500702c36b4774a2e431f8c47627df.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/5269f94d449e4fd98572277bec1e7007.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/b4f2a90f989c4ee1afdef0273169e777.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/a5a2266891f34cabac099bfc55dcbfe7.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/13b5bd7349b74b98b707470826c6d81f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<strong>需要移除从PowerAdmin的根目录中移除“install”文件夹，这一点很重要。使用以下命令：</strong>
+<img src="/../../image/ef56178ab9d6448aa7e5b93b15cec064.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/70cbd806172f4a5f83deb9a663741b74.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="添加主域名">添加主域名</h3>
+<p><img src="/../../image/105b3d51c441434cb0d5fe60d46548e7.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="添加子域名">添加子域名</h3>
+<p><img src="/../../image/1ec2f3e6f3d04448b3ecfb6170cf305d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="8成功测试">8、成功测试</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># cat /etc/resolv.conf </span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Generated by NetworkManager</span>
+</span></span><span class="line"><span class="cl">nameserver 172.17.20.20
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># nslookup www.fjf.com</span>
+</span></span><span class="line"><span class="cl">Server:		172.17.20.20
+</span></span><span class="line"><span class="cl">Address:	172.17.20.20#53
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Non-authoritative answer:
+</span></span><span class="line"><span class="cl">Name:	www.fjf.com
+</span></span><span class="line"><span class="cl">Address: 172.17.20.21
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># nslookup test.fjf.com</span>
+</span></span><span class="line"><span class="cl">Server:		172.17.20.20
+</span></span><span class="line"><span class="cl">Address:	172.17.20.20#53
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Non-authoritative answer:
+</span></span><span class="line"><span class="cl">Name:	test.fjf.com
+</span></span><span class="line"><span class="cl">Address: 172.17.20.21
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># nslookup 112.efoxconn.com</span>
+</span></span><span class="line"><span class="cl">Server:		172.17.20.20
+</span></span><span class="line"><span class="cl">Address:	172.17.20.20#53
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Non-authoritative answer:
+</span></span><span class="line"><span class="cl">Name:	112.efoxconn.com
+</span></span><span class="line"><span class="cl">Address: 10.134.192.116
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="9备服务器同上步骤">9、备服务器同上步骤</h2>
+<p>备份服务器 按照上面配置，可以进行安装 和配置文件scp</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">yum install -y pdns pdns-backend-mysql
+</span></span><span class="line"><span class="cl"> yum install pdns-recursor -y
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># scp -r /etc/pdns/*  172.17.20.21:/etc/pdns/</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@master pdns-recursor<span class="o">]</span><span class="c1"># scp -r /etc/pdns-recursor/* 172.17.20.21:/etc/pdns-recursor/</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@slave pdns<span class="o">]</span><span class="c1"># systemctl start pdns &amp;&amp;systemctl status pdns</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@slave pdns<span class="o">]</span><span class="c1"># systemctl start pdns-recursor &amp;&amp; systemctl status pdns-recursor.service </span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">[</span>root@slave pdns<span class="o">]</span><span class="c1"># systemctl enable pdns &amp;&amp; systemctl enable pdns-recursor</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="10nginx负载均衡">10、nginx负载均衡</h2>
+<p>安装nginx</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">yum install -y nginx
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>把这个配置加入 nginx.conf 后面</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">stream <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 添加socket转发的代理</span>
+</span></span><span class="line"><span class="cl">	upstream dns <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    server 172.17.20.21:5301 <span class="nv">max_fails</span><span class="o">=</span><span class="m">3</span> <span class="nv">fail_timeout</span><span class="o">=</span>3s<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    server 172.17.20.21:5301 <span class="nv">max_fails</span><span class="o">=</span><span class="m">3</span> <span class="nv">fail_timeout</span><span class="o">=</span>3s<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 提供转发的服务，即访问localhost:30001，会跳转至代理bss_num_socket指定的转发地址</span>
+</span></span><span class="line"><span class="cl">	server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    listen <span class="m">53</span> udp<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_pass dns<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_timeout 3s<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    proxy_connect_timeout 3s<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/077a6d2f9ce34468944e06e5a7204671.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@master ~<span class="o">]</span><span class="c1"># netstat -ltunp |grep 53</span>
+</span></span><span class="line"><span class="cl">tcp        <span class="m">0</span>      <span class="m">0</span> 127.0.0.1:5300          0.0.0.0:*               LISTEN      39851/pdns_server   
+</span></span><span class="line"><span class="cl">tcp        <span class="m">0</span>      <span class="m">0</span> 0.0.0.0:53              0.0.0.0:*               LISTEN      41809/nginx: master 
+</span></span><span class="line"><span class="cl">tcp        <span class="m">0</span>      <span class="m">0</span> 0.0.0.0:5301            0.0.0.0:*               LISTEN      40930/pdns_recursor 
+</span></span><span class="line"><span class="cl">tcp6       <span class="m">0</span>      <span class="m">0</span> :::5300                 :::*                    LISTEN      39851/pdns_server   
+</span></span><span class="line"><span class="cl">udp        <span class="m">0</span>      <span class="m">0</span> 127.0.0.1:5300          0.0.0.0:*                           39851/pdns_server   
+</span></span><span class="line"><span class="cl">udp        <span class="m">0</span>      <span class="m">0</span> 0.0.0.0:5301            0.0.0.0:*                           40930/pdns_recursor 
+</span></span><span class="line"><span class="cl">udp        <span class="m">0</span>      <span class="m">0</span> 0.0.0.0:53              0.0.0.0:*                           41809/nginx: master 
+</span></span><span class="line"><span class="cl">udp6       <span class="m">0</span>      <span class="m">0</span> :::5300                 :::*                                39851/pdns_server   
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>备份服务器的nginx也如上配置即可</p>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/dns/">DNS</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202410251628/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/01.jpg" loading="lazy" data-key="202410251628" data-hash="/../../title_pic/01.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">机房私有云OpenStack搭建详细步骤流程</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202410231844/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/77.jpg" loading="lazy" data-key="202410231844" data-hash="/../../title_pic/77.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407302222/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/11.jpg" loading="lazy" data-key="202407302222" data-hash="/../../title_pic/11.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Openvpn打通北京和深圳两地办公室网络</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407290930/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/76.jpg" loading="lazy" data-key="202407290930" data-hash="/../../title_pic/76.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">高可用openvpn全局单向A访问B区的网络</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407181155/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/58.jpg" loading="lazy" data-key="202407181155" data-hash="/../../title_pic/58.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">处理.git文件夹过大出现臃肿问题</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
