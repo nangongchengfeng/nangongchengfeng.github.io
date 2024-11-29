@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='在构建 Web 应用时，处理和传输大量数据是不可避免的。对于需要高效、可扩展的消息处理和异步任务执行的场景，使用 RabbitMQ（一种流行的消息队列中间件）与 Flask（一个轻量级的 Python Web 框架）结合，能够大大提升应用的性能和可靠性。本文将带你通过一个基于 Flask 和 RabbitMQ 的实际应用案例，深入了解如何构建一个高效的消息队列系统，完成从生成假数据到消费数据的全过程。Python：一个强大的编程语言，适合快速开发。Flask：一个轻量级的Web应用框架。Pika。'>
+<title>基于 Flask 和 RabbitMQ 构建高效消息队列系统：从数据生成到消费</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202411271427/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='基于 Flask 和 RabbitMQ 构建高效消息队列系统：从数据生成到消费'>
+<meta property='og:description' content='在构建 Web 应用时，处理和传输大量数据是不可避免的。对于需要高效、可扩展的消息处理和异步任务执行的场景，使用 RabbitMQ（一种流行的消息队列中间件）与 Flask（一个轻量级的 Python Web 框架）结合，能够大大提升应用的性能和可靠性。本文将带你通过一个基于 Flask 和 RabbitMQ 的实际应用案例，深入了解如何构建一个高效的消息队列系统，完成从生成假数据到消费数据的全过程。Python：一个强大的编程语言，适合快速开发。Flask：一个轻量级的Web应用框架。Pika。'>
+<meta property='og:url' content='https://www.ownit.top/p/202411271427/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='flask,rabbitmq,python' /><meta property='article:published_time' content='2024-11-27T14:27:58&#43;00:00'/><meta property='article:modified_time' content='2024-11-27T14:27:58&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/03.jpg' />
+<meta name="twitter:title" content="基于 Flask 和 RabbitMQ 构建高效消息队列系统：从数据生成到消费">
+<meta name="twitter:description" content="在构建 Web 应用时，处理和传输大量数据是不可避免的。对于需要高效、可扩展的消息处理和异步任务执行的场景，使用 RabbitMQ（一种流行的消息队列中间件）与 Flask（一个轻量级的 Python Web 框架）结合，能够大大提升应用的性能和可靠性。本文将带你通过一个基于 Flask 和 RabbitMQ 的实际应用案例，深入了解如何构建一个高效的消息队列系统，完成从生成假数据到消费数据的全过程。Python：一个强大的编程语言，适合快速开发。Flask：一个轻量级的Web应用框架。Pika。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/03.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#环境介绍">环境介绍</a></li>
+    <li><a href="#技术选型">技术选型</a></li>
+    <li><a href="#系统架构概览">系统架构概览</a></li>
+    <li><a href="#搭建rabbitmq服务">搭建RabbitMQ服务</a></li>
+    <li><a href="#生产者将数据发送到-rabbitmq-队列">生产者：将数据发送到 RabbitMQ 队列</a>
+      <ol>
+        <li><a href="#生产者代码">生产者代码</a></li>
+        <li><a href="#数据持久化">数据持久化</a></li>
+        <li><a href="#解释">解释：</a></li>
+        <li><a href="#关键点解析">关键点解析</a></li>
+        <li><a href="#持久化完整代码">持久化完整代码</a></li>
+      </ol>
+    </li>
+    <li><a href="#消费者从-rabbitmq-中获取数据">消费者：从 RabbitMQ 中获取数据</a>
+      <ol>
+        <li><a href="#关键点解析-1">关键点解析</a></li>
+        <li><a href="#持续发送数据">持续发送数据</a></li>
+      </ol>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202411271427/">
+                
+                    <img src="/../../title_pic/03.jpg" loading="lazy" alt="Featured image of post 基于 Flask 和 RabbitMQ 构建高效消息队列系统：从数据生成到消费" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/python%E5%AD%A6%E4%B9%A0/" >
+                Python学习
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202411271427/">基于 Flask 和 RabbitMQ 构建高效消息队列系统：从数据生成到消费</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            在构建 Web 应用时，处理和传输大量数据是不可避免的。对于需要高效、可扩展的消息处理和异步任务执行的场景，使用 RabbitMQ（一种流行的消息队列中间件）与 Flask（一个轻量级的 Python Web 框架）结合，能够大大提升应用的性能和可靠性。本文将带你通过一个基于 Flask 和 RabbitMQ 的实际应用案例，深入了解如何构建一个高效的消息队列系统，完成从生成假数据到消费数据的全过程。Python：一个强大的编程语言，适合快速开发。Flask：一个轻量级的Web应用框架。Pika。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Nov 27, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 6 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="简介">简介</h2>
+<p>在构建 Web 应用时，处理和传输大量数据是不可避免的。对于需要高效、可扩展的消息处理和异步任务执行的场景，使用 RabbitMQ（一种流行的消息队列中间件）与 Flask（一个轻量级的 Python Web 框架）结合，能够大大提升应用的性能和可靠性。本文将带你通过一个基于 Flask 和 RabbitMQ 的实际应用案例，深入了解如何构建一个高效的消息队列系统，完成从生成假数据到消费数据的全过程。</p>
+<h2 id="背景">背景</h2>
+<p>我们要开发一个移动可视化平台监控系统，并且这些信息需要被实时分析或存储。面对这样的需求，直接将所有逻辑放在单个应用中可能会导致性能瓶颈。因此，我们考虑采用微服务架构，通过分离数据生成与处理逻辑来提高系统的可扩展性和响应速度。</p>
+<h2 id="环境介绍">环境介绍</h2>
+<p>为了实现这个项目，我们需要以下环境：</p>
+<ul>
+<li><strong>Python</strong>：一个强大的编程语言，适合快速开发。</li>
+<li><strong>Flask</strong>：一个轻量级的Web应用框架。</li>
+<li><strong>Pika</strong>：Python的RabbitMQ客户端库。</li>
+<li><strong>Faker</strong>：一个生成伪数据的Python库，用于生成测试数据</li>
+<li><strong>RabbitMQ</strong>：消息队列服务，用来存储 生产者产生的数据</li>
+</ul>
+<h2 id="技术选型">技术选型</h2>
+<ul>
+<li><strong>Flask</strong>：轻量级Web框架，非常适合快速开发小型到中等规模的应用。</li>
+<li><strong>RabbitMQ</strong>：一个广泛使用的开源消息代理软件（也称为消息中间件），用于实现应用程序之间的通信。</li>
+</ul>
+<h2 id="系统架构概览">系统架构概览</h2>
+<ol>
+<li><strong>生产者</strong>：负责生成模拟用户数据并将其发送至RabbitMQ。</li>
+<li><strong>消费者</strong>：从RabbitMQ接收数据后执行特定任务，如数据分析或存储。</li>
+<li><strong>Flask应用</strong>：提供REST API接口给外部调用，同时启动消费者线程监听RabbitMQ中的消息。</li>
+</ol>
+<h2 id="搭建rabbitmq服务">搭建RabbitMQ服务</h2>
+<p>我们使用docker来搭建服务，如果win可以直接跑程序，相关流程请自行查询</p>
+<p>临时使用（停止会自动删除服务）</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 docker.cloudimages.asia/rabbitmq:4.0-management
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>长久使用</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it -d --name rabbitmq -p 5672:5672 -p 15672:15672 docker.cloudimages.asia/rabbitmq:4.0-management
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@prometheus-server ~<span class="o">]</span><span class="c1"># docker ps | grep 9b3a9355fa4a</span>
+</span></span><span class="line"><span class="cl">9b3a9355fa4a   docker.cloudimages.asia/rabbitmq:4.0-management   <span class="s2">&#34;docker-entrypoint.s…&#34;</span>   <span class="m">21</span> seconds ago   Up <span class="m">19</span> seconds             4369/tcp, 5671/tcp, 0.0.0.0:5672-&gt;5672/tcp, :::5672-&gt;5672/tcp, 15671/tcp, 15691-15692/tcp, 25672/tcp, 0.0.0.0:15672-&gt;15672/tcp, :::15672-&gt;15672/tcp           rabbitmq
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>访问页面地址：<a class="link" href="http://192.168.82.105:15672/"  target="_blank" rel="noopener"
+    >http://192.168.82.105:15672/</a>   使用 RabbitMQ 的管理界面。
+访问账号和密码： guest   |  guest</p>
+<p><img src="/../../image/75904e18c2ea43eeb4622e5c97b04a47.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+队列页面
+<img src="/../../image/455c8c6efa5f45c0ac15ef7ae656f067.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="生产者将数据发送到-rabbitmq-队列">生产者：将数据发送到 RabbitMQ 队列</h2>
+<p>生产者的任务是生成一些假数据，并将这些数据发送到 RabbitMQ 队列中。我们使用 Faker 库生成数据，并通过 RabbitMQ 的 basic_publish 方法发送消息。</p>
+<p>确保你的环境中安装了Python。然后，使用pip安装Flask、Pika和Faker：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">pip install flask pika faker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="生产者代码">生产者代码</h3>
+<p>生产者部分主要负责生成随机数据并通过RabbitMQ发送出去。这里我们使用Faker库来生成看起来真实的数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Time    : 2024/11/24 10:20</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Author  : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Email   : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @File    : test.py</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Software: PyCharm</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">faker</span> <span class="kn">import</span> <span class="n">Faker</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">pika</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">time</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 初始化 Faker 实例</span>
+</span></span><span class="line"><span class="cl"><span class="n">fake</span> <span class="o">=</span> <span class="n">Faker</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 配置 RabbitMQ 连接</span>
+</span></span><span class="line"><span class="cl"><span class="n">connection</span> <span class="o">=</span> <span class="n">pika</span><span class="o">.</span><span class="n">BlockingConnection</span><span class="p">(</span><span class="n">pika</span><span class="o">.</span><span class="n">ConnectionParameters</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;192.168.82.105&#39;</span><span class="p">,</span><span class="n">heartbeat</span><span class="o">=</span><span class="mi">60</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 声明一个队列</span>
+</span></span><span class="line"><span class="cl"><span class="n">queue_name</span> <span class="o">=</span> <span class="s1">&#39;ownit_queue&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="n">channel</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">queue_name</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 生成并发送假数据</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">generate_fake_data</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;name&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;address&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">address</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;email&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">email</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;phone&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">phone_number</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;company&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">company</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;date&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">date_this_year</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;text&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">max_nb_chars</span><span class="o">=</span><span class="mi">200</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>  <span class="c1"># 生成 1000 条假数据</span>
+</span></span><span class="line"><span class="cl">        <span class="n">fake_data</span> <span class="o">=</span> <span class="n">generate_fake_data</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="n">channel</span><span class="o">.</span><span class="n">basic_publish</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">exchange</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">routing_key</span><span class="o">=</span><span class="n">queue_name</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">fake_data</span><span class="p">)</span>  <span class="c1"># 将数据序列化为 JSON 格式</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># time.sleep(0.1)</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Sent: </span><span class="si">{</span><span class="n">fake_data</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">finally</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>执行插入10000条数据
+<img src="/../../image/635d90072941492d9b0e92f025e8e128.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/2c5a69f4187a45a4b797ff36671029ab.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="数据持久化">数据持久化</h3>
+<p>重启docker 服务。让mq重启</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker restart 9b3a9355fa4a
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为重启，队列没有持久化，导致数据丢失
+<img src="/../../image/b5e18f6aef474806b6bf5fd1175ad5a7.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>为了确保消息不会丢失，可以配置 RabbitMQ 的队列为持久化队列，即使 RabbitMQ 宕机或重启，队列中的消息也能被恢复。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">channel</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s1">&#39;ownit_queue&#39;</span><span class="p">,</span> <span class="n">durable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="n">properties</span><span class="o">=</span><span class="n">pika</span><span class="o">.</span><span class="n">BasicProperties</span><span class="p">(</span><span class="n">delivery_mode</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/8a9292a1cc9d4f3c98f0aa65e8bb6011.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+咦，还是没有数据？为什么？
+因为使用Dokcer启动没有持久数据，重启会丢失数据，就算我们mq做持久化也不起作用。
+<img src="/../../image/9cb43b99c36a4b48a53896f846059811.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker stop  9b3a9355fa4a <span class="o">&amp;&amp;</span> docker rm  9b3a9355fa4a
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>持久化命令</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it -d <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --name rabbitmq <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p 5672:5672 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p 15672:15672 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -v rabbitmq_data:/var/lib/rabbitmq/mnesia <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  docker.cloudimages.asia/rabbitmq:4.0-management
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="解释">解释：</h3>
+<ul>
+<li><code>-it -d</code>：以交互模式启动并在后台运行容器。</li>
+<li><code>--name rabbitmq</code>：给容器指定一个名字 <code>rabbitmq</code>。</li>
+<li><code>-p 5672:5672</code>：映射 RabbitMQ 的默认 AMQP 协议端口（5672）到宿主机。</li>
+<li><code>-p 15672:15672</code>：映射 RabbitMQ 的管理界面端口（15672）到宿主机。</li>
+<li><code>-v rabbitmq_data:/var/lib/rabbitmq/mnesia</code>：将宿主机的 Docker 卷 <code>rabbitmq_data</code> 持久化到容器内的 <code>/var/lib/rabbitmq/mnesia</code> 目录，这是 RabbitMQ 默认存储队列和消息数据的地方。
+<img src="/../../image/93289986fb4046c1a383b28f5904450e.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+使用宿主机目录</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run -it -d <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --name rabbitmq <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p 5672:5672 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p 15672:15672 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -v /root/rabbitmq:/var/lib/rabbitmq <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  docker.cloudimages.asia/rabbitmq:4.0-management
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@prometheus-server ~<span class="o">]</span><span class="c1"># docker restart 9e200cf168c3</span>
+</span></span><span class="line"><span class="cl">9e200cf168c3
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/9f4ada48f8e7407d9495b720b5d84db6.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="关键点解析">关键点解析</h3>
+<ul>
+<li><strong><code>Faker</code> 库</strong>：用于生成虚拟数据。每次调用 <code>generate_fake_data</code> 函数时都会生成不同的姓名、地址、邮箱等信息。</li>
+<li><strong>RabbitMQ 连接</strong>：我们使用 <code>pika</code> 库与 RabbitMQ 进行连接，并声明了一个队列 <code>ownit_queue</code>，用于存储消息。</li>
+<li><strong>数据发布</strong>：使用 <code>channel.basic_publish()</code> 方法将消息发布到指定的队列中，消息体使用 <code>json.dumps()</code> 序列化为 JSON 格式。</li>
+</ul>
+<h3 id="持久化完整代码">持久化完整代码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Time    : 2024/11/24 10:20</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Author  : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Email   : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @File    : test.py</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Software: PyCharm</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">faker</span> <span class="kn">import</span> <span class="n">Faker</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">pika</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">time</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 初始化 Faker 实例</span>
+</span></span><span class="line"><span class="cl"><span class="n">fake</span> <span class="o">=</span> <span class="n">Faker</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 配置 RabbitMQ 连接</span>
+</span></span><span class="line"><span class="cl"><span class="n">connection</span> <span class="o">=</span> <span class="n">pika</span><span class="o">.</span><span class="n">BlockingConnection</span><span class="p">(</span><span class="n">pika</span><span class="o">.</span><span class="n">ConnectionParameters</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;192.168.82.105&#39;</span><span class="p">,</span><span class="n">heartbeat</span><span class="o">=</span><span class="mi">60</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 声明一个队列</span>
+</span></span><span class="line"><span class="cl"><span class="n">queue_name</span> <span class="o">=</span> <span class="s1">&#39;ownit_queue&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="n">channel</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">queue_name</span><span class="p">,</span> <span class="n">durable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 生成并发送假数据</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">generate_fake_data</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;name&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;address&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">address</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;email&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">email</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;phone&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">phone_number</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;company&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">company</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;date&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">date_this_year</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;text&#34;</span><span class="p">:</span> <span class="n">fake</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">max_nb_chars</span><span class="o">=</span><span class="mi">200</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>  <span class="c1"># 生成 1000 条假数据</span>
+</span></span><span class="line"><span class="cl">        <span class="n">fake_data</span> <span class="o">=</span> <span class="n">generate_fake_data</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="n">channel</span><span class="o">.</span><span class="n">basic_publish</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">            <span class="n">exchange</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">routing_key</span><span class="o">=</span><span class="n">queue_name</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">fake_data</span><span class="p">),</span>  <span class="c1"># 将数据序列化为 JSON 格式</span>
+</span></span><span class="line"><span class="cl">            <span class="n">properties</span><span class="o">=</span><span class="n">pika</span><span class="o">.</span><span class="n">BasicProperties</span><span class="p">(</span><span class="n">delivery_mode</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># time.sleep(0.1)</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Sent: </span><span class="si">{</span><span class="n">fake_data</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">finally</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="消费者从-rabbitmq-中获取数据">消费者：从 RabbitMQ 中获取数据</h2>
+<p>消费者部分由Flask应用托管，它不仅提供了API接口，还启动了一个后台线程持续监听RabbitMQ上的消息。
+消费者的任务是从队列中读取消息，并进行处理。在这个例子中，我们将模拟一个简单的消息消费过程，打印接收到的数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">threading</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">time</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">pika</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">request</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nd">@app.route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">send_order</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="s1">&#39;Hello, World! MQ&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 消费者函数</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">consume</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 创建与 RabbitMQ 服务器的连接</span>
+</span></span><span class="line"><span class="cl">    <span class="n">connection</span> <span class="o">=</span> <span class="n">pika</span><span class="o">.</span><span class="n">BlockingConnection</span><span class="p">(</span><span class="n">pika</span><span class="o">.</span><span class="n">ConnectionParameters</span><span class="p">(</span><span class="s1">&#39;192.168.82.105&#39;</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 从连接中创建一个通道</span>
+</span></span><span class="line"><span class="cl">    <span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 声明一个名为 order_queue 的队列，如果队列不存在则创建它</span>
+</span></span><span class="line"><span class="cl">    <span class="n">channel</span><span class="o">.</span><span class="n">queue_declare</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s1">&#39;ownit_queue&#39;</span><span class="p">,</span><span class="n">durable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 定义一个回调函数，用于处理接收到的消息</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">body</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 打印接收到的消息体</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;数据接受: </span><span class="si">{</span><span class="n">body</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># 配置通道以消费来自 order_queue 的消息，指定回调函数处理消息，并设置自动确认消息</span>
+</span></span><span class="line"><span class="cl">    <span class="n">channel</span><span class="o">.</span><span class="n">basic_consume</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s1">&#39;ownit_queue&#39;</span><span class="p">,</span> <span class="n">on_message_callback</span><span class="o">=</span><span class="n">callback</span><span class="p">,</span> <span class="n">auto_ack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 打印消息表示程序正在等待接收消息，并提示用户按 CTRL+C 退出</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Waiting for messages. To exit press CTRL+C&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 开始一个循环以持续接收消息</span>
+</span></span><span class="line"><span class="cl">    <span class="n">channel</span><span class="o">.</span><span class="n">start_consuming</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 启动消费者线程</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">run_consumer</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">consume</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># 设置守护线程</span>
+</span></span><span class="line"><span class="cl">    <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="s2">&#34;Consumer thread started.&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">run_consumer</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/a541286623c04f6d9d13ed39ae1799ca.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><img src="/../../image/2fe9cd4bd336474fa5751a88ca991ca9.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="关键点解析-1">关键点解析</h3>
+<ul>
+<li><strong><code>consume()</code> 函数</strong>：通过 <code>pika</code> 连接 RabbitMQ，声明 <code>ownit_queue</code> 队列，并通过回调函数 <code>callback</code> 处理接收到的消息。</li>
+<li><strong>线程化消费</strong>：为了使 Flask 应用能够正常处理 Web 请求，同时也能处理消息队列中的消息，我们将消息消费部分放在一个单独的线程中运行。</li>
+<li><strong><code>auto_ack=True</code></strong>：自动确认消息，表示一旦消费者接收到消息后会自动从队列中删除该消息。</li>
+</ul>
+<h3 id="持续发送数据">持续发送数据</h3>
+<p>每秒接收1条数据
+<img src="/../../image/c2658458653f49c49c09440775163871.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+没消费的数据一直在MQ中
+<img src="/../../image/c2c2eec82af74eb68cfe1d5dc9b0697b.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="总结">总结</h2>
+<p>结合 <strong>Flask</strong> 和 <strong>RabbitMQ</strong> 构建一个高效的消息队列系统，从假数据的生成到数据的消费处理，整个过程都得到了详细展示。在实现过程中，我们主要涵盖了以下内容：</p>
+<ol>
+<li><strong>RabbitMQ 的安装与配置</strong>：了解了如何通过 RabbitMQ 管理消息队列，以及如何与 Python 进行交互。</li>
+<li><strong>生产者的实现</strong>：使用 <code>Faker</code> 库生成假数据，并将其发布到 RabbitMQ 队列中。通过 <code>pika</code> 库与 RabbitMQ 进行连接，确保数据能够被成功发送到队列中。</li>
+<li><strong>消费者的实现</strong>：通过 Flask 启动一个独立的消费者线程，从 RabbitMQ 队列中获取数据并进行处理。我们还讨论了如何在 Flask 应用中嵌入多线程操作，保证 Web 应用的响应性和消息处理的高效性。</li>
+<li><strong>消息确认和持久化</strong>：我们讨论了消息的持久化和确认机制，这对于生产环境中的高可用性和数据安全性至关重要。</li>
+</ol>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/flaskrabbitmqpython/">flask,rabbitmq,python</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202411251139/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/39.jpg" loading="lazy" data-key="202411251139" data-hash="/../../title_pic/39.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">深入浅出 WebSocket：构建实时数据大屏的高级实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202411251105/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/51.jpg" loading="lazy" data-key="202411251105" data-hash="/../../title_pic/51.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">基于 Flask 和 Socket.IO 的 WebSocket 实时数据更新实现</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202406271727/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/33.jpg" loading="lazy" data-key="202406271727" data-hash="/../../title_pic/33.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python （Ansbile）脚本高效批量管理服务器和安全</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202309221613/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/27.jpg" loading="lazy" data-key="202309221613" data-hash="/../../title_pic/27.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Flask配合Echarts写一个动态可视化大屏</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202309051144/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/55.jpg" loading="lazy" data-key="202309051144" data-hash="/../../title_pic/55.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Python调用Jumpserver的Api接口增删改查</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
