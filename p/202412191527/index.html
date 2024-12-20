@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='随着企业IT基础设施的不断扩大，Linux服务器的数量也日益增多，传统的单机日志管理方式已无法满足对日志数据集中管理、审计和分析的需求。尤其是在大型集群环境中，如何高效地收集、存储和分析日志成为了一项重要的技术挑战。'>
+<title>集中管理与实时审计：构建Linux集群（1300台服务器）日志平台的最佳实践</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202412191527/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='集中管理与实时审计：构建Linux集群（1300台服务器）日志平台的最佳实践'>
+<meta property='og:description' content='随着企业IT基础设施的不断扩大，Linux服务器的数量也日益增多，传统的单机日志管理方式已无法满足对日志数据集中管理、审计和分析的需求。尤其是在大型集群环境中，如何高效地收集、存储和分析日志成为了一项重要的技术挑战。'>
+<meta property='og:url' content='https://www.ownit.top/p/202412191527/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='服务器,linux,运维' /><meta property='article:published_time' content='2024-12-19T15:27:19&#43;00:00'/><meta property='article:modified_time' content='2024-12-19T15:27:19&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/47.jpg' />
+<meta name="twitter:title" content="集中管理与实时审计：构建Linux集群（1300台服务器）日志平台的最佳实践">
+<meta name="twitter:description" content="随着企业IT基础设施的不断扩大，Linux服务器的数量也日益增多，传统的单机日志管理方式已无法满足对日志数据集中管理、审计和分析的需求。尤其是在大型集群环境中，如何高效地收集、存储和分析日志成为了一项重要的技术挑战。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/47.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#需求">需求</a></li>
+    <li><a href="#解决方案">解决方案</a></li>
+    <li><a href="#整体架构">整体架构</a></li>
+    <li><a href="#rsyslog汇总">rsyslog汇总</a>
+      <ol>
+        <li><a href="#rsyslog服务端">rsyslog服务端</a></li>
+        <li><a href="#rsyslog客户端">rsyslog客户端</a></li>
+        <li><a href="#filebeaet收集">filebeaet收集</a></li>
+        <li><a href="#logstatsh配置">logstatsh配置</a></li>
+      </ol>
+    </li>
+    <li><a href="#操作系统命令审计">操作系统命令审计</a>
+      <ol>
+        <li><a href="#linux终端配置">Linux终端配置</a></li>
+        <li><a href="#filebeat配置">filebeat配置</a></li>
+        <li><a href="#logstatsh配置-1">logstatsh配置</a></li>
+      </ol>
+    </li>
+    <li><a href="#系统用户登录审计">系统用户登录审计</a>
+      <ol>
+        <li><a href="#filebeat配置-1">filebeat配置</a></li>
+        <li><a href="#logstatsh配置-2">logstatsh配置</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202412191527/">
+                
+                    <img src="/../../title_pic/47.jpg" loading="lazy" alt="Featured image of post 集中管理与实时审计：构建Linux集群（1300台服务器）日志平台的最佳实践" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202412191527/">集中管理与实时审计：构建Linux集群（1300台服务器）日志平台的最佳实践</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            随着企业IT基础设施的不断扩大，Linux服务器的数量也日益增多，传统的单机日志管理方式已无法满足对日志数据集中管理、审计和分析的需求。尤其是在大型集群环境中，如何高效地收集、存储和分析日志成为了一项重要的技术挑战。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Dec 19, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 7 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="简介">简介</h2>
+<p>随着企业IT基础设施的不断扩大，Linux服务器的数量也日益增多，传统的单机日志管理方式已无法满足对日志数据集中管理、审计和分析的需求。尤其是在大型集群环境中，如何高效地收集、存储和分析日志成为了一项重要的技术挑战。</p>
+<h2 id="背景">背景</h2>
+<p>在实现对大型Linux集群的日志集中管理与审计，特别是针对rsyslog日志的收集、操作命令日志以及登录日志的审计。通过部署集中的rsyslog服务端，能够统一收集1300多台Linux服务器的系统日志，确保日志数据的集中化管理。使用Filebeat作为日志收集工具，将日志数据推送至Logstash进行清洗和转换，最终存储到Elasticsearch中，并通过Kibana实现实时数据可视化展示。这种方式不仅简化了日志管理流程，还提高了系统的监控效率和安全性。</p>
+<h2 id="需求">需求</h2>
+<p>统一管理 1300 台服务器的Linux系统日志，能够及时发现问题和告警。
+<img src="/../../image/a263ca3c57ba4358b80507c8e9cd003a.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="解决方案">解决方案</h2>
+<ol>
+<li><strong>集中管理</strong>：通过统一的服务端收集所有Linux服务器的日志数据，减少单独配置每台服务器的工作量。</li>
+<li><strong>日志审计</strong>：对操作命令日志、登录日志等进行审计，确保系统行为的可追溯性。</li>
+<li><strong>数据清洗与分析</strong>：通过日志清洗与格式转换，确保日志数据的标准化，便于后续的分析和可视化展示。</li>
+<li><strong>实时展示</strong>：利用Kibana将清洗后的数据实时可视化，帮助运维人员快速发现潜在问题。</li>
+</ol>
+<h2 id="整体架构">整体架构</h2>
+<p>为实现这些目标，我们设计了以下的系统架构：</p>
+<ul>
+<li><strong>rsyslog</strong>：作为日志收集的核心组件，它负责将来自Linux系统的各种日志（包括<code>/var/log/messages</code>等）统一推送到中心化的日志服务端。</li>
+<li><strong>Filebeat</strong>：作为轻量级的日志收集器，部署在各个Linux节点上，负责将日志文件传输到Logstash。</li>
+<li><strong>Logstash</strong>：对收集到的日志进行清洗、解析和转换，确保数据符合预定格式，便于存入Elasticsearch。</li>
+<li><strong>Elasticsearch</strong>：存储经过清洗和转换的日志数据，提供强大的全文搜索和数据查询功能。</li>
+<li><strong>Kibana</strong>：通过Kibana仪表盘实时展示存储在Elasticsearch中的日志数据，帮助运维人员进行数据分析和可视化展示。</li>
+</ul>
+<h2 id="rsyslog汇总">rsyslog汇总</h2>
+<h3 id="rsyslog服务端">rsyslog服务端</h3>
+<p>首先配置rsyslog服务器，可以统一收集集群内部的日志。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 加载本地系统日志模块（例如通过 logger 命令发送的日志）</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imuxsock
+</span></span><span class="line"><span class="cl"><span class="c1"># 加载内核日志模块（之前由 rklogd 处理）</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imklog
+</span></span><span class="line"><span class="cl"><span class="c1"># 加载 UDP 模块，支持通过 UDP 协议接收日志</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imudp
+</span></span><span class="line"><span class="cl"><span class="c1"># 配置 UDP 服务器在 514 端口接收日志</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$UDPServerRun</span> <span class="m">514</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 加载 TCP 模块，支持通过 TCP 协议接收日志</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ModLoad</span> imtcp
+</span></span><span class="line"><span class="cl"><span class="c1"># 配置 TCP 服务器在 514 端口接收日志</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$InputTCPServerRun</span> <span class="m">514</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 定义一个自定义的日志格式模板 &#39;myFormat&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$template</span> myFormat,<span class="s2">&#34;%timestamp:::date-rfc3339% %fromhost-ip% %HOSTNAME% [%programname%] %syslogseverity-text%:%msg%\n&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 设置默认的文件格式为传统的 rsyslog 格式</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$ActionFileDefaultTemplate</span> RSYSLOG_TraditionalFileFormat
+</span></span><span class="line"><span class="cl"><span class="c1"># 加载 /etc/rsyslog.d/ 目录下的所有配置文件</span>
+</span></span><span class="line"><span class="cl"><span class="nv">$IncludeConfig</span> /etc/rsyslog.d/*.conf
+</span></span><span class="line"><span class="cl"><span class="c1"># 配置收集 info 级别的日志，排除 mail、authpriv、cron 类别的日志，输出到 /var/log/messages 文件，并使用 myFormat 格式</span>
+</span></span><span class="line"><span class="cl">*.info<span class="p">;</span>mail.none<span class="p">;</span>authpriv.none<span class="p">;</span>cron.none /var/log/messages<span class="p">;</span>myFormat
+</span></span><span class="line"><span class="cl"><span class="c1"># 收集所有 authpriv 类别的日志（通常是认证相关的日志），输出到 /var/log/secure 文件，并使用 myFormat 格式</span>
+</span></span><span class="line"><span class="cl">authpriv.* /var/log/secure<span class="p">;</span>myFormat
+</span></span><span class="line"><span class="cl"><span class="c1"># 收集所有 mail 类别的日志，输出到 /var/log/maillog 文件，使用异步写入（- 表示异步）</span>
+</span></span><span class="line"><span class="cl">mail.* -/var/log/maillog
+</span></span><span class="line"><span class="cl"><span class="c1"># 收集所有 cron 类别的日志（定时任务日志），输出到 /var/log/cron 文件</span>
+</span></span><span class="line"><span class="cl">cron.* /var/log/cron
+</span></span><span class="line"><span class="cl"><span class="c1"># 收集所有紧急级别（emerg）的日志，将其通过系统消息发送</span>
+</span></span><span class="line"><span class="cl">*.emerg :omusrmsg:*
+</span></span><span class="line"><span class="cl"><span class="c1"># 收集 uucp 和 news 类别的严重级别（crit）日志，输出到 /var/log/spooler 文件</span>
+</span></span><span class="line"><span class="cl">uucp,news.crit /var/log/spooler
+</span></span><span class="line"><span class="cl"><span class="c1"># 收集所有 local7 类别的日志，输出到 /var/log/boot.log 文件</span>
+</span></span><span class="line"><span class="cl">local7.* /var/log/boot.log
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>重启服务端</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl restart rsyslog
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>修改前：
+<img src="/../../image/41657c95934b42fa865e4360ed4342bc.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>修改后：
+<img src="/../../image/843493b6c99b40369dfd883ffff89235.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="rsyslog客户端">rsyslog客户端</h3>
+<p>所有集群的客户端配置最后一行IP，就可以把数据汇总在一切</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@zabbix ~<span class="o">]</span><span class="c1"># cat /etc/rsyslog.conf  |tail -n 2</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#authpriv.*      @10.10.10.17</span>
+</span></span><span class="line"><span class="cl">*.* @@192.168.102.20   <span class="c1"># rsyslog 服务端的IP</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>重启</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl restart rsyslog.service
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>日志已经打印到rsyslog 服务端的 <strong>/var/log/messages</strong>    <strong>/var/log/secure</strong> 等文件</p>
+<p><img src="/../../image/cbeb232b19874ddabe5ea2cbb585d424.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="filebeaet收集">filebeaet收集</h3>
+<p>在rsyslog 服务端的安装filebeaet，并且使用如下配置启动</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">filebeat.config.modules:
+</span></span><span class="line"><span class="cl">  path: <span class="si">${</span><span class="nv">path</span><span class="p">.config</span><span class="si">}</span>/modules.d/*.yml
+</span></span><span class="line"><span class="cl">  reload.enabled: <span class="nb">false</span>
+</span></span><span class="line"><span class="cl">filebeat.inputs:
+</span></span><span class="line"><span class="cl">- type: log
+</span></span><span class="line"><span class="cl">  enabled: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  tail_files: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  paths:
+</span></span><span class="line"><span class="cl">    - /var/log/messages
+</span></span><span class="line"><span class="cl">output.logstash:
+</span></span><span class="line"><span class="cl">  hosts: <span class="o">[</span><span class="s2">&#34;192.168.1.100:5514&#34;</span><span class="o">]</span>  
+</span></span><span class="line"><span class="cl">  <span class="c1"># 把日志发送到logstatsh中</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="logstatsh配置">logstatsh配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@game logstash<span class="o">]</span><span class="c1"># cat config/rsyslog.conf</span>
+</span></span><span class="line"><span class="cl">input <span class="o">{</span>
+</span></span><span class="line"><span class="cl">   beats <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">port</span> <span class="o">=</span>&gt; <span class="m">5514</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">type</span> <span class="o">=</span>&gt; syslog
+</span></span><span class="line"><span class="cl">  <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">filter <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    grok <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">{</span> 
+</span></span><span class="line"><span class="cl">		<span class="s2">&#34;message&#34;</span> <span class="o">=</span>&gt; <span class="s2">&#34;%{TIMESTAMP_ISO8601:time} %{IP:client_ip} %{HOSTNAME:host_name} \[%{DATA:type}\] %{GREEDYDATA:info}&#34;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="nv">overwrite</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;message&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">		
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">	mutate <span class="o">{</span>  
+</span></span><span class="line"><span class="cl">	<span class="nv">split</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;type&#34;</span>,<span class="s2">&#34;,&#34;</span><span class="o">]</span>     
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nv">add_field</span> <span class="o">=</span>&gt;   <span class="o">{</span>
+</span></span><span class="line"><span class="cl">                 <span class="s2">&#34;types&#34;</span> <span class="o">=</span>&gt; <span class="s2">&#34;%{[type][1]}&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    mutate<span class="o">{</span><span class="nv">remove_field</span> <span class="o">=</span>&gt; <span class="o">[</span> <span class="s2">&#34;tags&#34;</span>,<span class="s2">&#34;agent&#34;</span>,<span class="s2">&#34;host&#34;</span>,<span class="s2">&#34;log&#34;</span>,<span class="s2">&#34;ecs&#34;</span>,<span class="s2">&#34;type&#34;</span> <span class="o">]}</span>
+</span></span><span class="line"><span class="cl">	
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	date <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;time&#34;</span>, <span class="s2">&#34;yyyy-MM-dd HH:mm:ss,SSS&#34;</span>, <span class="s2">&#34;UNIX&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;@timestamp&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">locale</span> <span class="o">=</span>&gt; <span class="s2">&#34;cn&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">output <span class="o">{</span>
+</span></span><span class="line"><span class="cl">  stdout <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">codec</span><span class="o">=</span>&gt; rubydebug
+</span></span><span class="line"><span class="cl">  <span class="o">}</span>
+</span></span><span class="line"><span class="cl">  elasticsearch <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">hosts</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;127.0.0.1:9200&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">index</span> <span class="o">=</span>&gt; <span class="s2">&#34;message&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>数据格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">2024-12-03T18:35:30+08:00 192.168.102.30 master01 <span class="o">[</span>kubelet<span class="o">]</span> info: E1203 18:35:30.827608    <span class="m">1065</span> summary_sys_containers.go:83<span class="o">]</span> <span class="s2">&#34;Failed to get system container stats&#34;</span> <span class="nv">err</span><span class="o">=</span><span class="s2">&#34;failed to get cgroup stats for \&#34;/system.slice/docker.service\&#34;: failed to get container info for \&#34;/system.slice/docker.service\&#34;: unknown container \&#34;/system.slice/docker.service\&#34;&#34;</span> <span class="nv">containerName</span><span class="o">=</span><span class="s2">&#34;/system.slice/docker.service&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>GROK解析</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">%<span class="o">{</span>TIMESTAMP_ISO8601:time<span class="o">}</span> %<span class="o">{</span>IP:client_ip<span class="o">}</span> %<span class="o">{</span>HOSTNAME:host_name<span class="o">}</span> <span class="se">\[</span>%<span class="o">{</span>DATA:type<span class="o">}</span><span class="se">\]</span> %<span class="o">{</span>GREEDYDATA:info<span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>输出格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;client_ip&#34;</span>: <span class="s2">&#34;192.168.102.30&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;time&#34;</span>: <span class="s2">&#34;2024-12-03T18:35:30+08:00&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;type&#34;</span>: <span class="s2">&#34;kubelet&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;host_name&#34;</span>: <span class="s2">&#34;master01&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;info&#34;</span>: <span class="s2">&#34;info: E1203 18:35:30.827608    1065 summary_sys_containers.go:83] \&#34;Failed to get system container stats\&#34; err=\&#34;failed to get cgroup stats for \\\&#34;/system.slice/docker.service\\\&#34;: failed to get container info for \\\&#34;/system.slice/docker.service\\\&#34;: unknown container \\\&#34;/system.slice/docker.service\\\&#34;\&#34; containerName=\&#34;/system.slice/docker.service\&#34;\r&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/9098ea92de9e4108af35274b6d0ac883.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="操作系统命令审计">操作系统命令审计</h2>
+<p>Linux一般都是终端执行命令，我们可以让命令写到message日志上，在通过过滤，获取操作命令记录。</p>
+<h3 id="linux终端配置">Linux终端配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@zabbix ~<span class="o">]</span><span class="c1"># cat /etc/profile | tail -n 2</span>
+</span></span><span class="line"><span class="cl"><span class="nb">unset</span> MAILCHECK
+</span></span><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">PROMPT_COMMAND</span><span class="o">=</span><span class="s1">&#39;{ msg=$(history 1 | { read x y; echo $y; });logger -p local2.info &#34;euid=$(whoami)&#34; $(who am i) `pwd` &#34;$msg&#34;; }&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">日志格式
+</span></span><span class="line"><span class="cl">Oct <span class="m">11</span> 17:32:41 zabbix root: <span class="nv">euid</span><span class="o">=</span>root root pts/0 2021-10-11 15:13 <span class="o">(</span>10.10.10.3<span class="o">)</span> /root cat /etc/profile
+</span></span><span class="line"><span class="cl">Oct <span class="m">11</span> 17:32:47 zabbix root: <span class="nv">euid</span><span class="o">=</span>root root pts/0 2021-10-11 15:13 <span class="o">(</span>10.10.10.3<span class="o">)</span> /root cat /etc/profile <span class="p">|</span> tail -n <span class="m">2</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>rsyslog服务端展示
+<img src="/../../image/9699449ac7b3400d9e12f5cb97831bc5.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h3 id="filebeat配置">filebeat配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@logserver01 filebeat<span class="o">]</span><span class="c1"># cat system_messages.yml </span>
+</span></span><span class="line"><span class="cl"><span class="c1">#=========================== Filebeat inputs =============================</span>
+</span></span><span class="line"><span class="cl">filebeat.inputs:
+</span></span><span class="line"><span class="cl">- type: log
+</span></span><span class="line"><span class="cl">  enabled: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  tail_files: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  paths:
+</span></span><span class="line"><span class="cl">    - /var/log/messages
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="logstatsh配置-1">logstatsh配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@logserver01 config<span class="o">]</span><span class="c1"># cat system_userlog_FromKafkaInES.conf</span>
+</span></span><span class="line"><span class="cl">input<span class="o">{</span>
+</span></span><span class="line"><span class="cl">    beats <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">host</span> <span class="o">=</span>&gt; <span class="s1">&#39;172.17.9.200&#39;</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">port</span> <span class="o">=</span>&gt; <span class="m">5046</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#	kafka{</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		bootstrap_servers =&gt; [&#34;172.17.8.232:6667&#34;]</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		topics =&gt; [&#34;sys_os_exe&#34;]</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		codec =&gt; &#34;json&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		group_id =&gt; &#34;ELK_SYSTEM_EXE_GROUP&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		consumer_threads =&gt; 3</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		client_id =&gt; &#34;logstash&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		decorate_events =&gt; false</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		auto_offset_reset =&gt; &#34;earliest&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		request_timeout_ms =&gt; &#34;300000&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		session_timeout_ms =&gt; &#34;20000&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		max_poll_interval_ms =&gt; &#34;600000&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#	}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">filter<span class="o">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="o">([</span>message<span class="o">]</span> <span class="o">=</span>~ <span class="s2">&#34;euid&#34;</span><span class="o">){</span>
+</span></span><span class="line"><span class="cl">		grok<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">{</span><span class="s2">&#34;message&#34;</span> <span class="o">=</span>&gt; <span class="s1">&#39;^(?&lt;exetime&gt;\d+-\d+-\d+)(?:[^\d]+)(?&lt;hhmmss&gt;\d+:\d+:\d+)(?:[^\d]+\d+:\d+)(?:\s)(?&lt;deshost&gt;[^ ]+)(?:\s)(?&lt;name&gt;[^ ]+)(?:\s\[)(?&lt;loginuser&gt;[^ |\]]*)(?:\]\s[^ ]+\seuid=)(?&lt;exeuser&gt;[^ ]+)(?:\s+)(?&lt;userinfo&gt;[^\(]+)(?:\s\()(?&lt;srchost&gt;[^\)]+)(?:\)\s)(?&lt;exepath&gt;[^ ]+)(\s+)(?&lt;exeinfo&gt;.*)&#39;</span><span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="s2">&#34;_grokparsefailure&#34;</span> in <span class="o">[</span>tags<span class="o">]</span> <span class="o">{</span> drop <span class="o">{</span> <span class="o">}</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;tmp_exeinfo&#34;</span>,<span class="s2">&#34;%{exeinfo}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">split</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;exetime&#34;</span>,<span class="s2">&#34;-&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">split</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;tmp_exeinfo&#34;</span>,<span class="s2">&#34; &#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;indextime&#34;</span>,<span class="s2">&#34;%{[exetime][0]}%{[exetime][1]}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;%{[exetime][0]}-%{[exetime][1]}-%{[exetime][2]} %{hhmmss}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;cmd&#34;</span>,<span class="s2">&#34;%{[tmp_exeinfo][0]}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">#Retention log insertion time to ES..............</span>
+</span></span><span class="line"><span class="cl">		ruby <span class="o">{</span> <span class="nv">code</span> <span class="o">=</span>&gt; <span class="s2">&#34;event.set(&#39;inserttime&#39;, event.get(&#39;@timestamp&#39;).time.to_i)&#34;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">#replace InsertTime with evtTime &#34;yyyy-MM-dd HH:mm:ss eg:2020-06-29 09:24:29&#34;</span>
+</span></span><span class="line"><span class="cl">		date<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;yyyy-MM-dd HH:mm:ss&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">              		<span class="c1">#kibana use this time....................</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;@timestamp&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span><span class="nv">replace</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;%{evtTime} +0800&#34;</span><span class="o">]}</span>
+</span></span><span class="line"><span class="cl">		date<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;yyyy-MM-dd HH:mm:ss +0800&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                       	<span class="nv">timezone</span> <span class="o">=</span>&gt;<span class="s2">&#34;UTC&#34;</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">#log event time timestamp................</span>
+</span></span><span class="line"><span class="cl">                       	<span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;logtimestamp&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">#log event time long string......................</span>
+</span></span><span class="line"><span class="cl">		ruby <span class="o">{</span> <span class="nv">code</span> <span class="o">=</span>&gt; <span class="s2">&#34;event.set(&#39;longtime&#39;, event.get(&#39;logtimestamp&#39;).time.to_i)&#34;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span><span class="nv">remove_field</span> <span class="o">=</span>&gt; <span class="o">[</span> <span class="s2">&#34;tmp_exeinfo&#34;</span>,<span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;host&#34;</span>,<span class="s2">&#34;ecs&#34;</span>,<span class="s2">&#34;log&#34;</span>,<span class="s2">&#34;hhmmss&#34;</span>,<span class="s2">&#34;input&#34;</span>,<span class="s2">&#34;agent&#34;</span>,<span class="s2">&#34;exetime&#34;</span> <span class="o">]}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">else</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">                drop<span class="o">{}</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">output<span class="o">{</span>
+</span></span><span class="line"><span class="cl">	stdout<span class="o">{</span><span class="nv">codec</span> <span class="o">=</span>&gt; rubydebug<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="o">[</span>indextime<span class="o">]</span> !~ <span class="s2">&#34;index&#34;</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">		elasticsearch<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">hosts</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;http://172.17.9.176:9200&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">#hosts =&gt; &#34;172.17.9.176&#34;</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">index</span> <span class="o">=</span>&gt; <span class="s2">&#34;sys_os_userlog_%{[indextime]}&#34;</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">user</span> <span class="o">=</span>&gt; <span class="s2">&#34;*********&#34;</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">password</span> <span class="o">=</span>&gt; <span class="s2">&#34;*********&#34;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>数据格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">2024-12-03T18:39:05+08:00 192.168.102.30 master01 <span class="o">[</span>root<span class="o">]</span> info: <span class="nv">euid</span><span class="o">=</span>root root pts/0 2024-12-03 18:21 <span class="o">(</span>192.168.96.19<span class="o">)</span> /root <span class="o">[</span>2024-12-03 18:39:05<span class="o">]</span>ip a
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>GROK解析</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">^<span class="o">(</span>?&lt;exetime&gt;<span class="se">\d</span>+-<span class="se">\d</span>+-<span class="se">\d</span>+<span class="o">)(</span>?:<span class="o">[</span>^<span class="se">\d</span><span class="o">]</span>+<span class="o">)(</span>?&lt;hhmmss&gt;<span class="se">\d</span>+:<span class="se">\d</span>+:<span class="se">\d</span>+<span class="o">)(</span>?:<span class="o">[</span>^<span class="se">\d</span><span class="o">]</span>+<span class="se">\d</span>+:<span class="se">\d</span>+<span class="o">)(</span>?:<span class="se">\s</span><span class="o">)(</span>?&lt;deshost&gt;<span class="o">[</span>^ <span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\s</span><span class="o">)(</span>?&lt;name&gt;<span class="o">[</span>^ <span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\s\[</span><span class="o">)(</span>?&lt;loginuser&gt;<span class="o">[</span>^ <span class="p">|</span><span class="se">\]</span><span class="o">]</span>*<span class="o">)(</span>?:<span class="se">\]\s</span><span class="o">[</span>^ <span class="o">]</span>+<span class="se">\s</span>euid<span class="o">=)(</span>?&lt;exeuser&gt;<span class="o">[</span>^ <span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\s</span>+<span class="o">)(</span>?&lt;userinfo&gt;<span class="o">[</span>^<span class="se">\(</span><span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\s\(</span><span class="o">)(</span>?&lt;srchost&gt;<span class="o">[</span>^<span class="se">\)</span><span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\)\s</span><span class="o">)(</span>?&lt;exepath&gt;<span class="o">[</span>^ <span class="o">]</span>+<span class="o">)(</span><span class="se">\s</span>+<span class="o">)(</span>?&lt;exeinfo&gt;.*<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>输出格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;loginuser&#34;</span>: <span class="s2">&#34;root&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;hhmmss&#34;</span>: <span class="s2">&#34;18:39:05&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;exepath&#34;</span>: <span class="s2">&#34;/root&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;deshost&#34;</span>: <span class="s2">&#34;192.168.102.30&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;srchost&#34;</span>: <span class="s2">&#34;192.168.96.19&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;name&#34;</span>: <span class="s2">&#34;master01&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;exeinfo&#34;</span>: <span class="s2">&#34;[2024-12-03 18:39:05]ip a\r&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;exeuser&#34;</span>: <span class="s2">&#34;root&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;userinfo&#34;</span>: <span class="s2">&#34;root pts/0 2024-12-03 18:21&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;exetime&#34;</span>: <span class="s2">&#34;2024-12-03&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/744a66a8691948bc9c18e024ae15f3cb.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="系统用户登录审计">系统用户登录审计</h2>
+<h3 id="filebeat配置-1">filebeat配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@logserver01 filebeat<span class="o">]</span><span class="c1"># cat system_secure.yml</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#=========================== Filebeat inputs =============================</span>
+</span></span><span class="line"><span class="cl">filebeat.inputs:
+</span></span><span class="line"><span class="cl">- type: log
+</span></span><span class="line"><span class="cl">  enabled: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  tail_files: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">  paths:
+</span></span><span class="line"><span class="cl">    - /var/log/secure
+</span></span><span class="line"><span class="cl"><span class="c1">#=========================== Filebeat outppp_id: messuts =============================</span>
+</span></span><span class="line"><span class="cl">output.logstash:
+</span></span><span class="line"><span class="cl">  hosts: <span class="o">[</span><span class="s2">&#34;172.17.9.200:5045&#34;</span><span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="logstatsh配置-2">logstatsh配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@logserver01 config<span class="o">]</span><span class="c1"># cat system_login_FromKafkaInES.conf</span>
+</span></span><span class="line"><span class="cl">input<span class="o">{</span>
+</span></span><span class="line"><span class="cl">    beats <span class="o">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">host</span> <span class="o">=</span>&gt; <span class="s1">&#39;172.17.9.200&#39;</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">port</span> <span class="o">=</span>&gt; <span class="m">5045</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#	kafka{</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		bootstrap_servers =&gt; [&#34;172.17.8.232:6667&#34;]</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		topics =&gt; [&#34;sys_os_login&#34;]</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		codec =&gt; &#34;json&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		group_id =&gt; &#34;ELK_SYSTEM_LOGIN_GROUP&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		consumer_threads =&gt; 3</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		client_id =&gt; &#34;logstash&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		decorate_events =&gt; false</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		auto_offset_reset =&gt; &#34;earliest&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		request_timeout_ms =&gt; &#34;300000&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		session_timeout_ms =&gt; &#34;20000&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#		max_poll_interval_ms =&gt; &#34;600000&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#	}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">filter<span class="o">{</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">#login successed log</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="o">([</span>message<span class="o">]</span> <span class="o">=</span>~ <span class="s2">&#34;Accepted&#34;</span><span class="o">){</span>
+</span></span><span class="line"><span class="cl">		grok<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">{</span><span class="s2">&#34;message&#34;</span> <span class="o">=</span>&gt; <span class="s1">&#39;^(?&lt;atime&gt;\d+-\d+-\d+)(?:[^\d]+)(?&lt;hhmmss&gt;\d+:\d+:\d+)(?:[^\d]+\d+:\d+)(?:\s+)(?&lt;deshost&gt;\d+\.\d+\.\d+\.\d+)(?:\s)(?&lt;name&gt;[^ ]+)(?:[\S\s]*Failed\spassword\sfor[\sinvalid\suser]*\s)(?&lt;loginuser&gt;[^ ]+)(?:\sfrom\s)(?&lt;srchost&gt;[\d.]+)(?:\s\w+\s\d+\s)(?&lt;loginmode&gt;\w*)&#39;</span><span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="s2">&#34;_grokparsefailure&#34;</span> in <span class="o">[</span>tags<span class="o">]</span> <span class="o">{</span> drop <span class="o">{</span> <span class="o">}</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;type&#34;</span>,<span class="s2">&#34;systemlogin&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">split</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;atime&#34;</span>,<span class="s2">&#34;-&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;indextime&#34;</span>,<span class="s2">&#34;%{[atime][0]}%{[atime][1]}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;%{[atime][0]}-%{[atime][1]}-%{[atime][2]} %{hhmmss}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">#Retention log insertion time to ES..............</span>
+</span></span><span class="line"><span class="cl">		ruby <span class="o">{</span> <span class="nv">code</span> <span class="o">=</span>&gt; <span class="s2">&#34;event.set(&#39;inserttime&#39;, event.get(&#39;@timestamp&#39;).time.to_i)&#34;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="c1">#replace InsertTime with evtTime &#34;yyyy-MM-dd HH:mm:ss eg:2020-06-29 09:24:29&#34;</span>
+</span></span><span class="line"><span class="cl">		date<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;yyyy-MM-dd HH:mm:ss&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">              		<span class="c1">#kibana use this time....................</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;@timestamp&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span><span class="nv">replace</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;%{evtTime} +0800&#34;</span><span class="o">]}</span>
+</span></span><span class="line"><span class="cl">		date<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;yyyy-MM-dd HH:mm:ss +0800&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                       	<span class="nv">timezone</span> <span class="o">=</span>&gt;<span class="s2">&#34;UTC&#34;</span>
+</span></span><span class="line"><span class="cl">			<span class="c1">#log event time timestamp................</span>
+</span></span><span class="line"><span class="cl">                       	<span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;logtimestamp&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="c1">#log event time long string......................</span>
+</span></span><span class="line"><span class="cl">		ruby <span class="o">{</span> <span class="nv">code</span> <span class="o">=</span>&gt; <span class="s2">&#34;event.set(&#39;longtime&#39;, event.get(&#39;logtimestamp&#39;).time.to_i)&#34;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">		mutate<span class="o">{</span><span class="nv">remove_field</span> <span class="o">=</span>&gt; <span class="o">[</span> <span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;host&#34;</span>,<span class="s2">&#34;ecs&#34;</span>,<span class="s2">&#34;log&#34;</span>,<span class="s2">&#34;hhmmss&#34;</span>,<span class="s2">&#34;input&#34;</span>,<span class="s2">&#34;agent&#34;</span>,<span class="s2">&#34;atime&#34;</span> <span class="o">]}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">#login failed log</span>
+</span></span><span class="line"><span class="cl">	<span class="k">else</span> <span class="k">if</span> <span class="o">([</span>message<span class="o">]</span> <span class="o">=</span>~ <span class="s2">&#34;Failed password for&#34;</span><span class="o">){</span>
+</span></span><span class="line"><span class="cl">		grok<span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">{</span><span class="s2">&#34;message&#34;</span> <span class="o">=</span>&gt; <span class="s1">&#39;^(?&lt;atime&gt;\d+-\d+-\d+)(?:[^\d]+)(?&lt;hhmmss&gt;\d+:\d+:\d+)(?:[^\d]+\d+:\d+)(?:\s+)(?&lt;deshost&gt;\d+\.\d+\.\d+\.\d+)(?:[\S\s]*Failed\spassword\sfor[\sinvalid\suser]*\s)(?&lt;loginuser&gt;[^ ]+)(?:\sfrom\s)(?&lt;srchost&gt;[\d.]+)(?:\s\w+\s\d+\s)(?&lt;loginmode&gt;\w*)&#39;</span><span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="s2">&#34;_grokparsefailure&#34;</span> in <span class="o">[</span>tags<span class="o">]</span> <span class="o">{</span> drop <span class="o">{</span> <span class="o">}</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;type&#34;</span>,<span class="s2">&#34;systemloginfailed&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">split</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;atime&#34;</span>,<span class="s2">&#34;-&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                mutate<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;indextime&#34;</span>,<span class="s2">&#34;%{[atime][0]}%{[atime][1]}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">add_field</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;%{[atime][0]}-%{[atime][1]}-%{[atime][2]} %{hhmmss}&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">#Retention log insertion time to ES..............</span>
+</span></span><span class="line"><span class="cl">                ruby <span class="o">{</span> <span class="nv">code</span> <span class="o">=</span>&gt; <span class="s2">&#34;event.set(&#39;inserttime&#39;, event.get(&#39;@timestamp&#39;).time.to_i)&#34;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                <span class="c1">#replace InsertTime with evtTime &#34;yyyy-MM-dd HH:mm:ss eg:2020-06-29 09:24:29&#34;</span>
+</span></span><span class="line"><span class="cl">                date<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;yyyy-MM-dd HH:mm:ss&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                        <span class="c1">#kibana use this time....................</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;@timestamp&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                mutate<span class="o">{</span><span class="nv">replace</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;%{evtTime} +0800&#34;</span><span class="o">]}</span>
+</span></span><span class="line"><span class="cl">                date<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">match</span> <span class="o">=</span>&gt; <span class="o">[</span><span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;yyyy-MM-dd HH:mm:ss +0800&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">timezone</span> <span class="o">=</span>&gt;<span class="s2">&#34;UTC&#34;</span>
+</span></span><span class="line"><span class="cl">                        <span class="c1">#log event time timestamp................</span>
+</span></span><span class="line"><span class="cl">                        <span class="nv">target</span> <span class="o">=</span>&gt; <span class="s2">&#34;logtimestamp&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">#log event time long string......................</span>
+</span></span><span class="line"><span class="cl">                ruby <span class="o">{</span> <span class="nv">code</span> <span class="o">=</span>&gt; <span class="s2">&#34;event.set(&#39;longtime&#39;, event.get(&#39;logtimestamp&#39;).time.to_i)&#34;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                mutate<span class="o">{</span><span class="nv">remove_field</span> <span class="o">=</span>&gt; <span class="o">[</span> <span class="s2">&#34;evtTime&#34;</span>,<span class="s2">&#34;host&#34;</span>,<span class="s2">&#34;ecs&#34;</span>,<span class="s2">&#34;log&#34;</span>,<span class="s2">&#34;hhmmss&#34;</span>,<span class="s2">&#34;input&#34;</span>,<span class="s2">&#34;agent&#34;</span>,<span class="s2">&#34;atime&#34;</span> <span class="o">]}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	<span class="c1">#other log</span>
+</span></span><span class="line"><span class="cl">	<span class="k">else</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">		drop<span class="o">{}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">output<span class="o">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="o">[</span>type<span class="o">]</span> <span class="o">==</span> <span class="s2">&#34;systemlogin&#34;</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">[</span>indextime<span class="o">]</span> !~ <span class="s2">&#34;index&#34;</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">			stdout<span class="o">{</span><span class="nv">codec</span> <span class="o">=</span>&gt; rubydebug<span class="o">}</span>
+</span></span><span class="line"><span class="cl">			elasticsearch<span class="o">{</span>
+</span></span><span class="line"><span class="cl">				<span class="nv">hosts</span> <span class="o">=</span>&gt; <span class="s2">&#34;172.17.9.176&#34;</span>
+</span></span><span class="line"><span class="cl">				<span class="nv">index</span> <span class="o">=</span>&gt; <span class="s2">&#34;sys_os_systemlogin_%{[indextime]}&#34;</span>
+</span></span><span class="line"><span class="cl">				<span class="nv">user</span> <span class="o">=</span>&gt; <span class="s2">&#34;elastic&#34;</span>
+</span></span><span class="line"><span class="cl">				<span class="nv">password</span> <span class="o">=</span>&gt; <span class="s2">&#34;f5OPbv6sqfstmc+&#34;</span>
+</span></span><span class="line"><span class="cl">                	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">else</span> <span class="k">if</span> <span class="o">[</span>type<span class="o">]</span> <span class="o">==</span> <span class="s2">&#34;systemloginfailed&#34;</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="o">[</span>indextime<span class="o">]</span> !~ <span class="s2">&#34;index&#34;</span><span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        stdout<span class="o">{</span><span class="nv">codec</span> <span class="o">=</span>&gt; rubydebug<span class="o">}</span>
+</span></span><span class="line"><span class="cl">                        elasticsearch<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                               <span class="nv">hosts</span> <span class="o">=</span>&gt; <span class="s2">&#34;172.17.9.176&#34;</span>
+</span></span><span class="line"><span class="cl">                               <span class="nv">index</span> <span class="o">=</span>&gt; <span class="s2">&#34;sys_os_systemloginfailed_%{[indextime]}&#34;</span>
+</span></span><span class="line"><span class="cl">                               <span class="nv">user</span> <span class="o">=</span>&gt; <span class="s2">&#34;elastic&#34;</span>
+</span></span><span class="line"><span class="cl">                               <span class="nv">password</span> <span class="o">=</span>&gt; <span class="s2">&#34;xxxxxxx+&#34;</span>
+</span></span><span class="line"><span class="cl">                        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>成功日志解析</p>
+<p>日志格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">2024-12-03T18:45:09+08:00 192.168.102.42 node03 <span class="o">[</span>sshd<span class="o">]</span> info: Accepted password <span class="k">for</span> root from 192.168.96.19 port <span class="m">14347</span> ssh2
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>GROK语法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">%<span class="o">{</span>TIMESTAMP_ISO8601:atime<span class="o">}</span> %<span class="o">{</span>IP:deshost<span class="o">}</span> %<span class="o">{</span>HOSTNAME:name<span class="o">}</span> <span class="se">\[</span>%<span class="o">{</span>WORD:type<span class="o">}</span><span class="se">\]</span> %<span class="o">{</span>DATA:loglevel<span class="o">}</span>: Accepted password <span class="k">for</span> %<span class="o">{</span>WORD:loginuser<span class="o">}</span> from %<span class="o">{</span>IP:srchost<span class="o">}</span> port %<span class="o">{</span>NUMBER:port<span class="o">}</span> %<span class="o">{</span>WORD:loginmode<span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>日志格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;loginuser&#34;</span>: <span class="s2">&#34;root&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;atime&#34;</span>: <span class="s2">&#34;2024-12-03T18:45:09+08:00&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;type&#34;</span>: <span class="s2">&#34;sshd&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;deshost&#34;</span>: <span class="s2">&#34;192.168.102.42&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;srchost&#34;</span>: <span class="s2">&#34;192.168.96.19&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;port&#34;</span>: <span class="s2">&#34;14347&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;loglevel&#34;</span>: <span class="s2">&#34;info&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;name&#34;</span>: <span class="s2">&#34;node03&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;loginmode&#34;</span>: <span class="s2">&#34;ssh2&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/89b7c6060a11457cabf773cadd97b3fe.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>失败日志格式</p>
+<p>日志格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">2024-12-03T19:01:57+08:00 192.168.102.42 node03 <span class="o">[</span>sshd<span class="o">]</span> info: Failed password <span class="k">for</span> invalid user <span class="m">123</span> from 192.168.96.19 port <span class="m">12103</span> ssh2
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>GROK语法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">^<span class="o">(</span>?&lt;atime&gt;<span class="se">\d</span>+-<span class="se">\d</span>+-<span class="se">\d</span>+<span class="o">)(</span>?:<span class="o">[</span>^<span class="se">\d</span><span class="o">]</span>+<span class="o">)(</span>?&lt;hhmmss&gt;<span class="se">\d</span>+:<span class="se">\d</span>+:<span class="se">\d</span>+<span class="o">)(</span>?:<span class="o">[</span>^<span class="se">\d</span><span class="o">]</span>+<span class="se">\d</span>+:<span class="se">\d</span>+<span class="o">)(</span>?:<span class="se">\s</span>+<span class="o">)(</span>?&lt;deshost&gt;<span class="se">\d</span>+<span class="se">\.\d</span>+<span class="se">\.\d</span>+<span class="se">\.\d</span>+<span class="o">)(</span>?:<span class="o">[</span><span class="se">\S\s</span><span class="o">]</span>*Failed<span class="se">\s</span>password<span class="se">\s</span>for<span class="o">[</span><span class="se">\s</span>invalid<span class="se">\s</span>user<span class="o">]</span>*<span class="se">\s</span><span class="o">)(</span>?&lt;loginuser&gt;<span class="o">[</span>^ <span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\s</span>from<span class="se">\s</span><span class="o">)(</span>?&lt;srchost&gt;<span class="o">[</span><span class="se">\d</span>.<span class="o">]</span>+<span class="o">)(</span>?:<span class="se">\s\w</span>+<span class="se">\s\d</span>+<span class="se">\s</span><span class="o">)(</span>?&lt;loginmode&gt;<span class="se">\w</span>*<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>日志输出</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">{</span>
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;loginuser&#34;</span>: <span class="s2">&#34;123&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;atime&#34;</span>: <span class="s2">&#34;2024-12-03&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;hhmmss&#34;</span>: <span class="s2">&#34;19:01:57&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;deshost&#34;</span>: <span class="s2">&#34;192.168.102.42&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;srchost&#34;</span>: <span class="s2">&#34;192.168.96.19&#34;</span>,
+</span></span><span class="line"><span class="cl">  <span class="s2">&#34;loginmode&#34;</span>: <span class="s2">&#34;ssh2&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/1583e432809d47a1b489adf9e4747f22.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8linux%E8%BF%90%E7%BB%B4/">服务器,linux,运维</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202412192138/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/04.jpg" loading="lazy" data-key="202412192138" data-hash="/../../title_pic/04.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">CSDN数据大屏可视化【开源】</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202412182218/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/16.jpg" loading="lazy" data-key="202412182218" data-hash="/../../title_pic/16.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">构建全面的生产监控体系：从基础设施到业务服务</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202410251628/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/01.jpg" loading="lazy" data-key="202410251628" data-hash="/../../title_pic/01.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">机房私有云OpenStack搭建详细步骤流程</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202410231844/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/77.jpg" loading="lazy" data-key="202410231844" data-hash="/../../title_pic/77.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">OpenStack将运行的系统导出 QCOW2 镜像并导入阿里云</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407302222/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/11.jpg" loading="lazy" data-key="202407302222" data-hash="/../../title_pic/11.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Openvpn打通北京和深圳两地办公室网络</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2024 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
