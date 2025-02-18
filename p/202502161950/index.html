@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='等到第二次再去启动的时候，JVM就可以去读取刚刚所记录的这些方法编译的信息，同时会主动的触发即时编译器编译刚刚记录的热点方法，使得在用户请求到来之前，就把热点方法编译成为性能较高的Native Code，避免了在用户请求大量进入的时候做编译，这样就能够进一步提高应用程序的性能，节约CPU使用率。因此，每次扩展服务时，都会丢失数据或者会导致这部分请求的响应时间增加。在慢启动模式下，添加新的目标服务Pod时，避免新增Pod被大量请求击垮，这些新目标服务可以根据指定的加速期在接受其均衡策略的请求之前进行预热。'>
+<title>Kubernetes Pod扩容预热陷阱：如何避免5xx错误和CPU飙升？</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202502161950/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='Kubernetes Pod扩容预热陷阱：如何避免5xx错误和CPU飙升？'>
+<meta property='og:description' content='等到第二次再去启动的时候，JVM就可以去读取刚刚所记录的这些方法编译的信息，同时会主动的触发即时编译器编译刚刚记录的热点方法，使得在用户请求到来之前，就把热点方法编译成为性能较高的Native Code，避免了在用户请求大量进入的时候做编译，这样就能够进一步提高应用程序的性能，节约CPU使用率。因此，每次扩展服务时，都会丢失数据或者会导致这部分请求的响应时间增加。在慢启动模式下，添加新的目标服务Pod时，避免新增Pod被大量请求击垮，这些新目标服务可以根据指定的加速期在接受其均衡策略的请求之前进行预热。'>
+<meta property='og:url' content='https://www.ownit.top/p/202502161950/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='kubernetes,容器,云原生' /><meta property='article:published_time' content='2025-02-16T19:50:18&#43;00:00'/><meta property='article:modified_time' content='2025-02-16T19:50:18&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/59.jpg' />
+<meta name="twitter:title" content="Kubernetes Pod扩容预热陷阱：如何避免5xx错误和CPU飙升？">
+<meta name="twitter:description" content="等到第二次再去启动的时候，JVM就可以去读取刚刚所记录的这些方法编译的信息，同时会主动的触发即时编译器编译刚刚记录的热点方法，使得在用户请求到来之前，就把热点方法编译成为性能较高的Native Code，避免了在用户请求大量进入的时候做编译，这样就能够进一步提高应用程序的性能，节约CPU使用率。因此，每次扩展服务时，都会丢失数据或者会导致这部分请求的响应时间增加。在慢启动模式下，添加新的目标服务Pod时，避免新增Pod被大量请求击垮，这些新目标服务可以根据指定的加速期在接受其均衡策略的请求之前进行预热。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/59.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#问题背景">问题背景</a></li>
+    <li><a href="#问题分析">问题分析</a></li>
+    <li><a href="#解决方案">解决方案</a>
+      <ol>
+        <li><a href="#方案一使用istio的loadbalancersettings进行流量预热">方案一：使用Istio的LoadBalancerSettings进行流量预热</a></li>
+        <li><a href="#方案二使用阿里云的jvm预热方案jwarmup">方案二：使用阿里云的JVM预热方案（jwarmup）</a></li>
+        <li><a href="#方案三手动预热接口">方案三：手动预热接口</a></li>
+        <li><a href="#方案四使用kubernetes的readiness-probe">方案四：使用Kubernetes的Readiness Probe</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202502161950/">
+                
+                    <img src="/../../title_pic/59.jpg" loading="lazy" alt="Featured image of post Kubernetes Pod扩容预热陷阱：如何避免5xx错误和CPU飙升？" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202502161950/">Kubernetes Pod扩容预热陷阱：如何避免5xx错误和CPU飙升？</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            等到第二次再去启动的时候，JVM就可以去读取刚刚所记录的这些方法编译的信息，同时会主动的触发即时编译器编译刚刚记录的热点方法，使得在用户请求到来之前，就把热点方法编译成为性能较高的Native Code，避免了在用户请求大量进入的时候做编译，这样就能够进一步提高应用程序的性能，节约CPU使用率。因此，每次扩展服务时，都会丢失数据或者会导致这部分请求的响应时间增加。在慢启动模式下，添加新的目标服务Pod时，避免新增Pod被大量请求击垮，这些新目标服务可以根据指定的加速期在接受其均衡策略的请求之前进行预热。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 16, 2025</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 7 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="问题背景">问题背景</h2>
+<p>在Kubernetes（k8s）中，Pod的自动扩容（Horizontal Pod Autoscaler, HPA）是一个常见的功能，用于根据负载动态调整Pod的数量。然而，当新Pod加入时，如果没有预热机制，流量会立即涌入新Pod，导致新Pod在启动初期无法处理大量请求，进而引发5xx错误、CPU飙升等问题。特别是在基于JVM的应用程序中，JVM需要一定的时间进行预热（如JIT编译、类加载等），才能达到最佳性能。</p>
+<blockquote>
+<p>阿里云介绍：
+在未启用慢启动预热功能时，每当新目标Pod加入时，请求方都会向该Pod发送一定比例的流量，不支持新Pod的渐进式流量增加。这对于需要一些预热时间来提供全部负载的服务可能是不可取的，并且可能会导致请求超时、数据丢失和用户体验恶化。例如在基于JVM的Web应用程序中，这些应用程序使用水平Pod自动缩放。当服务刚启动时，它会被大量请求淹没，这会导致应用程序预热时持续超时。因此，每次扩展服务时，都会丢失数据或者会导致这部分请求的响应时间增加。预热的基本思想就是让刚启动的机器逐步接入流量。
+地址：https://help.aliyun.com/zh/asm/user-guide/use-the-warm-up-feature</p>
+</blockquote>
+<h2 id="问题分析">问题分析</h2>
+<ol>
+<li><strong>是什么</strong>：
+<ul>
+<li><strong>Pod扩容时的流量分配问题</strong>：当新Pod加入时，Kubernetes默认会将流量均匀分配到所有Pod（包括新Pod），导致新Pod在启动初期无法处理大量请求。</li>
+<li><strong>预热陷阱</strong>：新Pod在启动初期需要时间进行预热（如JVM的JIT编译、缓存预热等），如果此时涌入大量请求，会导致请求超时、5xx错误、CPU飙升等问题。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：
+<ul>
+<li><strong>流量分配机制</strong>：Kubernetes默认的流量分配机制是均匀分配，不支持渐进式流量增加。</li>
+<li><strong>预热需求</strong>：某些应用程序（如基于JVM的应用）在启动初期需要时间进行预热，才能达到最佳性能。</li>
+</ul>
+</li>
+<li><strong>怎么做</strong>：
+<ul>
+<li><strong>解决方案</strong>：通过引入预热机制，让新Pod在启动初期逐步接入流量，避免一次性涌入大量请求</li>
+</ul>
+</li>
+</ol>
+<h2 id="解决方案">解决方案</h2>
+<h3 id="方案一使用istio的loadbalancersettings进行流量预热">方案一：使用Istio的LoadBalancerSettings进行流量预热</h3>
+<p>慢启动模式又称渐进式流量增加，用户可以为服务配置一个时间段，每当一个服务实例启动时，请求方会向该实例发送一部分请求负载，并在配置的时间段内逐步增加请求量。当慢启动窗口持续时间到达，就会退出慢启动模式。</p>
+<p>在慢启动模式下，添加新的目标服务Pod时，避免新增Pod被大量请求击垮，这些新目标服务可以根据指定的加速期在接受其均衡策略的请求之前进行预热。</p>
+<p>慢启动对于依赖缓存并且需要预热期才能以最佳性能响应请求的应用程序非常有用。只需在服务对应的DestinationRule下的配置trafficPolicy/loadBalancer即可，需要注意的是：</p>
+<blockquote>
+<p>loadBalancer：表示负载均衡器信息。类型限定于ROUND_ROBIN和LEAST_REQUEST负载均衡器。</p>
+</blockquote>
+<blockquote>
+<p>warmupDurationSecs：表示Service的预热持续时间。如果设置，则新创建的服务端点在此窗口期间从其创建时间开始保持预热模式，并且Istio逐渐增加该端点的流量，而不是发送成比例的流量。</p>
+</blockquote>
+<blockquote>
+<p>慢启动要求应用在当前可用区的副本数不为0。例如：</p>
+<p>数据面集群只有一个可用区A，可用区A中当前有一个副本，启动第二个时，慢启动会生效。</p>
+<p>数据面集群有两个可用区A、B，当前应用只有一个副本，且位于可用区A，如果启动的第二个副本位于可用区B（一些调度器会默认采用跨可用区分布的策略），则不会触发慢启动。此时，如果再启动第三个副本，慢启动会生效。</p>
+</blockquote>
+<p>Istio
+提供了<code>LoadBalancerSettings</code>配置，可以通过<code>warmupDurationSecs</code>参数实现流量预热。该参数允许新Pod在启动后的一段时间内逐步增加流量。
+地址：<a class="link" href="https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings"  target="_blank" rel="noopener"
+    >https://istio.io/latest/docs/reference/config/networking/destination-rule/#LoadBalancerSettings</a>
+<strong>步骤</strong>：</p>
+<ol>
+<li>在Istio的<code>DestinationRule</code>中配置<code>LoadBalancerSettings</code>。</li>
+<li>设置<code>warmupDurationSecs</code>参数，定义预热时间。</li>
+</ol>
+<p><strong>代码示例</strong>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">networking.istio.io/v1alpha3</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">DestinationRule</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">mocka</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l">mocka</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">trafficPolicy</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">loadBalancer</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">simple</span><span class="p">:</span><span class="w"> </span><span class="l">ROUND_ROBIN</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">warmupDurationSecs</span><span class="p">:</span><span class="w"> </span><span class="m">300</span><span class="w">  </span><span class="c"># 预热时间为300秒（5分钟）</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>优点</strong>：</p>
+<ul>
+<li>简单易用，直接通过Istio配置实现流量预热。</li>
+<li>无需修改应用程序代码。</li>
+</ul>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>需要部署Istio，增加了系统复杂性。</li>
+</ul>
+<hr>
+<h3 id="方案二使用阿里云的jvm预热方案jwarmup">方案二：使用阿里云的JVM预热方案（jwarmup）</h3>
+<p>参考文档：<a class="link" href="https://baijiahao.baidu.com/s?id=1752631259548476891&amp;wfr=spider&amp;for=pc"  target="_blank" rel="noopener"
+    >https://baijiahao.baidu.com/s?id=1752631259548476891&amp;wfr=spider&amp;for=pc</a></p>
+<p>阿里云提供了<code>jwarmup</code>工具，可以将JVM的JIT编译信息保存到文件中，下次发布时自动加载，从而加速JVM预热过程。</p>
+<p><strong>JwarmUp的基本原理</strong>：根据前一次程序运行的情况，记录热点代码以及类加载顺序等信息。在应用下一次启动的时候积极主动地对相关类进行加载，并积极编译相关代码，进而使得应用尽快使用上C2编译优化的指令。从而在流量进来之前，提前完成类的加载、初始化和方法编译, 跳过解释阶段, 直接执行编译好的native code, 避免一面解释执行一面后台编译带来的CPU与load飙高, rt超时等问题。</p>
+<p><img src="/../../image/4ade532701654d42a8a9f8cfd77c1faf.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><img src="/../../image/9cafc398768f44a0b8cd4bd43c288c0a.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+上方为JWarmup的流程图，它将应用程序的发布分成了两个阶段，分别是Recording和Replaying。在Recording阶段，JVM会接受线上的请求，同时记录JVM即时编译器它所编译方法的信息，并且将这些信息都输出到一个文件之中。 等到第二次再去启动的时候，JVM就可以去读取刚刚所记录的这些方法编译的信息，同时会主动的触发即时编译器编译刚刚记录的热点方法，使得在用户请求到来之前，就把热点方法编译成为性能较高的Native Code，避免了在用户请求大量进入的时候做编译，这样就能够进一步提高应用程序的性能，节约CPU使用率。</p>
+<p><strong>步骤</strong>：</p>
+<ol>
+<li>在应用程序中集成<code>jwarmup</code>工具。</li>
+<li>在发布前运行<code>jwarmup</code>，生成JIT编译信息文件。</li>
+<li>在下次发布时，自动加载JIT编译信息文件。</li>
+</ol>
+<p><strong>代码示例</strong>：</p>
+<ul>
+<li>记录编译信息阶段</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">-XX:+CompilationWarmUpRecording  -XX:CompilationWarmUpLogfile<span class="o">=</span>jwarmup.log  -XX:CompilationWarmUpRecordTime<span class="o">=</span><span class="m">300</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>记录模式、记录存储的jwarmup.log，在5分钟后生成profiling data</p>
+</blockquote>
+<ul>
+<li>使用编译信息阶段</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">-XX:+CompilationWarmUp  -XX:CompilationWarmUpLogfile<span class="o">=</span>jwarmup.log  -XX:CompilationWarmUpDeoptTime<span class="o">=</span><span class="m">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>JWarmUp会在指定时间退优化warmup编译的方法，设置CompilationWarmUpDeoptTime为0可以取消这个定时。</p>
+</blockquote>
+<p>1、recording记录下来的日志，是怎么分发到其他线上机的？</p>
+<p>答：在应用启动的脚本文件进行控制：</p>
+<ul>
+<li>预热节点，会将记录下来的编译信息上传到远程服务器oss上，</li>
+<li>发布节点，在启动时从远处机器主动pull下来预热节点上传的编译信息。</li>
+</ul>
+<p>2、是怎么制定一台机器做recording的呢？是访问某个url还是判断beta机器？</p>
+<p>答：是通过访问oss做了一个类似于“文件锁”的东西，先拿到锁的beta机器做为预热节点，其余机器为发布节点。想要达到预热的效果请确保：</p>
+<ul>
+<li>发布的机器的参数中有<code> -XX:+CompilationWarmUp</code></li>
+<li>每次beta发布后，记得检查下编译信息文件是否已经上传</li>
+<li>beta发布的那台机器必须是有流量的，Recording时间不要太短，尽量多编译一些方法。</li>
+</ul>
+<p>如果不保证上述两点的话，便无法完成预热发布，即没有充分利用beta的编译信息，仍然走正常发布的流程</p>
+<hr>
+<h3 id="方案三手动预热接口">方案三：手动预热接口</h3>
+<p>在Pod启动后，手动调用所有接口进行预热，然后再接入流量。</p>
+<p><strong>步骤</strong>：</p>
+<ol>
+<li>在Pod启动后，编写脚本调用所有接口。</li>
+<li>确保所有接口都被调用后，再接入流量。</li>
+</ol>
+<p><strong>代码示例</strong>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 预热脚本示例</span>
+</span></span><span class="line"><span class="cl">curl http://my-service/api/endpoint1
+</span></span><span class="line"><span class="cl">curl http://my-service/api/endpoint2
+</span></span><span class="line"><span class="cl">curl http://my-service/api/endpoint3
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>优点</strong>：</p>
+<ul>
+<li>简单直接，适用于所有类型的应用程序。</li>
+<li>无需额外工具或配置。</li>
+</ul>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>需要手动编写和维护预热脚本。</li>
+<li>无法动态调整预热时间。</li>
+</ul>
+<hr>
+<h3 id="方案四使用kubernetes的readiness-probe">方案四：使用Kubernetes的Readiness Probe</h3>
+<p>通过配置Kubernetes的<code>Readiness Probe</code>，确保Pod在完全预热后再接入流量。</p>
+<p><strong>步骤</strong>：</p>
+<ol>
+<li>在Pod的<code>Readiness Probe</code>中配置预热检查。</li>
+<li>确保Pod在预热完成后再标记为<code>Ready</code>。</li>
+</ol>
+<p><strong>代码示例</strong>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">my-pod</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">my-container</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">my-image</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">readinessProbe</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">httpGet</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l">/healthz</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">initialDelaySeconds</span><span class="p">:</span><span class="w"> </span><span class="m">60</span><span class="w">  </span><span class="c"># 延迟60秒开始检查</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">periodSeconds</span><span class="p">:</span><span class="w"> </span><span class="m">10</span><span class="w">        </span><span class="c"># 每10秒检查一次</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>优点</strong>：</p>
+<ul>
+<li>简单易用，直接通过Kubernetes配置实现。</li>
+<li>无需修改应用程序代码。</li>
+</ul>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>无法精确控制预热时间。</li>
+<li>需要应用程序提供健康检查接口。</li>
+</ul>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/kubernetes%E5%AE%B9%E5%99%A8%E4%BA%91%E5%8E%9F%E7%94%9F/">kubernetes,容器,云原生</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202502171722/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/62.jpg" loading="lazy" data-key="202502171722" data-hash="/../../title_pic/62.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">轻量级日志分析利器：Go实战</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202412192138/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/04.jpg" loading="lazy" data-key="202412192138" data-hash="/../../title_pic/04.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">CSDN数据大屏可视化【开源】</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202412191527/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/47.jpg" loading="lazy" data-key="202412191527" data-hash="/../../title_pic/47.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">集中管理与实时审计：构建Linux集群（1300台服务器）日志平台的最佳实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202412182218/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/16.jpg" loading="lazy" data-key="202412182218" data-hash="/../../title_pic/16.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">构建全面的生产监控体系：从基础设施到业务服务</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202410251628/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/01.jpg" loading="lazy" data-key="202410251628" data-hash="/../../title_pic/01.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">机房私有云OpenStack搭建详细步骤流程</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2025 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

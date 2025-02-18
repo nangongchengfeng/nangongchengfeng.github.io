@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='我使用Flask和Flask-SocketIO 来做 Websocket 链接。前期正常使用，但是后期布置修改什么导致Websocket连接失败。排查需求，才发现初始化不正常导致。在postman输入地址和监听事件。'>
+<title>Flask 与 SocketIO 正确初始化及最佳实践调试</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202412301802/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='Flask 与 SocketIO 正确初始化及最佳实践调试'>
+<meta property='og:description' content='我使用Flask和Flask-SocketIO 来做 Websocket 链接。前期正常使用，但是后期布置修改什么导致Websocket连接失败。排查需求，才发现初始化不正常导致。在postman输入地址和监听事件。'>
+<meta property='og:url' content='https://www.ownit.top/p/202412301802/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='flask,python,后端' /><meta property='article:published_time' content='2024-12-30T18:02:10&#43;00:00'/><meta property='article:modified_time' content='2024-12-30T18:02:10&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/54.jpg' />
+<meta name="twitter:title" content="Flask 与 SocketIO 正确初始化及最佳实践调试">
+<meta name="twitter:description" content="我使用Flask和Flask-SocketIO 来做 Websocket 链接。前期正常使用，但是后期布置修改什么导致Websocket连接失败。排查需求，才发现初始化不正常导致。在postman输入地址和监听事件。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/54.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#1问题">1、问题</a></li>
+    <li><a href="#2环境">2、环境</a></li>
+    <li><a href="#3正常初始化单文件">3、正常初始化【单文件】</a></li>
+    <li><a href="#4多文件初始化两个文件">4、多文件初始化【两个文件】</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202412301802/">
+                
+                    <img src="/../../title_pic/54.jpg" loading="lazy" alt="Featured image of post Flask 与 SocketIO 正确初始化及最佳实践调试" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%94%99%E8%AF%AF%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3/" >
+                错误问题解决
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202412301802/">Flask 与 SocketIO 正确初始化及最佳实践调试</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            我使用Flask和Flask-SocketIO 来做 Websocket 链接。前期正常使用，但是后期布置修改什么导致Websocket连接失败。排查需求，才发现初始化不正常导致。在postman输入地址和监听事件。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Dec 30, 2024</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="1问题">1、问题</h2>
+<p>我使用Flask和Flask-SocketIO 来做 Websocket 链接。前期正常使用，但是后期布置修改什么导致Websocket连接失败。排查需求，才发现初始化不正常导致。</p>
+<p><strong>SocketIO 和 Flask 应用的初始化顺序和引用循环的问题</strong></p>
+<h2 id="2环境">2、环境</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python-engineio<span class="o">==</span>4.11.1
+</span></span><span class="line"><span class="cl">python-socketio<span class="o">==</span>5.12.0
+</span></span><span class="line"><span class="cl">Flask-SocketIO<span class="o">==</span>5.3.6
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3正常初始化单文件">3、正常初始化【单文件】</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">from flask import Flask, render_template
+</span></span><span class="line"><span class="cl">from flask_socketio import SocketIO
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">app</span> <span class="o">=</span> Flask<span class="o">(</span>__name__<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">socketio</span> <span class="o">=</span> SocketIO<span class="o">(</span>app<span class="o">)</span>  <span class="c1"># 初始化 SocketIO</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 默认路由，用于渲染 HTML 页面</span>
+</span></span><span class="line"><span class="cl">@app.route<span class="o">(</span><span class="s1">&#39;/&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def index<span class="o">()</span>:
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> render_template<span class="o">(</span><span class="s1">&#39;index.html&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 出现消息后,率先执行此处</span>
+</span></span><span class="line"><span class="cl">@socketio.on<span class="o">(</span><span class="s2">&#34;message&#34;</span>, <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def socket<span class="o">(</span>message<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">    print<span class="o">(</span>f<span class="s2">&#34;接收到消息: {message}&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> i in range<span class="o">(</span>1, 10<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">        socketio.sleep<span class="o">(</span>1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">        print<span class="o">(</span>f<span class="s2">&#34;发送消息: {i}&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">        socketio.emit<span class="o">(</span><span class="s2">&#34;response&#34;</span>,           <span class="c1"># 绑定通信</span>
+</span></span><span class="line"><span class="cl">                      <span class="o">{</span><span class="s2">&#34;data&#34;</span>: i<span class="o">}</span>,           <span class="c1"># 返回socket数据</span>
+</span></span><span class="line"><span class="cl">                      <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 当websocket连接成功时,自动触发connect默认方法</span>
+</span></span><span class="line"><span class="cl">@socketio.on<span class="o">(</span><span class="s2">&#34;connect&#34;</span>, <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def connect<span class="o">()</span>:
+</span></span><span class="line"><span class="cl">    print<span class="o">(</span><span class="s2">&#34;链接建立成功..&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 当websocket连接失败时,自动触发disconnect默认方法</span>
+</span></span><span class="line"><span class="cl">@socketio.on<span class="o">(</span><span class="s2">&#34;disconnect&#34;</span>, <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def disconnect<span class="o">()</span>:
+</span></span><span class="line"><span class="cl">    print<span class="o">(</span><span class="s2">&#34;链接建立失败..&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nv">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span>:
+</span></span><span class="line"><span class="cl">    socketio.run<span class="o">(</span>app, <span class="nv">debug</span><span class="o">=</span>True, <span class="nv">host</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span>, <span class="nv">port</span><span class="o">=</span>5000,allow_unsafe_werkzeug<span class="o">=</span>True<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4多文件初始化两个文件">4、多文件初始化【两个文件】</h2>
+<p>主要是 manage.py 和 <strong>init</strong>.py 两个文件。
+<img src="/../../image/963d3e26374d4b2f805629e06c894900.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+app/<strong>init</strong>.py</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">from flask import Flask
+</span></span><span class="line"><span class="cl">from flask_socketio import SocketIO
+</span></span><span class="line"><span class="cl">from flasgger import Swagger
+</span></span><span class="line"><span class="cl">from flask_cors import CORS
+</span></span><span class="line"><span class="cl">from flask_migrate import Migrate
+</span></span><span class="line"><span class="cl">from app.config import config
+</span></span><span class="line"><span class="cl">from app.extension import db
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 创建一个全局的 socketio 对象，但不立即初始化</span>
+</span></span><span class="line"><span class="cl"><span class="nv">socketio</span> <span class="o">=</span> SocketIO<span class="o">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 其他 swagger 配置保持不变...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">def create_app<span class="o">(</span><span class="nv">DevelopmentConfig</span><span class="o">=</span>None<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> DevelopmentConfig is None:
+</span></span><span class="line"><span class="cl">        <span class="nv">DevelopmentConfig</span> <span class="o">=</span> <span class="s1">&#39;development&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nv">app</span> <span class="o">=</span> Flask<span class="o">(</span>__name__<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    app.config<span class="o">[</span><span class="s1">&#39;SECRET_KEY&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;123456&#39;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 加载配置项</span>
+</span></span><span class="line"><span class="cl">    app.config.from_object<span class="o">(</span>config.get<span class="o">(</span>DevelopmentConfig<span class="o">))</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    from app.api import config_blueprint
+</span></span><span class="line"><span class="cl">    <span class="c1"># 注册蓝图</span>
+</span></span><span class="line"><span class="cl">    config_blueprint<span class="o">(</span>app<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 数据库配置初始化</span>
+</span></span><span class="line"><span class="cl">    config_extensions<span class="o">(</span>app<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 数据库迁移相关代码...</span>
+</span></span><span class="line"><span class="cl">    from app.api.models.EsModels import sysEsLogs,sysCretitLogs
+</span></span><span class="line"><span class="cl">    from app.api.models.NetModels import sysNetLogs
+</span></span><span class="line"><span class="cl">    from app.api.models.UpsModels import sysUpsLogs
+</span></span><span class="line"><span class="cl">    <span class="nv">migrate</span> <span class="o">=</span> Migrate<span class="o">(</span>app, db<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># Swagger初始化</span>
+</span></span><span class="line"><span class="cl">    Swagger<span class="o">(</span>app, <span class="nv">config</span><span class="o">=</span>swagger_config, <span class="nv">template</span><span class="o">=</span>swagger_template<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># CORS配置</span>
+</span></span><span class="line"><span class="cl">    CORS<span class="o">(</span>app, <span class="nv">resources</span><span class="o">={</span>r<span class="s1">&#39;/*&#39;</span>: <span class="o">{</span><span class="s1">&#39;origins&#39;</span>: <span class="s1">&#39;*&#39;</span><span class="o">}}</span>, <span class="nv">supports_credentials</span><span class="o">=</span>True<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 初始化 SocketIO</span>
+</span></span><span class="line"><span class="cl">    socketio.init_app<span class="o">(</span>app, <span class="nv">cors_allowed_origins</span><span class="o">=</span><span class="s2">&#34;*&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> app
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>socket_events.py</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">from app import socketio
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Socket.IO 事件处理</span>
+</span></span><span class="line"><span class="cl">@socketio.on<span class="o">(</span><span class="s2">&#34;message&#34;</span>, <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def socket<span class="o">(</span>message<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">    print<span class="o">(</span>f<span class="s2">&#34;接收到消息: {message}&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> i in range<span class="o">(</span>1, 10<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">        socketio.sleep<span class="o">(</span>1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">        print<span class="o">(</span>f<span class="s2">&#34;发送消息: {i}&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">        socketio.emit<span class="o">(</span><span class="s2">&#34;response&#34;</span>,
+</span></span><span class="line"><span class="cl">                     <span class="o">{</span><span class="s2">&#34;data&#34;</span>: i<span class="o">}</span>,
+</span></span><span class="line"><span class="cl">                     <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@socketio.on<span class="o">(</span><span class="s2">&#34;connect&#34;</span>, <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def connect<span class="o">()</span>:
+</span></span><span class="line"><span class="cl">    print<span class="o">(</span><span class="s2">&#34;链接建立成功..&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@socketio.on<span class="o">(</span><span class="s2">&#34;disconnect&#34;</span>, <span class="nv">namespace</span><span class="o">=</span><span class="s2">&#34;/ws&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">def disconnect<span class="o">()</span>:
+</span></span><span class="line"><span class="cl">    print<span class="o">(</span><span class="s2">&#34;链接建立失败..&#34;</span><span class="o">)</span> 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>manage.py</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Time    : 2024/5/2 12:01</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Author  : 南宫乘风</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Email   : 1794748404@qq.com</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @File    : manage.py</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># @Software: PyCharm</span>
+</span></span><span class="line"><span class="cl">import atexit
+</span></span><span class="line"><span class="cl">import os
+</span></span><span class="line"><span class="cl">import sys
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">from apscheduler.schedulers.background import BackgroundScheduler
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">from app import create_app, socketio
+</span></span><span class="line"><span class="cl">from app.common.util.LogHandler import log
+</span></span><span class="line"><span class="cl">from app.crontab.NetCronTab import NetworkMonitor
+</span></span><span class="line"><span class="cl">from app.crontab.UpsCronTab import UPSMonitor
+</span></span><span class="line"><span class="cl">from app.socket_events import *
+</span></span><span class="line"><span class="cl"><span class="c1"># 默认为开发环境，按需求修改 production  development</span>
+</span></span><span class="line"><span class="cl"><span class="nv">config_name</span> <span class="o">=</span> <span class="s1">&#39;development&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">app</span> <span class="o">=</span> create_app<span class="o">(</span>config_name<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 解决中文乱码</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># app.json.ensure_ascii = False</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># from skywalking import agent, config</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># config.init(agent_collector_backend_services=&#39;192.168.82.105:11800&#39;, agent_name=&#39;python-flask@devTenant&#39;,agent_instance_name=&#34;python-flask&#34;)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># agent.start()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 数据库迁移</span>
+</span></span><span class="line"><span class="cl">def start_scheduler<span class="o">()</span>:
+</span></span><span class="line"><span class="cl">    <span class="c1"># 创建一个后台调度器</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">scheduler</span> <span class="o">=</span> BackgroundScheduler<span class="o">(</span><span class="nv">timezone</span><span class="o">=</span><span class="s2">&#34;Asia/Shanghai&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    from app.crontab.EsCronTab import EsIndexCron
+</span></span><span class="line"><span class="cl">    scheduler.add_job<span class="o">(</span><span class="nv">func</span><span class="o">=</span>EsIndexCron, <span class="nv">trigger</span><span class="o">=</span><span class="s1">&#39;interval&#39;</span>, <span class="nv">minutes</span><span class="o">=</span>1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    log.info<span class="o">(</span><span class="s2">&#34;EsIndexCron 定时任务启动成功&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># scheduler.add_job(func=send_alert, trigger=&#34;interval&#34;, seconds=20)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 启动调度器</span>
+</span></span><span class="line"><span class="cl">    scheduler.start<span class="o">()</span>
+</span></span><span class="line"><span class="cl">    atexit.register<span class="o">(</span>lambda: scheduler.shutdown<span class="o">())</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nv">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span>:
+</span></span><span class="line"><span class="cl">    <span class="c1"># 获取当前文件的绝对路径</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">current_file</span> <span class="o">=</span> os.path.abspath<span class="o">(</span>__file__<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">base_dir</span> <span class="o">=</span> os.path.dirname<span class="o">(</span>current_file<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 将项目目录添加到 sys.path</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> base_dir not in sys.path:
+</span></span><span class="line"><span class="cl">        sys.path.append<span class="o">(</span>base_dir<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> not app.debug or app.testing:
+</span></span><span class="line"><span class="cl">        start_scheduler<span class="o">()</span>
+</span></span><span class="line"><span class="cl">        log.info<span class="o">(</span><span class="s2">&#34;定时任务启动成功&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    socketio.run<span class="o">(</span>app, <span class="nv">debug</span><span class="o">=</span>True, <span class="nv">use_reloader</span><span class="o">=</span>True, <span class="nv">host</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span>, <span class="nv">port</span><span class="o">=</span>5001<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># use_reloader=False, threaded=True,</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/4db4b08ed32249fea5f0fe13f943c8ba.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>在postman输入地址和监听事件</p>
+<p><img src="/../../image/7284abf8368e45d0bbe22a47d4172161.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+>
+<img src="/../../image/562988b5d7824fef979c34ff9fec5f1d.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><img src="/../../image/c7c52ed793a749838faaa2fccdc10fc7.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/flaskpython%E5%90%8E%E7%AB%AF/">flask,python,后端</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202212011159/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/63.jpg" loading="lazy" data-key="202212011159" data-hash="/../../title_pic/63.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Git引起的 gitlab-runner 报错</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202203091639/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/32.jpg" loading="lazy" data-key="202203091639" data-hash="/../../title_pic/32.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Linux虚拟机（lvm）报Unmount and run xfs_repair</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202111031653/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/60.jpg" loading="lazy" data-key="202111031653" data-hash="/../../title_pic/60.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">截取日志范围（sed）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202107261639/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/34.jpg" loading="lazy" data-key="202107261639" data-hash="/../../title_pic/34.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Centos7 自启没有起作用？？（rc.local）</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202103231916/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/04.jpg" loading="lazy" data-key="202103231916" data-hash="/../../title_pic/04.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">二进制部署Kubernetes安装metrics-server遇到的问题</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2025 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
