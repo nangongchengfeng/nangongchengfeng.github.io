@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='本文探讨了MySQL社区版缺乏原生审计功能的问题，并提出使用MariaDB的server_audit插件作为解决方案。介绍了版本兼容性关键点（MySQL 5.7.34及以下版本适用），详细说明了插件安装步骤和配置参数优化建议，包括日志路径设置、文件轮转策略等。文章还展示了审计日志的格式样例，为需要合规审计的企业提供了可行方案。最后强调在生产环境部署前必须进行完整测试，确保插件兼容性和稳定性。'>
+<title>为MySQL社区版实现审计功能：从插件配置到日志监控全解析</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202506101112/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='为MySQL社区版实现审计功能：从插件配置到日志监控全解析'>
+<meta property='og:description' content='本文探讨了MySQL社区版缺乏原生审计功能的问题，并提出使用MariaDB的server_audit插件作为解决方案。介绍了版本兼容性关键点（MySQL 5.7.34及以下版本适用），详细说明了插件安装步骤和配置参数优化建议，包括日志路径设置、文件轮转策略等。文章还展示了审计日志的格式样例，为需要合规审计的企业提供了可行方案。最后强调在生产环境部署前必须进行完整测试，确保插件兼容性和稳定性。'>
+<meta property='og:url' content='https://www.ownit.top/p/202506101112/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='mysql,数据库' /><meta property='article:published_time' content='2025-06-10T11:12:48&#43;00:00'/><meta property='article:modified_time' content='2025-06-10T11:12:48&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/02.jpg' />
+<meta name="twitter:title" content="为MySQL社区版实现审计功能：从插件配置到日志监控全解析">
+<meta name="twitter:description" content="本文探讨了MySQL社区版缺乏原生审计功能的问题，并提出使用MariaDB的server_audit插件作为解决方案。介绍了版本兼容性关键点（MySQL 5.7.34及以下版本适用），详细说明了插件安装步骤和配置参数优化建议，包括日志路径设置、文件轮转策略等。文章还展示了审计日志的格式样例，为需要合规审计的企业提供了可行方案。最后强调在生产环境部署前必须进行完整测试，确保插件兼容性和稳定性。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/02.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#为什么mysql社区版需要审计功能">为什么MySQL社区版需要审计功能？</a></li>
+    <li><a href="#技术选型与版本兼容性分析">技术选型与版本兼容性分析</a></li>
+    <li><a href="#环境">环境</a></li>
+    <li><a href="#安装插件">安装插件</a>
+      <ol>
+        <li><a href="#查看插件安装目录">查看插件安装目录</a></li>
+        <li><a href="#提取mariadb审计插件并放置插件目录">提取mariadb审计插件并放置插件目录</a></li>
+        <li><a href="#mysql安装server_auditso插件">mysql安装server_audit.so插件</a></li>
+        <li><a href="#增加审计目录授权">增加审计目录授权</a></li>
+        <li><a href="#开启审计写入配置文件">开启审计，写入配置文件</a></li>
+        <li><a href="#检查日志状态">检查日志状态</a></li>
+        <li><a href="#日志格式">日志格式</a></li>
+      </ol>
+    </li>
+    <li><a href="#审计日志处理系统实现">审计日志处理系统实现</a>
+      <ol>
+        <li><a href="#系统架构设计">系统架构设计</a></li>
+        <li><a href="#python处理程序核心逻辑">Python处理程序核心逻辑</a></li>
+      </ol>
+    </li>
+    <li><a href="#后记">后记</a>
+      <ol>
+        <li>
+          <ol>
+            <li><a href="#生产环境建议"><strong>生产环境建议</strong></a></li>
+          </ol>
+        </li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202506101112/">
+                
+                    <img src="/../../title_pic/02.jpg" loading="lazy" alt="Featured image of post 为MySQL社区版实现审计功能：从插件配置到日志监控全解析" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/mysql%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                MySQL,项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202506101112/">为MySQL社区版实现审计功能：从插件配置到日志监控全解析</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            本文探讨了MySQL社区版缺乏原生审计功能的问题，并提出使用MariaDB的server_audit插件作为解决方案。介绍了版本兼容性关键点（MySQL 5.7.34及以下版本适用），详细说明了插件安装步骤和配置参数优化建议，包括日志路径设置、文件轮转策略等。文章还展示了审计日志的格式样例，为需要合规审计的企业提供了可行方案。最后强调在生产环境部署前必须进行完整测试，确保插件兼容性和稳定性。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jun 10, 2025</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 8 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="背景">背景</h2>
+<p>公司要把重要的数据库的操作记录留存，方便查询操作可视化和告警监控等待。更能和其余相同的数据库保持一致。</p>
+<p>本文将详细介绍如何通过MariaDB的server_audit插件为MySQL社区版实现完整的审计功能，包括版本兼容性处理、插件配置、日志解析和存储方案。</p>
+<h2 id="为什么mysql社区版需要审计功能">为什么MySQL社区版需要审计功能？</h2>
+<p>在公司数据库管理中，审计日志是安全合规和故障排查的重要工具。然而，许多使用MySQL社区版的企业面临一个尴尬的现实：原生的审计功能仅在企业版中提供。根据MySQL官方文档，社区版从5.7.34版本后不再支持第三方审计插件，这给需要合规审计的企业带来了挑战。</p>
+<h2 id="技术选型与版本兼容性分析">技术选型与版本兼容性分析</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MySQL企业版审计插件</td>
+<td>官方支持，功能完善</td>
+<td>需要付费许可</td>
+<td>预算充足的企业</td>
+</tr>
+<tr>
+<td>MariaDB server_audit插件</td>
+<td>免费开源，功能完整</td>
+<td>版本兼容性复杂</td>
+<td>MySQL 5.7.34及以下版本</td>
+</tr>
+<tr>
+<td>Percona审计插件</td>
+<td>完全兼容MySQL</td>
+<td>需要迁移到Percona Server</td>
+<td>新建项目或可迁移环境</td>
+</tr>
+<tr>
+<td>触发器+通用日志</td>
+<td>无需额外组件</td>
+<td>性能影响大，信息不完整</td>
+<td>简单审计需求</td>
+</tr>
+</tbody>
+</table></div>
+<p>在企业数据管理中，数据库操作审计是安全合规的核心需求。但MySQL社区版存在明显短板：</p>
+<ol>
+<li><strong>缺乏原生审计功能</strong>（仅企业版支持<code>audit_log</code>插件）</li>
+<li><strong>版本兼容陷阱</strong>
+<ul>
+<li>MySQL 5.7.34：最后一个可原生使用MariaDB插件的版本</li>
+<li>MySQL ≥5.7.34 无法使用MariaDB的<code>server_audit.so</code>插件</li>
+<li>MySQL 8.0 完全移除插件兼容性</li>
+</ul>
+</li>
+<li><strong>替代方案选择</strong>
+<ul>
+<li>方案1：MySQL 5.7低版本 + MariaDB插件（需版本匹配）</li>
+<li>方案2：迁移至<strong>Percona Server</strong>（免费开源，兼容MySQL 5.6/5.7/8.0且支持审计）</li>
+<li>方案3：全面迁移到MariaDB</li>
+</ul>
+</li>
+</ol>
+<p>实践建议：在测试环境中验证插件兼容性，生产环境部署前进行完整的回归测试。</p>
+<h2 id="环境">环境</h2>
+<p>环境如下：</p>
+<p>MySQL</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@test_db01 ~<span class="o">]</span><span class="c1"># mysql -V</span>
+</span></span><span class="line"><span class="cl">mysql  Ver 14.14 Distrib 5.7.27, <span class="k">for</span> Linux <span class="o">(</span>x86_64<span class="o">)</span> using  EditLine wrapper
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Cnetos7</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>root@test_db01 ~<span class="o">]</span><span class="c1"># cat /etc/redhat-release </span>
+</span></span><span class="line"><span class="cl">CentOS Linux release 7.3.1611 <span class="o">(</span>Core<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Linux test_db01 3.10.0-514.el7.x86_64 <span class="c1">#1 SMP Tue Nov 22 16:42:41 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="安装插件">安装插件</h2>
+<h3 id="查看插件安装目录">查看插件安装目录</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">mysql&gt;  show global variables like <span class="s1">&#39;plugin_dir&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">+---------------+--------------------------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span> Variable_name <span class="p">|</span> Value                    <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+---------------+--------------------------+
+</span></span><span class="line"><span class="cl"><span class="p">|</span> plugin_dir    <span class="p">|</span> /usr/lib64/mysql/plugin/ <span class="p">|</span>
+</span></span><span class="line"><span class="cl">+---------------+--------------------------+
+</span></span><span class="line"><span class="cl"><span class="m">1</span> row in <span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="提取mariadb审计插件并放置插件目录">提取mariadb审计插件并放置插件目录</h3>
+<p>此处需要注意版本，直接适配核对测试</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">wget  https://downloads.mariadb.com/MariaDB/mariadb-10.5.16/bintar-linux-x86_64/mariadb-10.5.16-linux-x86_64.tar.gz
+</span></span><span class="line"><span class="cl">tar -zxvf   mariadb-10.5.3-linux-x86_64.tar.gz
+</span></span><span class="line"><span class="cl">cp ./mariadb-10.5.3-linux-x86_64/lib/plugin/server_audit.so /usr/lib64/mysql/plugin/
+</span></span><span class="line"><span class="cl">chmod +x /usr/lib64/mysql/plugin/
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="mysql安装server_auditso插件">mysql安装server_audit.so插件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mysql&gt;  install plugin server_audit soname <span class="s1">&#39;server_audit.so&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">Query OK, <span class="m">0</span> rows affected <span class="o">(</span>0.02 sec<span class="o">)</span>           
+</span></span><span class="line"><span class="cl"><span class="c1">##也可以在my.cnf 加载插件方式安装</span>
+</span></span><span class="line"><span class="cl">在my.cnf 设置 <span class="nv">plugin_load</span> <span class="o">=</span> <span class="nv">server_audit</span><span class="o">=</span>server_audit.so  
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>查看当前MySQL插件情况</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mysql&gt;  show plugins<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span> SERVER_AUDIT                             <span class="p">|</span> ACTIVE   <span class="p">|</span> AUDIT              <span class="p">|</span> server_audit.so       <span class="p">|</span> GPL     <span class="p">|</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="增加审计目录授权">增加审计目录授权</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir /opt/mysqldata/auditlogs
+</span></span><span class="line"><span class="cl">chown -R mysql:mysql /opt/mysqldata/auditlogs
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="开启审计写入配置文件">开启审计，写入配置文件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1">#防止server_audit 插件被卸载 进行配置文件配置</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit</span><span class="o">=</span>FORCE_PLUS_PERMANENT
+</span></span><span class="line"><span class="cl"><span class="c1">#指定哪些操作被记录到日志文件中</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_events</span><span class="o">=</span><span class="s1">&#39;CONNECT,QUERY,TABLE,QUERY_DDL&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#开启审计功能</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_logging</span><span class="o">=</span>on
+</span></span><span class="line"><span class="cl"><span class="c1">#默认存放路径，可以不写，默认到data文件下</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_file_path</span><span class="o">=</span>/opt/mysqldata/auditlogs
+</span></span><span class="line"><span class="cl"><span class="c1">#设置文件大小 默认1000000，1073741824=1GB</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_file_rotate_size</span><span class="o">=</span><span class="m">1073741824</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#指定日志文件的数量，如果为0日志将从不轮转</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_file_rotations</span><span class="o">=</span><span class="m">0</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">下面是我的配置文件
+</span></span><span class="line"><span class="cl">版本太低，不支持JSON，高版本支持JSON格式，方便Python处理，后续只能re来处理
+</span></span><span class="line"><span class="cl"><span class="sb">```</span>bash
+</span></span><span class="line"><span class="cl"><span class="c1">#######server audit#####</span>
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_logging</span><span class="o">=</span>ON
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_file_path</span><span class="o">=</span>/www/server/data/server_audit.log
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit</span><span class="o">=</span>FORCE_PLUS_PERMANENT
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_file_rotate_size</span><span class="o">=</span>500M
+</span></span><span class="line"><span class="cl"><span class="nv">server_audit_file_rotations</span><span class="o">=</span><span class="m">15</span>
+</span></span><span class="line"><span class="cl"><span class="nv">max_allowed_packet</span><span class="o">=</span>32M
+</span></span><span class="line"><span class="cl"><span class="c1">#audit_log_format=JSON</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#audit_log_file=server_audit.json</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#server_audit_logging=ON</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#server_audit_file_path=/data/mysql/server_audit.json</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#server_audit=FORCE_PLUS_PERMANENT</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#server_audit_file_rotate_size=1G</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#server_audit_file_rotations=10</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#max_allowed_packet=32M</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li><code>FORCE_PLUS_PERMANENT</code>：防止插件被意外卸载</li>
+<li>日志轮转设置：避免日志文件无限增长</li>
+<li><code>max_allowed_packet</code>：确保大SQL语句能被完整记录</li>
+</ul>
+<p>重启mysql生效！</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">/etc/init.d/mysql restart
+</span></span><span class="line"><span class="cl">Shutting down MySQL............... SUCCESS! 
+</span></span><span class="line"><span class="cl">Starting MySQL.. SUCCESS! 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="检查日志状态">检查日志状态</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">-- 检查插件状态 
+</span></span><span class="line"><span class="cl">SHOW PLUGINS WHERE <span class="nv">NAME</span> <span class="o">=</span> <span class="s1">&#39;server_audit&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">-- 查看审计设置 
+</span></span><span class="line"><span class="cl">SHOW GLOBAL VARIABLES LIKE <span class="s1">&#39;server_audit%&#39;</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="日志格式">日志格式</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="m">20250610</span> 10:42:49,test_db01,root,192.168.102.207,7972452,438352983,QUERY,xxxx,<span class="s1">&#39;SELECT  id,ext_id,ext_table_name,target_type,value1,value2,spread_config  FROM t_target \n \n WHERE (ext_id = \&#39;</span>12606411819336451111124<span class="se">\&#39;</span> AND <span class="nv">ext_table_name</span> <span class="o">=</span> <span class="se">\&#39;</span>t_discount_coupon<span class="se">\&#39;</span><span class="o">)</span><span class="s1">&#39;,0
+</span></span></span><span class="line"><span class="cl"><span class="s1">20250610 10:42:50,test_db01,root,192.168.83.18,7972073,438352984,QUERY,gazelle_model_assemble,&#39;</span>SELECT  id,code,name,handler,status,retry_times,create_time,update_time  FROM batch      WHERE  <span class="o">(</span><span class="nv">status</span> <span class="o">=</span> <span class="se">\&#39;</span>running<span class="se">\&#39;</span><span class="o">)</span><span class="s1">&#39;,0
+</span></span></span><span class="line"><span class="cl"><span class="s1">20250610 10:42:50,test_db01,root,192.168.102.207,7969972,438352986,QUERY,xxxx,&#39;</span><span class="k">select</span> * from t_event_send where <span class="nv">sent</span> <span class="o">=</span> <span class="m">0</span> order by created_time asc<span class="s1">&#39;,0
+</span></span></span><span class="line"><span class="cl"><span class="s1">20250610 10:42:50,test_db01,root,192.168.83.36,7853786,438352985,QUERY,hxxxdb,&#39;</span>SELECT<span class="se">\n</span>            MAX<span class="o">(</span>IF<span class="o">(</span><span class="nv">status</span> <span class="o">=</span> 1, create_time, null<span class="o">))</span> nearBankTime<span class="se">\n</span>        FROM user_bank_cards<span class="se">\n</span>        WHERE create_time &gt;<span class="o">=</span> NOW<span class="o">()</span> - INTERVAL <span class="m">12</span> HOUR<span class="s1">&#39;,0
+</span></span></span><span class="line"><span class="cl"><span class="s1">20250610 10:42:50,test_db01,root,192.168.83.27,7971636,438352987,QUERY,hixxxx_core,&#39;</span>SELECT id, user_id, trade_no, out_trade_no, order_sn, lease_id, period_no, amount, trade_status, alipay_close_status, trade_type, remark, trade_way, business_type, entry_param, coupon_id, coupon_amount, deleted, gmt_create, gmt_modified FROM hire_trade_flows WHERE <span class="nv">deleted</span> <span class="o">=</span> <span class="m">0</span> AND <span class="o">(</span><span class="nv">trade_status</span> <span class="o">=</span> <span class="m">3</span> AND <span class="nv">trade_type</span> <span class="o">=</span> <span class="m">1</span> AND trade_way IN <span class="o">(</span>1, 3, 4<span class="o">)</span> AND business_type IN <span class="o">(</span>3, 5, 2, 1, 14, 4, 6, 10, 13<span class="o">))</span><span class="s1">&#39;,0
+</span></span></span><span class="line"><span class="cl"><span class="s1">20250610 10:42:50,test_db01,root,192.168.83.25,7972144,438352988,QUERY,historical_customer_data,&#39;</span>SELECT 1<span class="s1">&#39;,0
+</span></span></span><span class="line"><span class="cl"><span class="s1">20250610 10:42:50,test_db01,root,192.168.83.25,7972144,438352989,QUERY,historical_customer_data,&#39;</span>SELECT 1<span class="err">&#39;</span>,0
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>解释这条日志格式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="m">20250610</span> 10:42:50,test_db01,root,192.168.83.36,7853786,438352985,QUERY,hxxxdb,<span class="s1">&#39;SELECT\n            MAX(IF(status = 1, create_time, null)) nearBankTime\n        FROM user_bank_cards\n        WHERE create_time &gt;= NOW() - INTERVAL 12 HOUR&#39;</span>,0
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>字段编号</th>
+<th>字段值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>20250610 10:42:50</code></td>
+<td><strong>时间戳</strong>，表示审计事件发生的时间</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>test_db01</code></td>
+<td><strong>服务器主机名</strong>（或 MariaDB 实例名称）</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>root</code></td>
+<td><strong>数据库用户名</strong>，执行该语句的用户</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>192.168.83.36</code></td>
+<td><strong>客户端 IP 地址</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>7853786</code></td>
+<td><strong>线程 ID</strong>（MariaDB 内部线程号）</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>438352985</code></td>
+<td><strong>查询 ID</strong>，用于区分不同的 SQL 查询</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>QUERY</code></td>
+<td><strong>事件类型</strong>（<code>QUERY</code> 表示 SQL 查询）</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>hxxxdb</code></td>
+<td><strong>当前数据库名</strong>（<code>USE</code> 的数据库）</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>'SELECT\n MAX(IF(...</code></td>
+<td><strong>SQL 语句内容</strong>，使用单引号包裹，<code>\n</code> 为换行符</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>0</code></td>
+<td><strong>返回值 / 错误码</strong>，<code>0</code> 表示成功（无错误）</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="审计日志处理系统实现">审计日志处理系统实现</h2>
+<h3 id="系统架构设计">系统架构设计</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="o">[</span>MySQL Server<span class="o">]</span> 
+</span></span><span class="line"><span class="cl">    ↓ <span class="o">(</span>生成审计日志<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>server_audit.log<span class="o">]</span>  
+</span></span><span class="line"><span class="cl">    ↓ <span class="o">(</span>Python监控进程<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>日志解析模块<span class="o">]</span> → <span class="o">[</span>MySQL审计数据库<span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="python处理程序核心逻辑">Python处理程序核心逻辑</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="m">20250610</span> 10:42:50,test_db01,root,192.168.83.36,7853786,438352985,QUERY,hxxxdb,<span class="s1">&#39;SELECT\n            MAX(IF(status = 1, create_time, null)) nearBankTime\n        FROM user_bank_cards\n        WHERE create_time &gt;= NOW() - INTERVAL 12 HOUR&#39;</span>,0
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>我们有上面的日志格式，可以进行如下操作处理</p>
+<p><strong>日志监控关键特性：</strong></p>
+<ol>
+<li><strong>断点续传</strong>：通过state文件记录读取位置</li>
+<li><strong>文件轮转检测</strong>：通过inode和dev识别日志切换</li>
+<li><strong>异常处理</strong>：完善的错误捕获和日志记录</li>
+</ol>
+<p><img src="/../../image/90ab2ba35ab94ed49e6fb99e0a2e0517.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">process_log_entry</span><span class="p">(</span><span class="n">new_content</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;处理单个审计日志条目&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 定义正则表达式模式，用于解析审计日志格式</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># 模式匹配字段：时间，数据库名(1)，用户名，源IP，连接ID，查询ID，事件类型，数据库名(2)，SQL语句，执行结果</span>
+</span></span><span class="line"><span class="cl">    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&#34;^(\d</span><span class="si">{8}</span><span class="s2"> \d</span><span class="si">{2}</span><span class="s2">:\d</span><span class="si">{2}</span><span class="s2">:\d</span><span class="si">{2}</span><span class="s2">),([\w]+),([\w]+),(\d+\.\d+\.\d+\.\d+),(\d+),(\d+),([\w]+),([\w]+),&#39;(.*)&#39;,(\d+)&#34;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 尝试匹配日志行</span>
+</span></span><span class="line"><span class="cl">    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">new_content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 提取匹配的各个字段</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_time</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>        <span class="c1"># 时间 (格式: 年月日 时分秒)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">database_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># 数据库名称 (从第8组获取)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>      <span class="c1"># SQL语句内容 (包含原始转义字符)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">s_sql_content</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>    <span class="c1"># 保留原始SQL语句用于日志记录</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_result</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>      <span class="c1"># SQL执行结果 (0表示成功)</span>
+</span></span><span class="line"><span class="cl">        
+</span></span><span class="line"><span class="cl">        <span class="c1"># 清洗SQL语句内容：</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 1. 去除SQL注释（--、#和/* */类型的注释）</span>
+</span></span><span class="line"><span class="cl">        <span class="n">COMMENT_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&#34;(--.*?</span><span class="se">\\</span><span class="s2">r</span><span class="se">\\</span><span class="s2">n|#.*?</span><span class="se">\\</span><span class="s2">r</span><span class="se">\\</span><span class="s2">n|/\*.*?\*/)&#34;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">COMMENT_PATTERN</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&#34;&#34;</span><span class="p">,</span> <span class="n">sql_content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        
+</span></span><span class="line"><span class="cl">        <span class="c1"># 2. 替换特殊转义字符</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#    - 将\n换行符替换为空格</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#    - 将\&#39;转义单引号替换为普通单引号</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#    - 将\t制表符替换为空格</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#    - 将\r回车符替换为空格</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">sql_content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">n&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\\&#39;</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">t&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">r&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        
+</span></span><span class="line"><span class="cl">        <span class="c1"># 3. 去除SQL语句前后的多余空格</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">sql_content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        
+</span></span><span class="line"><span class="cl">        <span class="c1"># 检查是否为需要记录的DDL语句：</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 1. SQL执行成功 (sql_result == &#34;0&#34;)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 2. 是DDL操作 (CREATE/ALTER/DROP/RENAME开头)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">DDL_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&#34;^(CREATE|ALTER|DROP|RENAME)&#34;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="n">sql_result</span> <span class="o">==</span> <span class="s2">&#34;0&#34;</span> <span class="ow">and</span> <span class="n">DDL_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">sql_content</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="c1"># 记录处理日志</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;-&#34;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;原始SQL内容: </span><span class="si">{</span><span class="n">s_sql_content</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;执行时间: </span><span class="si">{</span><span class="n">sql_time</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;数据库名称: </span><span class="si">{</span><span class="n">database_name</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;清洗后SQL: </span><span class="si">{</span><span class="n">sql_content</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;-&#34;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            
+</span></span><span class="line"><span class="cl">            <span class="c1"># 将审计记录保存到MySQL数据库</span>
+</span></span><span class="line"><span class="cl">            <span class="n">save_to_mysql</span><span class="p">(</span><span class="n">sql_time</span><span class="p">,</span> <span class="n">database_name</span><span class="p">,</span> <span class="n">sql_content</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">原始: <span class="s1">&#39;SELECT\n            MAX(...) nearBankTime\n        FROM ...&#39;</span>
+</span></span><span class="line"><span class="cl">清洗后: <span class="s1">&#39;SELECT MAX(...) nearBankTime FROM ...&#39;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>完整代码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># -*- coding: utf-8 -*-</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">re</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">time</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">logging</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">pymysql</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 日志配置</span>
+</span></span><span class="line"><span class="cl"><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">    <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;mysql_monitor.log&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(levelname)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="n">datefmt</span><span class="o">=</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 读取缓存文件，定位日志读取位置</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">load_state</span><span class="p">(</span><span class="n">state_file</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;Load saved state.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">state</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;inode&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dev&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Failed to load state: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 保存位置数据到文件中</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">save_state</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">inode</span><span class="p">,</span> <span class="n">dev</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;Save current state.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span>
+</span></span><span class="line"><span class="cl">                <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="n">position</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s1">&#39;inode&#39;</span><span class="p">:</span> <span class="n">inode</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s1">&#39;dev&#39;</span><span class="p">:</span> <span class="n">dev</span>
+</span></span><span class="line"><span class="cl">            <span class="p">},</span> <span class="n">f</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Failed to save state: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 保存sql数据到数据中，方便可视化 或者  告警</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">save_to_mysql</span><span class="p">(</span><span class="n">sql_time</span><span class="p">,</span> <span class="n">database_name</span><span class="p">,</span> <span class="n">sql_content</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;将日志信息写入到 MySQL 数据库的 audit_log 表中&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">connection</span> <span class="o">=</span> <span class="n">pymysql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="n">host</span><span class="o">=</span><span class="s1">&#39;192.168.102.201&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">user</span><span class="o">=</span><span class="s1">&#39;root&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">password</span><span class="o">=</span><span class="s1">&#39;xxxx.88&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">database</span><span class="o">=</span><span class="s1">&#39;audit_db&#39;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">charset</span><span class="o">=</span><span class="s1">&#39;utf8mb4&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">with</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">sql</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">                  INSERT INTO audit_log (sql_time, database_name, sql_content)
+</span></span></span><span class="line"><span class="cl"><span class="s2">                  VALUES (</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)
+</span></span></span><span class="line"><span class="cl"><span class="s2">                  &#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">sql_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">sql_time</span><span class="p">,</span> <span class="s2">&#34;%Y%m</span><span class="si">%d</span><span class="s2"> %H:%M:%S&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&#34;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">sql_time</span><span class="p">,</span> <span class="n">database_name</span><span class="p">,</span> <span class="n">sql_content</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Failed to insert data into MySQL: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">finally</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 读取文件 ，数据 匹配 和 清洗</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">process_log_entry</span><span class="p">(</span><span class="n">new_content</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;Process a single log entry.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&#34;^(\d</span><span class="si">{8}</span><span class="s2"> \d</span><span class="si">{2}</span><span class="s2">:\d</span><span class="si">{2}</span><span class="s2">:\d</span><span class="si">{2}</span><span class="s2">),([\w]+),([\w]+),(\d+\.\d+\.\d+\.\d+),(\d+),(\d+),([\w]+),([\w]+),&#39;(.*)&#39;,(\d+)&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">new_content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_time</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">database_name</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">s_sql_content</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_result</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 先匹配存在DDL语句的sql内容</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 去除-- /* # 等注释符</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#logging.info(f&#34;1 {sql_content}&#34;)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">COMMENT_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&#34;(--.*?</span><span class="se">\\</span><span class="s2">r</span><span class="se">\\</span><span class="s2">n|#.*?</span><span class="se">\\</span><span class="s2">r</span><span class="se">\\</span><span class="s2">n|/\*.*?\*/)&#34;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">COMMENT_PATTERN</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&#34;&#34;</span><span class="p">,</span> <span class="n">sql_content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 去除多余的换行符/&#39;等</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#logging.info(f&#34;2 {sql_content}&#34;)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">sql_content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">n&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\\&#39;</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">t&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">r&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#logging.info(f&#34;3 {sql_content}&#34;)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 去除前后多余的空格</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sql_content</span> <span class="o">=</span> <span class="n">sql_content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">#logging.info(f&#34;4 {sql_content}&#34;)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1"># 检查是否为 DDL 语句</span>
+</span></span><span class="line"><span class="cl">        <span class="n">DDL_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&#34;^(CREATE|ALTER|DROP|RENAME)&#34;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="n">sql_result</span> <span class="o">==</span> <span class="s2">&#34;0&#34;</span> <span class="ow">and</span> <span class="n">DDL_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">sql_content</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;-&#34;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;SQL Content: </span><span class="si">{</span><span class="n">s_sql_content</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Time: </span><span class="si">{</span><span class="n">sql_time</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Database Name: </span><span class="si">{</span><span class="n">database_name</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;SQL Content: </span><span class="si">{</span><span class="n">sql_content</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;-&#34;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">save_to_mysql</span><span class="p">(</span><span class="n">sql_time</span><span class="p">,</span> <span class="n">database_name</span><span class="p">,</span> <span class="n">sql_content</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 启动程序，传入 缓存 文件  和 审计日志记录 文件 位置</span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">monitor_log</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="n">log_file</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="s2">&#34;&#34;&#34;Monitor MySQL audit logs.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">last_position</span><span class="p">,</span> <span class="n">last_inode</span><span class="p">,</span> <span class="n">last_dev</span> <span class="o">=</span> <span class="n">load_state</span><span class="p">(</span><span class="n">state_file</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">current_st</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">log_file</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&#34;Log file not found, retrying...&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">current_st</span><span class="o">.</span><span class="n">st_ino</span> <span class="o">!=</span> <span class="n">last_inode</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">current_st</span><span class="o">.</span><span class="n">st_dev</span> <span class="o">!=</span> <span class="n">last_dev</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;New log file detected&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">last_position</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">            <span class="n">last_inode</span> <span class="o">=</span> <span class="n">current_st</span><span class="o">.</span><span class="n">st_ino</span>
+</span></span><span class="line"><span class="cl">            <span class="n">last_dev</span> <span class="o">=</span> <span class="n">current_st</span><span class="o">.</span><span class="n">st_dev</span>
+</span></span><span class="line"><span class="cl">            <span class="n">save_state</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="n">last_position</span><span class="p">,</span> <span class="n">last_inode</span><span class="p">,</span> <span class="n">last_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="n">current_st</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&lt;</span> <span class="n">last_position</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;File truncated&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">last_position</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">            <span class="n">save_state</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="n">last_position</span><span class="p">,</span> <span class="n">last_inode</span><span class="p">,</span> <span class="n">last_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="n">current_st</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&gt;</span> <span class="n">last_position</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;replace&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                    <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">last_position</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                        <span class="n">process_log_entry</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">                    <span class="n">last_position</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                    <span class="n">save_state</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="n">last_position</span><span class="p">,</span> <span class="n">last_inode</span><span class="p">,</span> <span class="n">last_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Error reading log file: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">log_file</span> <span class="o">=</span> <span class="s1">&#39;/data/mysql/server_audit.log&#39;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">state_file</span> <span class="o">=</span> <span class="s2">&#34;/opt/mysql_audit_monitor/mysqlMonitor.state&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Starting MySQL audit log monitoring: </span><span class="si">{</span><span class="n">log_file</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">try</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">monitor_log</span><span class="p">(</span><span class="n">state_file</span><span class="p">,</span> <span class="n">log_file</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Monitoring stopped&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/267dce67af334de6a7b333a4a1efed0f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><img src="/../../image/d823fe56c06d42ee9eb1aa3a116374a3.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="后记">后记</h2>
+<h4 id="生产环境建议"><strong>生产环境建议</strong></h4>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align:left"><strong>场景</strong></th>
+<th style="text-align:left"><strong>推荐方案</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">MySQL 5.7.34以下版本</td>
+<td style="text-align:left">MariaDB插件方案</td>
+</tr>
+<tr>
+<td style="text-align:left">MySQL 8.0+</td>
+<td style="text-align:left">Percona Server或迁移至MariaDB</td>
+</tr>
+<tr>
+<td style="text-align:left">审计日志存储</td>
+<td style="text-align:left">独立MySQL实例，与业务库物理隔离</td>
+</tr>
+<tr>
+<td style="text-align:left">高频操作环境</td>
+<td style="text-align:left">写入Elasticsearch替代MySQL</td>
+</tr>
+</tbody>
+</table></div>
+<p>通过<code>server_audit</code>插件+Python监控的组合，可在MySQL社区版低成本实现企业级审计需求。但需注意：</p>
+<blockquote>
+<p>📌 <strong>版本兼容性</strong>是成功前提，MySQL 8.0用户务必选择Percona/MariaDB
+📌 <strong>日志清洗</strong>环节直接影响分析准确性（如转义符处理）
+📌 审计日志<strong>存储分离</strong>是安全最佳实践</p>
+</blockquote>
+<p><strong>最终效果</strong>：</p>
+<ul>
+<li>所有数据库操作可视化展示</li>
+<li>实时捕获高危DDL语句</li>
+<li>满足等保2.0/ISO 27001审计要求</li>
+</ul>
+
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/mysql%E6%95%B0%E6%8D%AE%E5%BA%93/">mysql,数据库</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2025 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
