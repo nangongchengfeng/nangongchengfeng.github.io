@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='在现代互联网应用开发中，灰度发布（又称金丝雀发布）是一种非常重要的部署策略。它允许我们将新版本服务逐步推送给部分用户，而不是一次性全量发布，从而降低风险并快速获得用户反馈。本文将分享一个实际的灰度环境部署案例，涉及两个服务（fbdm和grayfbdm）共享同一数据库但运行不同代码的场景。'>
+<title>利用 Nginx 实现灰度环境的 H5 应用发布策略</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202506181815/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='利用 Nginx 实现灰度环境的 H5 应用发布策略'>
+<meta property='og:description' content='在现代互联网应用开发中，灰度发布（又称金丝雀发布）是一种非常重要的部署策略。它允许我们将新版本服务逐步推送给部分用户，而不是一次性全量发布，从而降低风险并快速获得用户反馈。本文将分享一个实际的灰度环境部署案例，涉及两个服务（fbdm和grayfbdm）共享同一数据库但运行不同代码的场景。'>
+<meta property='og:url' content='https://www.ownit.top/p/202506181815/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='nginx' /><meta property='article:tag' content='运维' /><meta property='article:published_time' content='2025-06-18T18:15:08&#43;00:00'/><meta property='article:modified_time' content='2025-06-18T18:15:08&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/18.jpg' />
+<meta name="twitter:title" content="利用 Nginx 实现灰度环境的 H5 应用发布策略">
+<meta name="twitter:description" content="在现代互联网应用开发中，灰度发布（又称金丝雀发布）是一种非常重要的部署策略。它允许我们将新版本服务逐步推送给部分用户，而不是一次性全量发布，从而降低风险并快速获得用户反馈。本文将分享一个实际的灰度环境部署案例，涉及两个服务（fbdm和grayfbdm）共享同一数据库但运行不同代码的场景。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/18.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#背景介绍">背景介绍</a></li>
+    <li><a href="#系统架构概述">系统架构概述</a></li>
+    <li><a href="#核心设计原理">核心设计原理</a>
+      <ol>
+        <li><a href="#1-数据库共享策略">1. 数据库共享策略</a></li>
+        <li><a href="#2-流量分流机制">2. 流量分流机制</a></li>
+        <li><a href="#3-路由判断条件">3. 路由判断条件</a></li>
+        <li><a href="#4完整nginx配置">4.完整Nginx配置</a></li>
+      </ol>
+    </li>
+    <li><a href="#成功案例">成功案例</a></li>
+    <li><a href="#后续实践">后续实践</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202506181815/">
+                
+                    <img src="/../../title_pic/18.jpg" loading="lazy" alt="Featured image of post 利用 Nginx 实现灰度环境的 H5 应用发布策略" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/nginx/" >
+                Nginx
+            </a>
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202506181815/">利用 Nginx 实现灰度环境的 H5 应用发布策略</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            在现代互联网应用开发中，灰度发布（又称金丝雀发布）是一种非常重要的部署策略。它允许我们将新版本服务逐步推送给部分用户，而不是一次性全量发布，从而降低风险并快速获得用户反馈。本文将分享一个实际的灰度环境部署案例，涉及两个服务（fbdm和grayfbdm）共享同一数据库但运行不同代码的场景。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jun 18, 2025</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="背景介绍">背景介绍</h2>
+<p>在现代互联网应用开发中，灰度发布（又称金丝雀发布）是一种非常重要的部署策略。它允许我们将新版本服务逐步推送给部分用户，而不是一次性全量发布，从而降低风险并快速获得用户反馈。本文将分享一个实际的灰度环境部署案例，涉及两个服务（fbdm和grayfbdm）共享同一数据库但运行不同代码的场景。
+**目前场景：**用于线上功能和需求验证，防止全量上线验证出问题，减少回滚的概率。</p>
+<p>某业务系统中存在两个核心后端服务：</p>
+<ul>
+<li><code>fbdm</code>：正式服务，面向所有用户；</li>
+<li><code>grayfbdm</code>：灰度服务，仅对测试或特定用户开放。</li>
+</ul>
+<p>两者数据库一致，配置相同，仅代码版本不同。<strong>灰度发布前必须先完成数据库字段变更</strong>，以保证向前兼容。
+<img src="/../../image/f5c8a9d0b8cc4e73b945f0d3617d42dd.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>前端页面通过不同的访问地址与 Header 标签来区分灰度与正式流量。</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>访问角色</th>
+<th>访问域名</th>
+<th>Header 特征</th>
+<th>Nginx 路由目标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>测试用户</td>
+<td><code>gray.example.com</code></td>
+<td><code>appenv=gray</code></td>
+<td>grayfbdm</td>
+</tr>
+<tr>
+<td>正式用户</td>
+<td><code>prod.example.com</code></td>
+<td>无灰度标签</td>
+<td>fbdm</td>
+</tr>
+</tbody>
+</table></div>
+<p>灰度环境请求需满足下列任一条件，即可命中 <code>grayfbdm</code>：</p>
+<ul>
+<li>请求 Header 包含 <code>appenv=gray</code>；</li>
+<li>URL 参数中包含 <code>appEnv=gray</code> 或灰度域名作为 <code>returnUrl</code>；</li>
+<li><code>Origin</code> 为灰度域名。</li>
+</ul>
+<h2 id="系统架构概述">系统架构概述</h2>
+<p>基本系统包含以下关键组件：</p>
+<ol>
+<li><strong>两个后端服务</strong>：
+<ul>
+<li>fbdm：生产环境服务</li>
+<li>grayfbdm：灰度环境服务</li>
+</ul>
+</li>
+<li><strong>共享数据库</strong>：两个服务使用相同的数据库实例</li>
+<li><strong>前端H5应用</strong>：能够通过header标识请求来源</li>
+<li><strong>Nginx反向代理</strong>：负责根据规则将请求路由到不同的后端服务</li>
+</ol>
+<h2 id="核心设计原理">核心设计原理</h2>
+<h3 id="1-数据库共享策略">1. 数据库共享策略</h3>
+<p>由于两个服务使用相同的数据库，在灰度发布过程中需要特别注意：</p>
+<ul>
+<li><strong>数据库变更先行</strong>：任何涉及数据库结构的变更必须先于服务部署执行</li>
+<li><strong>代码兼容性</strong>：新版本代码必须能够兼容旧版本的数据结构</li>
+<li><strong>数据一致性</strong>：确保灰度环境和生产环境不会因为数据操作相互干扰</li>
+</ul>
+<h3 id="2-流量分流机制">2. 流量分流机制</h3>
+<p>Nginx作为流量入口，根据多种条件将请求路由到不同的后端：</p>
+<p><img src="/../../image/f4e8db1f4ff742b6804c5b6a92f5522a.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 上游服务定义 </span>
+</span></span><span class="line"><span class="cl">upstream fbdm <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    server 10.0.0.1:8081 <span class="nv">fail_timeout</span><span class="o">=</span><span class="m">5</span> <span class="nv">max_fails</span><span class="o">=</span>2<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    server 10.0.0.2:8081 <span class="nv">fail_timeout</span><span class="o">=</span><span class="m">5</span> <span class="nv">max_fails</span><span class="o">=</span>2<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    keepalive 2000<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span><span class="line"><span class="cl">upstream grayfbdm <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    server 10.0.1.1:8081 <span class="nv">fail_timeout</span><span class="o">=</span><span class="m">5</span> <span class="nv">max_fails</span><span class="o">=</span>2<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    keepalive 2000<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl"> 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="3-路由判断条件">3. 路由判断条件</h3>
+<p>Nginx通过以下条件判断是否将请求路由到灰度环境：</p>
+<ol>
+<li><strong>HTTP Header</strong>：检查<code>appenv=gray</code></li>
+<li><strong>URL参数</strong>：检查<code>returnUrl</code>或<code>appEnv</code>参数</li>
+<li><strong>Origin Header</strong>：检查请求来源是否为灰度域名</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nb">set</span> <span class="nv">$target</span> http://fbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">(</span><span class="nv">$http_appEnv</span> <span class="o">=</span> <span class="s2">&#34;gray&#34;</span> <span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">(</span><span class="nv">$arg_returnUrl</span> ~* <span class="s2">&#34;^https?%3A%2F%2Fmfbdgray\.xxxxx\.com&#34;</span> <span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">(</span><span class="nv">$arg_appEnv</span> ~* <span class="s2">&#34;^gray&#34;</span> <span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">(</span><span class="nv">$http_origin</span> ~* <span class="s2">&#34;https?://mfbdgray\.xxxxx\.com&#34;</span> <span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="4完整nginx配置">4.完整Nginx配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 定义 upstream（正式服务 &amp; 灰度服务）</span>
+</span></span><span class="line"><span class="cl">upstream fbdm <span class="o">{</span>
+</span></span><span class="line"><span class="cl">	server 10.0.0.1:8081 <span class="nv">fail_timeout</span><span class="o">=</span><span class="m">5</span> <span class="nv">max_fails</span><span class="o">=</span>2<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	server 10.0.0.2:8081 <span class="nv">fail_timeout</span><span class="o">=</span><span class="m">5</span> <span class="nv">max_fails</span><span class="o">=</span>2<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	keepalive 2000<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">upstream grayfbdm <span class="o">{</span>
+</span></span><span class="line"><span class="cl">	server 10.0.1.1:8081 <span class="nv">fail_timeout</span><span class="o">=</span><span class="m">5</span> <span class="nv">max_fails</span><span class="o">=</span>2<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	keepalive 2000<span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 80 端口跳转到 HTTPS</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">	listen 80<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	server_name prod.example.com<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">		rewrite ^/<span class="o">(</span>.*<span class="o">)</span>$ https://<span class="nv">$host</span>/<span class="nv">$1</span> permanent<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 443 HTTPS 端口配置（灰度智能路由）</span>
+</span></span><span class="line"><span class="cl">server <span class="o">{</span>
+</span></span><span class="line"><span class="cl">	listen <span class="m">443</span> ssl<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	server_name prod.example.com<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	ssl_certificate /path/to/cert.pem<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	ssl_certificate_key /path/to/key.pem<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	include ssl.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	location / <span class="o">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nb">set</span> <span class="nv">$target</span> http://fbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="c1"># 灰度判断逻辑</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$http_appEnv</span> <span class="o">=</span> <span class="s2">&#34;gray&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$arg_returnUrl</span> ~* <span class="s2">&#34;^https?%3A%2F%2Fgray\.example\.com&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$arg_appEnv</span> ~* <span class="s2">&#34;^gray&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$http_origin</span> ~* <span class="s2">&#34;https?://gray\.example\.com&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		proxy_pass <span class="nv">$target</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">		include https_proxy.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		proxy_next_upstream error timeout invalid_header http_403 http_404 http_500 http_502 http_503 http_504<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="c1"># 黑名单控制（引用外部白名单/黑名单配置）</span>
+</span></span><span class="line"><span class="cl">		include /opt/nginx/conf/whitelist/login.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="c1"># 登录、发送验证码等接口灰度策略保持一致</span>
+</span></span><span class="line"><span class="cl">	location ~* ^<span class="o">(</span>/api/auth/sendCode<span class="p">|</span>/api/user/login<span class="p">|</span>/api/user/checkMobile<span class="o">)</span>$ <span class="o">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nb">set</span> <span class="nv">$target</span> http://fbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$http_appEnv</span> <span class="o">=</span> <span class="s2">&#34;gray&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$arg_returnUrl</span> ~* <span class="s2">&#34;^https?%3A%2F%2Fgray\.example\.com&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$arg_appEnv</span> ~* <span class="s2">&#34;^gray&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="o">(</span><span class="nv">$http_origin</span> ~* <span class="s2">&#34;https?://gray\.example\.com&#34;</span><span class="o">)</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nb">set</span> <span class="nv">$target</span> http://grayfbdm<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		<span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		proxy_pass <span class="nv">$target</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">		include https_proxy.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		proxy_next_upstream error timeout invalid_header http_403 http_404 http_500 http_502 http_503 http_504<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="c1"># 黑名单控制</span>
+</span></span><span class="line"><span class="cl">		include /opt/nginx/conf/whitelist/mesg.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		include /opt/nginx/conf/whitelist/login.conf<span class="p">;</span>
+</span></span><span class="line"><span class="cl">		allow all<span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li><strong>灵活灰度判断</strong>：通过 Header、Query 参数与 Origin 三层判断方式，确保请求正确识别；</li>
+<li><strong>接口隔离保护</strong>：关键接口如登录与验证码单独配置，防止因路由失误导致异常；</li>
+<li><strong>白名单机制</strong>：通过 <code>include</code> 引用外部配置，统一黑白名单管理；</li>
+<li><strong>自动 HTTPS 跳转</strong>：防止未加密请求造成信息泄露。</li>
+</ul>
+<h2 id="成功案例">成功案例</h2>
+<p>在一次重大架构升级中，灰度发布机制帮助我们：</p>
+<ol>
+<li>提前发现代码的bug，测试人员多轮验证，未影响正常用户</li>
+<li>可以任何时间段发版，让测试人员测试，提升工作效率和速度</li>
+</ol>
+<h2 id="后续实践">后续实践</h2>
+<ol>
+<li><strong>版本兼容性</strong>：确保灰度版本代码能够回滚，避免因数据库变更导致生产环境不可用</li>
+<li><strong>监控与日志</strong>：为灰度环境设置独立的监控和日志收集，便于问题排查</li>
+<li><strong>流量比例控制</strong>：可以通过Nginx配置实现按比例的灰度发布</li>
+<li><strong>自动化测试</strong>：灰度环境应配备完整的自动化测试套件</li>
+<li><strong>用户标识策略</strong>：除了测试人员，可以考虑基于用户ID、设备ID等进行灰度分流</li>
+</ol>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/nginx/">Nginx</a>
+        
+            <a href="/tags/%E8%BF%90%E7%BB%B4/">运维</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202404101725/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/67.jpg" loading="lazy" data-key="202404101725" data-hash="/../../title_pic/67.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx日志格式化和追踪</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202407151647/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/18.jpg" loading="lazy" data-key="202407151647" data-hash="/../../title_pic/18.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">使用Nginx OpenResty与Redis实现高效IP黑白名单管理</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202404021613/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/74.jpg" loading="lazy" data-key="202404021613" data-hash="/../../title_pic/74.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx在Kubernetes集群中的进阶应用</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202304101429/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/24.jpg" loading="lazy" data-key="202304101429" data-hash="/../../title_pic/24.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Nginx模板自动化</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202405241437/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/45.jpg" loading="lazy" data-key="202405241437" data-hash="/../../title_pic/45.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">自动化重置数据库功能的探索与实践</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2025 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

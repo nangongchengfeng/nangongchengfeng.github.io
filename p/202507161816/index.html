@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='在多部门、多技术栈并存的企业环境中，日志收集与分析是保障系统稳定运行的核心能力之一。然而，不同开发团队采用各异的日志打印方式，导致日志数据结构混乱，严重影响后续的收集、存储、检索与告警效率。本文将介绍我们如何建立统一的日志格式规范，并基于 Filebeat &#43; Logstash 实现多环境（宿主机/Kubernetes）下的高效日志采集、解析与存储。'>
+<title>统一日志格式规范与 Filebeat&#43;Logstash 实践落地</title>
+
+<link rel='canonical' href='https://www.ownit.top/p/202507161816/'>
+
+<link rel="stylesheet" href="/scss/style.min.f8f67bed86aec9bc8e9eb410ba9583e51cb34eee82f3d10e0abbae72b51272ce.css"><meta property='og:title' content='统一日志格式规范与 Filebeat&#43;Logstash 实践落地'>
+<meta property='og:description' content='在多部门、多技术栈并存的企业环境中，日志收集与分析是保障系统稳定运行的核心能力之一。然而，不同开发团队采用各异的日志打印方式，导致日志数据结构混乱，严重影响后续的收集、存储、检索与告警效率。本文将介绍我们如何建立统一的日志格式规范，并基于 Filebeat &#43; Logstash 实现多环境（宿主机/Kubernetes）下的高效日志采集、解析与存储。'>
+<meta property='og:url' content='https://www.ownit.top/p/202507161816/'>
+<meta property='og:site_name' content='南宫乘风'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='日志' /><meta property='article:published_time' content='2025-07-16T18:16:11&#43;00:00'/><meta property='article:modified_time' content='2025-07-16T18:16:11&#43;00:00'/><meta property='og:image' content='https://www.ownit.top/title_pic/77.jpg' />
+<meta name="twitter:title" content="统一日志格式规范与 Filebeat&#43;Logstash 实践落地">
+<meta name="twitter:description" content="在多部门、多技术栈并存的企业环境中，日志收集与分析是保障系统稳定运行的核心能力之一。然而，不同开发团队采用各异的日志打印方式，导致日志数据结构混乱，严重影响后续的收集、存储、检索与告警效率。本文将介绍我们如何建立统一的日志格式规范，并基于 Filebeat &#43; Logstash 实现多环境（宿主机/Kubernetes）下的高效日志采集、解析与存储。"><meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content='https://www.ownit.top/title_pic/77.jpg' />
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu227367ba8544f2fc7811ed9508937bec_102665_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍥</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">南宫乘风</a></h1>
+            <h2 class="site-description">当你的才华撑不起你的野心时，只有静下心学习才是唯一的出路</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://blog.csdn.net/heian_99'
+                        target="_blank"
+                        title="CSDN"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32.000000pt" height="32.000000pt" viewBox="0 0 32.000000 32.000000"
+ preserveAspectRatio="xMidYMid meet">
+
+<g transform="translate(0.000000,32.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
+<path d="M0 160 l0 -160 160 0 160 0 0 160 0 160 -160 0 -160 0 0 -160z m225
+108 c24 -11 34 -41 16 -52 -4 -3 -17 1 -27 9 -43 32 -95 3 -109 -62 -5 -27 -2
+-37 19 -58 29 -29 62 -32 94 -9 25 17 42 11 42 -15 0 -27 -51 -45 -107 -38
+-70 8 -97 42 -91 115 4 48 10 60 41 89 39 35 76 42 122 21z"/>
+</g>
+</svg>
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='https://github.com/nangongchengfeng/'
+                        target="_blank"
+                        title="GitHub"
+                        rel="me"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+                <li>
+                    <a 
+                        href='/index.xml'
+                        target="_blank"
+                        title="RSS"
+                        rel="me"
+                    >
+                        
+                        
+                            <?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 455.731 455.731" xml:space="preserve">
+<g>
+	<rect x="0" y="0" style="fill:#F78422;" width="455.731" height="455.731"/>
+	<g>
+		<path style="fill:#FFFFFF;" d="M296.208,159.16C234.445,97.397,152.266,63.382,64.81,63.382v64.348
+			c70.268,0,136.288,27.321,185.898,76.931c49.609,49.61,76.931,115.63,76.931,185.898h64.348
+			C391.986,303.103,357.971,220.923,296.208,159.16z"/>
+		<path style="fill:#FFFFFF;" d="M64.143,172.273v64.348c84.881,0,153.938,69.056,153.938,153.939h64.348
+			C282.429,270.196,184.507,172.273,64.143,172.273z"/>
+		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
+	</g>
+</g>
+</svg>
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>搜索</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+        
+        <li >
+            <a href='/link/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" />
+  <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" />
+</svg>
+
+
+
+                
+                <span>友链</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#背景">背景</a></li>
+    <li><a href="#为什么要统一日志格式">为什么要统一日志格式？</a></li>
+    <li><a href="#日志格式统一规范">日志格式统一规范</a></li>
+    <li><a href="#多语言实现示例">多语言实现示例</a></li>
+    <li><a href="#日志采集方案设计">日志采集方案设计</a>
+      <ol>
+        <li><a href="#宿主机-filebeat-配置">宿主机 Filebeat 配置</a></li>
+        <li><a href="#kubernetes-pod-内部-filebeat-configmap">Kubernetes Pod 内部 Filebeat ConfigMap</a></li>
+        <li><a href="#logstash-解析规则设计">Logstash 解析规则设计</a></li>
+      </ol>
+    </li>
+    <li><a href="#实践效果">实践效果</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+            <main class="main full-width">
+    <article class="has-image main-article">
+    <header class="article-header">
+        <div class="article-image">
+            <a href="/p/202507161816/">
+                
+                    <img src="/../../title_pic/77.jpg" loading="lazy" alt="Featured image of post 统一日志格式规范与 Filebeat&#43;Logstash 实践落地" />
+                
+            </a>
+        </div>
+    
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" >
+                项目实战
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/202507161816/">统一日志格式规范与 Filebeat&#43;Logstash 实践落地</a>
+        </h2>
+    
+        
+        <h3 class="article-subtitle">
+            在多部门、多技术栈并存的企业环境中，日志收集与分析是保障系统稳定运行的核心能力之一。然而，不同开发团队采用各异的日志打印方式，导致日志数据结构混乱，严重影响后续的收集、存储、检索与告警效率。本文将介绍我们如何建立统一的日志格式规范，并基于 Filebeat &#43; Logstash 实现多环境（宿主机/Kubernetes）下的高效日志采集、解析与存储。
+        </h3>
+        
+    </div>
+
+    
+    
+    
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jul 16, 2025</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 6 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+
+</header>
+
+    <section class="article-content">
+    
+    
+    <h2 id="背景">背景</h2>
+<p>在多部门、多技术栈并存的企业环境中，日志收集与分析是保障系统稳定运行的核心能力之一。然而，不同开发团队采用各异的日志打印方式，导致日志数据结构混乱，严重影响后续的收集、存储、检索与告警效率。</p>
+<p><strong>比如我们大部门就有多套日志格式，不同小部门有不同的格式，导致我们运维任务和成本大幅度增加。</strong>
+典型问题场景包括：</p>
+<p>开发团队A使用Log4j，格式为[%d] %p %c - %m%n
+团队B采用Logback，格式为%date %level [%thread] %logger - %msg%n
+微服务C输出JSON格式日志但缺少统一字段规范</p>
+<p><img src="/../../image/cdb7e996bbf94058a432c26db5e9e7f4.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p>本文将介绍我们如何建立统一的日志格式规范，并基于 Filebeat + Logstash 实现多环境（宿主机/Kubernetes）下的高效日志采集、解析与存储。</p>
+<h2 id="为什么要统一日志格式">为什么要统一日志格式？</h2>
+<p><strong>遇到的问题：</strong></p>
+<ul>
+<li>各部门日志格式五花八门，结构不一</li>
+<li>多行异常堆栈无法完整还原，频繁切段</li>
+<li>traceId/请求上下文缺失，无法链路追踪</li>
+<li>结构化字段难以提取，告警系统误报频繁</li>
+</ul>
+<p><strong>统一格式的好处：</strong></p>
+<ul>
+<li>日志标准化后，便于多系统集中分析</li>
+<li>traceId 实现服务链路跟踪（可接入 Skywalking/Jaeger）</li>
+<li>多行异常可合并为单条日志事件</li>
+<li>方便在 Elasticsearch 中建立字段索引，用于筛选、聚合与报警</li>
+</ul>
+<h2 id="日志格式统一规范">日志格式统一规范</h2>
+<p>在设计日志标准时，我们遵循以下关键原则：</p>
+<p>机器可读性：便于采集工具自动解析
+人类可读性：保留足够上下文，便于工程师直接阅读
+完整性与高效性的平衡：包含必要字段但不过度冗余
+可扩展性：支持未来增加新字段而不破坏兼容性
+行业兼容性：符合主流日志框架的最佳实践</p>
+<p><strong>经过多轮评审，最终确定的标准日志格式为：</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">%d<span class="o">{</span>yyyy-MM-dd HH:mm:ss.SSS<span class="o">}</span> <span class="o">[</span>%-5level<span class="o">]</span> <span class="o">[</span>%X<span class="o">{</span>traceId:-null<span class="o">}]</span> <span class="o">[</span>%thread<span class="o">]</span> <span class="o">[</span>%logger<span class="o">{</span>36<span class="o">}]</span> <span class="o">[</span>%L<span class="o">]</span> - %msg%n%wEx
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>样例日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">2025-04-09 13:36:39.947 <span class="o">[</span>INFO <span class="o">]</span> <span class="o">[</span>null<span class="o">]</span> <span class="o">[</span>main<span class="o">]</span> <span class="o">[</span>o.s.c.s.PostProcessorRegistrationDelegate<span class="nv">$BeanPostProcessorChecker</span><span class="o">]</span> <span class="o">[</span>327<span class="o">]</span> - Bean <span class="s1">&#39;org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration&#39;</span> of <span class="nb">type</span> <span class="o">[</span>org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration<span class="nv">$$</span>EnhancerBySpringCGLIB<span class="nv">$$</span>d712abb8<span class="o">]</span> is not eligible <span class="k">for</span> getting processed by all BeanPostProcessors <span class="o">(</span><span class="k">for</span> example: not eligible <span class="k">for</span> auto-proxying<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Grok语法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">%<span class="o">{</span>TIMESTAMP_ISO8601:date<span class="o">}</span> <span class="se">\[\s</span><span class="o">{</span>0,2<span class="o">}(</span>?&lt;loglevel&gt;<span class="o">[</span>^<span class="se">\]</span><span class="o">]</span>+<span class="o">)</span><span class="se">\]</span> <span class="se">\[\s</span><span class="o">{</span>0,2<span class="o">}(</span>?&lt;traceId&gt;<span class="o">[</span>^<span class="se">\]</span><span class="o">]</span>+<span class="o">)</span><span class="se">\]</span> <span class="se">\[</span><span class="o">(</span>?&lt;thread&gt;<span class="o">[</span>^<span class="se">\]</span><span class="o">]</span>+<span class="o">)</span><span class="se">\]</span> <span class="se">\[</span><span class="o">(</span>?&lt;logger&gt;<span class="o">[</span>^<span class="se">\]</span><span class="o">]</span>+<span class="o">)</span><span class="se">\]</span> <span class="se">\[</span><span class="o">(</span>?&lt;codeline&gt;<span class="se">\d</span>+<span class="o">)</span><span class="se">\]</span> - %<span class="o">{</span>GREEDYDATA:msg<span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/../../image/a298271c16a84bc7aef2f0a768e1619f.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<p><strong>这个标准格式包含七大关键要素：</strong></p>
+<p>时间戳：精确到毫秒的ISO8601格式，确保跨时区协调
+日志级别：统一5字符宽度对齐（ERROR/WARN/INFO/DEBUG）
+追踪标识：分布式系统必备的traceId，缺省为null
+线程信息：帮助理解异步处理流程
+类名：缩写为36字符保持简洁
+行号：精准定位日志产生位置
+消息体：包含可选的异常堆栈信息</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>字段占位符</th>
+<th>对应字段</th>
+<th>说明</th>
+<th>必要性</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%d{yyyy-MM-dd HH:mm:ss.SSS}</td>
+<td>时间戳</td>
+<td>精确到毫秒的ISO8601格式</td>
+<td>必要</td>
+<td>2023-08-15 14:30:45.123</td>
+</tr>
+<tr>
+<td>%-5level</td>
+<td>日志级别</td>
+<td>右对齐，5字符宽度</td>
+<td>必要</td>
+<td>INFO / ERROR</td>
+</tr>
+<tr>
+<td>%X{traceId:-null}</td>
+<td>请求链路ID</td>
+<td>分布式追踪标识</td>
+<td>重要</td>
+<td>3f5e8a2b1c9d4f7e</td>
+</tr>
+<tr>
+<td>%thread</td>
+<td>线程名</td>
+<td>执行线程标识</td>
+<td>必要</td>
+<td>http-nio-8080-exec-1</td>
+</tr>
+<tr>
+<td>%logger{36}</td>
+<td>类名</td>
+<td>截断到36字符的类全名</td>
+<td>必要</td>
+<td>com.fjf.service.PaymentService</td>
+</tr>
+<tr>
+<td>%L</td>
+<td>代码行号</td>
+<td>日志调用处的行号</td>
+<td>可选</td>
+<td>42</td>
+</tr>
+<tr>
+<td>%msg</td>
+<td>日志内容</td>
+<td>实际日志信息</td>
+<td>核心</td>
+<td>&ldquo;用户支付成功，金额:100.00&rdquo;</td>
+</tr>
+<tr>
+<td>%wEx</td>
+<td>异常堆栈</td>
+<td>附带异常时的堆栈信息</td>
+<td>条件</td>
+<td>java.lang.NullPointerException&hellip;</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="多语言实现示例">多语言实现示例</h2>
+<p>Java (Log4j2)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">&lt;PatternLayout <span class="nv">pattern</span><span class="o">=</span><span class="s2">&#34;%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%X{traceId:-null}] [%thread] [%-36.36logger{36}] [%.-1L] - %msg%n%wEx&#34;</span>/&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Python：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">import logging
+</span></span><span class="line"><span class="cl"><span class="nv">FORMAT</span> <span class="o">=</span> <span class="s1">&#39;%(asctime)s [%(levelname)-5s] [%(traceId)s] [%(threadName)s] [%(name)-36s] [%(lineno)d] - %(message)s&#39;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="日志采集方案设计">日志采集方案设计</h2>
+<p><strong>混合环境下的采集策略</strong>
+面对物理机与Kubernetes并存的混合环境，我们设计了分层采集方案：</p>
+<h3 id="宿主机-filebeat-配置">宿主机 Filebeat 配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="c"># filebeat.inputs配置</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">filebeat.inputs</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">log</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">paths</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/app/logs/app/hx-app.log</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/app/logs/app/hx-consume.log</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/fjf_work/logs/fujfu_member/fujfu_member_admin.log</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># 多行日志处理关键配置</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">multiline.pattern</span><span class="p">:</span><span class="w"> </span><span class="l">^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}[.,:]0{0,1}\d{3}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">multiline.negate</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">multiline.match</span><span class="p">:</span><span class="w"> </span><span class="l">after</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># 元数据字段</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">fields</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">logtype</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;hx&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">fields_under_root</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">fields</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="m">192.18.199.160</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">output.logstash</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;logstash.server.fjf:5044&#34;</span><span class="p">]</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>技术关键点：</p>
+<ul>
+<li>multiline.pattern使用正则严格匹配标准格式的时间戳开头</li>
+<li>negate: true + match: after确保堆栈信息被正确关联到主日志行</li>
+<li>通过fields添加主机IP等元信息，便于后续定位问题来源</li>
+</ul>
+<h3 id="kubernetes-pod-内部-filebeat-configmap">Kubernetes Pod 内部 Filebeat ConfigMap</h3>
+<p><code>filebeat-configmap.yaml</code> 可以注册到configmap中</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">filebeat.inputs</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>- <span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">log</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">paths</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>- <span class="l">/app/logs/app/*.log</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">multiline.pattern</span><span class="p">:</span><span class="w"> </span><span class="l">^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}[.,:]0{0,1}\d{3}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">multiline.negate</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">multiline.match</span><span class="p">:</span><span class="w"> </span><span class="l">after</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">fields</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">logtype</span><span class="p">:</span><span class="w"> </span><span class="l">${LOGTYPE:app}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">fields_under_root</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">fields</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l">${POD_IP} </span><span class="w"> </span><span class="c"># 自动注入Pod IP</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">output.logstash</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;logstash-server.default.svc.cloudcs.fjf:5044&#34;</span><span class="p">]</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>✅ 说明：多行合并通过正则识别日志起始行（时间戳），其余行自动归入上一条日志。</p>
+<p>K8s特定优化：</p>
+<ul>
+<li>使用环境变量动态注入POD_IP和LOGTYPE</li>
+<li>通配符路径匹配适配不同应用的日志文件</li>
+<li>通过DaemonSet确保每个节点都有采集器</li>
+</ul>
+<h3 id="logstash-解析规则设计">Logstash 解析规则设计</h3>
+<p>在 Logstash 中通过 filter 插件完成日志结构化处理，区分标准格式、PowerJob 特例与 JSON 格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="l">filter {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># JSON日志特殊处理</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="l">if [fields][json] == &#34;true&#34; {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="l">json {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="l">source =&gt; &#34;message&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="l">remove_field =&gt; [&#34;message&#34;,&#34;agent&#34;,&#34;tags&#34;,&#34;ecs&#34;]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># 标准格式解析</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="l">else {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="l">grok {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="l">match =&gt; { &#34;message&#34; =&gt; [</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="s2">&#34;%{TIMESTAMP_ISO8601:date} \[\s{0,2}(?&lt;loglevel&gt;[^\]]+)\] \[\s{0,2}(?&lt;traceId&gt;[^\]]+)\] \[(?&lt;thread&gt;[^\]]+)\] \[(?&lt;logger&gt;[^\]]+)\] \[(?&lt;codeline&gt;\d+)\] - %{GREEDYDATA:msg}&#34;</span><span class="p">,</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c"># 备用模式匹配历史格式</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="p">]</span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># 添加业务标记</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="l">ruby {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="l">code =&gt; &#39;event.set(&#34;projectname&#34;, event.get(&#34;host&#34;)[&#34;name&#34;].split(&#34;.&#34;)[0])&#39;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># 时间处理</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="l">date {</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="l">match =&gt; [&#34;date&#34;,&#34;ISO8601&#34;,&#34;yyyy-MM-dd HH:mm:ss.SSS&#34;]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="l">target =&gt; &#34;@timestamp&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="l">timezone =&gt; &#34;Asia/Shanghai&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>}<span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span>}<span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>生产案例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ruby" data-lang="ruby"><span class="line"><span class="cl"><span class="c1"># ===========================</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 1. 输入配置（Beats 输入）</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ===========================</span>
+</span></span><span class="line"><span class="cl"><span class="n">input</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">beats</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">port</span> <span class="o">=&gt;</span> <span class="mi">5044</span>                      <span class="c1"># 接收来自 Filebeat 的数据</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ssl</span> <span class="o">=&gt;</span> <span class="kp">false</span>                      <span class="c1"># 未启用 SSL（可以视需求启用）</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client_inactivity_timeout</span> <span class="o">=&gt;</span> <span class="mi">36000</span> <span class="c1"># 客户端连接空闲超时（秒）</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ===========================</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. 过滤器（filter）</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ===========================</span>
+</span></span><span class="line"><span class="cl"><span class="n">filter</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1"># 如果是 JSON 格式日志（如前端或Node服务打印的 JSON 日志）</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="o">[</span><span class="n">fields</span><span class="o">][</span><span class="n">json</span><span class="o">]</span> <span class="o">==</span> <span class="s2">&#34;true&#34;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">json</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">source</span> <span class="o">=&gt;</span> <span class="s2">&#34;message&#34;</span>             <span class="c1"># 指定从 message 字段中解析 JSON</span>
+</span></span><span class="line"><span class="cl">      <span class="n">remove_field</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&#34;message&#34;</span><span class="p">,</span> <span class="s2">&#34;agent&#34;</span><span class="p">,</span> <span class="s2">&#34;tags&#34;</span><span class="p">,</span> <span class="s2">&#34;ecs&#34;</span><span class="o">]</span> <span class="c1"># 清理多余字段</span>
+</span></span><span class="line"><span class="cl">      <span class="n">add_field</span> <span class="o">=&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;loglevel&#34;</span> <span class="o">=&gt;</span> <span class="s2">&#34;%{[severity]}&#34;</span> <span class="c1"># 从 JSON 中提取 severity 字段作为 loglevel</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1"># 如果是 PowerJob 的日志格式（特殊格式日志单独处理）</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">[</span><span class="n">fields</span><span class="o">][</span><span class="n">logtype</span><span class="o">]</span> <span class="o">==</span> <span class="s2">&#34;powerjob&#34;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">grok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">match</span> <span class="o">=&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;message&#34;</span> <span class="o">=&gt;</span> <span class="s2">&#34;%{TIMESTAMP_ISO8601:date} </span><span class="se">\s</span><span class="s2">{0,1}(?&lt;severity&gt;.*?) (?&lt;pid&gt;.*?) --- \[(?&lt;thread&gt;.*?)\] (?&lt;class&gt;.*?) </span><span class="se">\s</span><span class="s2">*: (?&lt;rest&gt;.*+?)&#34;</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">      <span class="n">remove_field</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&#34;message&#34;</span><span class="p">,</span> <span class="s2">&#34;agent&#34;</span><span class="p">,</span> <span class="s2">&#34;tags&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">      <span class="n">add_field</span> <span class="o">=&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;loglevel&#34;</span> <span class="o">=&gt;</span> <span class="s2">&#34;%{[severity]}&#34;</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mutate</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">update</span> <span class="o">=&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;[fields][logtype]&#34;</span> <span class="o">=&gt;</span> <span class="s2">&#34;logstash&#34;</span> <span class="c1"># 为统一索引，将 logtype 设置为 logstash</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1"># 默认解析逻辑：标准日志格式（适配多种格式）</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">grok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">match</span> <span class="o">=&gt;</span> <span class="p">{</span> 
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;message&#34;</span> <span class="o">=&gt;</span> <span class="o">[</span>
+</span></span><span class="line"><span class="cl">          <span class="c1"># 标准推荐格式日志</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;%{TIMESTAMP_ISO8601:date} \[</span><span class="se">\s</span><span class="s2">{0,2}(?&lt;loglevel&gt;[^\]]+)\] \[</span><span class="se">\s</span><span class="s2">{0,2}(?&lt;traceId&gt;[^\]]+)\] \[(?&lt;thread&gt;[^\]]+)\] \[(?&lt;logger&gt;[^\]]+)\] \[(?&lt;codeline&gt;\d+)\] - %{GREEDYDATA:msg}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          
+</span></span><span class="line"><span class="cl">          <span class="c1"># 其他兼容格式 （防止有漏网之鱼，加的格式，注意格式越多，处理也耗费CPU）</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;%{TIMESTAMP_ISO8601:date} (?&lt;loglevel&gt;.*?)</span><span class="se">\s</span><span class="s2">{1,2}\| \[(?&lt;threadname&gt;.*?)\] (?&lt;classname&gt;.*?) \[(?&lt;codeline&gt;.*?)\] \| \[(?&lt;traceid&gt;.*?)\] \| (?&lt;msg&gt;.*+?)&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;%{TIMESTAMP_ISO8601:date} (?&lt;loglevel&gt;.*?)</span><span class="se">\s</span><span class="s2">{1,2}\| \[(?&lt;threadname&gt;.*?)\] (?&lt;classname&gt;.*?) \[(?&lt;codeline&gt;.*?)\] \| (?&lt;msg&gt;.*+?)&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;\[%{TIMESTAMP_ISO8601:date}\] \[(?&lt;loglevel&gt;.*?)</span><span class="se">\s</span><span class="s2">{0,2}\] \[(?&lt;threadname&gt;.*?)\] (?&lt;classname&gt;.*?) (?&lt;codeline&gt;.*?) - (?&lt;msg&gt;.*+?)&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="s2">&#34;%{TIMESTAMP_ISO8601:date} \[(?&lt;threadname&gt;.*?)\] (?&lt;loglevel&gt;.*?)</span><span class="se">\s</span><span class="s2">{0,2} (?&lt;classname&gt;.*?) (?&lt;codeline&gt;.*?) - (?&lt;msg&gt;.*+?)&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">]</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">      <span class="n">remove_field</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&#34;message&#34;</span><span class="p">,</span> <span class="s2">&#34;agent&#34;</span><span class="p">,</span> <span class="s2">&#34;tags&#34;</span><span class="o">]</span> <span class="c1"># 删除原始 message 字段等无用字段</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1"># Ruby 脚本：提取主机名的前缀作为项目名</span>
+</span></span><span class="line"><span class="cl">  <span class="n">ruby</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">code</span> <span class="o">=&gt;</span><span class="s1">&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s1">      arr = event.get(&#34;host&#34;)[&#34;name&#34;].split(&#34;.&#34;)[0]
+</span></span></span><span class="line"><span class="cl"><span class="s1">      event.set(&#34;projectname&#34;, arr)
+</span></span></span><span class="line"><span class="cl"><span class="s1">    &#39;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1"># 时间字段统一转换为 @timestamp，便于时序检索</span>
+</span></span><span class="line"><span class="cl">  <span class="n">date</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">match</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&#34;date&#34;</span><span class="p">,</span> <span class="s2">&#34;ISO8601&#34;</span><span class="p">,</span> <span class="s2">&#34;yyyy-MM-dd HH:mm:ss.SSS&#34;</span><span class="o">]</span>
+</span></span><span class="line"><span class="cl">    <span class="n">target</span> <span class="o">=&gt;</span> <span class="s2">&#34;@timestamp&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">timezone</span> <span class="o">=&gt;</span> <span class="s2">&#34;Asia/Shanghai&#34;</span>   <span class="c1"># 设置中国时区，避免时间错乱</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ===========================</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 3. 输出到 Elasticsearch</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ===========================</span>
+</span></span><span class="line"><span class="cl"><span class="n">output</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">elasticsearch</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">hosts</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&#34;elasticsearch-log.prod.server.fjf:9200&#34;</span><span class="o">]</span>  <span class="c1"># ES 地址</span>
+</span></span><span class="line"><span class="cl">    <span class="n">user</span> <span class="o">=&gt;</span> <span class="s2">&#34;elastic&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">password</span> <span class="o">=&gt;</span> <span class="s2">&#34;xxxxxxxxxxxx&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">manage_template</span> <span class="o">=&gt;</span> <span class="kp">false</span>     <span class="c1"># 不自动覆盖 ES 模板（防止冲突）</span>
+</span></span><span class="line"><span class="cl">    <span class="n">index</span> <span class="o">=&gt;</span> <span class="s2">&#34;%{[fields][logtype]}-prod-%{+YYYY.MM.dd}&#34;</span>  <span class="c1"># 动态索引名（按日志类型和日期）</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>关键处理阶段：</strong></p>
+<ul>
+<li>格式识别路由：区分JSON和文本日志</li>
+<li>多模式Grok解析：主模式匹配标准格式，备用模式兼容历史格式</li>
+<li>元数据丰富：从主机名提取项目标识</li>
+<li>时间标准化：统一转化为ES兼容的时间戳</li>
+</ul>
+<p><img src="/../../image/0bff6fd22f0a40ae8ffd44d24561a493.png"
+	
+	
+	
+	loading="lazy"
+	
+		alt="在这里插入图片描述"
+	
+	
+></p>
+<h2 id="实践效果">实践效果</h2>
+<p>引入统一日志系统后取得的可测量改进：</p>
+<ol>
+<li>故障定位时间：从平均2.5小时缩短至30分钟</li>
+<li>日志存储量：通过合理字段设计减少25%存储需求</li>
+<li>日志利用率：结构化日志使90%的日志可被监控系统利用</li>
+<li>异常检测：基于标准字段建立的规则发现率提升40%</li>
+</ol>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E6%97%A5%E5%BF%97/">日志</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>未来的你，会感谢今天仍在努力奋斗的你</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-content--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-content">
+        <div class="flex article-list--tile">
+            
+                
+<article class="has-image">
+    <a href="/p/202506181815/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/18.jpg" loading="lazy" data-key="202506181815" data-hash="/../../title_pic/18.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">利用 Nginx 实现灰度环境的 H5 应用发布策略</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202506131214/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/65.jpg" loading="lazy" data-key="202506131214" data-hash="/../../title_pic/65.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">基于Nginx的微信支付回调跨网络环境解决方案</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202506101112/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/02.jpg" loading="lazy" data-key="202506101112" data-hash="/../../title_pic/02.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">为MySQL社区版实现审计功能：从插件配置到日志监控全解析</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202505221840/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/35.jpg" loading="lazy" data-key="202505221840" data-hash="/../../title_pic/35.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">基于阿里云DashScope API构建智能对话指南</h2>
+        </div>
+    </a>
+</article>
+
+            
+                
+<article class="has-image">
+    <a href="/p/202504290901/">
+        
+        
+            <div class="article-image">
+                
+                    <img src="/../../title_pic/76.jpg" loading="lazy" data-key="202504290901" data-hash="/../../title_pic/76.jpg"/>
+                
+            </div>
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Chroma向量检索实战：打造智能客服的“最强大脑”</h2>
+        </div>
+    </a>
+</article>
+
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    <script
+    src="https://giscus.app/client.js"
+    data-repo="nangongchengfeng/nangongchengfeng.github.io"
+    data-repo-id="R_kgDOIwWL4Q"
+    data-category="Announcements"
+    data-category-id="DIC_kwDOIwWL4c4Cg8Rs"
+    data-mapping="title"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="en"
+    crossorigin="anonymous"
+    async
+></script>
+<script>
+    function setGiscusTheme(theme) {
+        let giscus = document.querySelector("iframe.giscus-frame");
+        if (giscus) {
+            giscus.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                "https://giscus.app"
+            );
+        }
+    }
+
+    (function () {
+        addEventListener("message", (e) => {
+            if (event.origin !== "https://giscus.app") return;
+            handler();
+        });
+        window.addEventListener("onColorSchemeChange", handler);
+
+        function handler() {
+            if (document.documentElement.dataset.scheme === "light") {
+                setGiscusTheme('light');
+            } else {
+                setGiscusTheme('dark_dimmed');
+            }
+        }
+    })();
+</script>
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+            2018 - 
+        
+        2025 南宫乘风
+    </section>
+    
+    <section class="powerby">
+        
+            <a href="https://beian.miit.gov.cn/" target="_blank">备案号</a> <a href="https://beian.miit.gov.cn/" target="_blank">陕ICP备2021004364号-1</a> <br/>
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.16.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
+            >
+
+            </main>
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>
